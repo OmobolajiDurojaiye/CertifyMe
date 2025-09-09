@@ -1,0 +1,7 @@
+| Role                 | Color Name | Hex Code  | Usage                                          |
+| -------------------- | ---------- | --------- | ---------------------------------------------- |
+| **Primary**          | Blue       | `#2563EB` | Buttons, links, active highlights              |
+| **Secondary**        | Gold/Amber | `#FACC15` | Certificate borders, icons, pricing highlights |
+| **Background**       | White      | `#F9FAFB` | App background, landing page sections          |
+| **Text / Neutral**   | Slate      | `#1E293B` | Body text, sidebar, footer                     |
+| **Accent / Success** | Green      | `#22C55E` | Verification badge, success alerts             |

@@ -1,0 +1,120 @@
+Database Schema (MVP)
+1. Users Table
+
+Holds account details.
+
+Users
+-----
+id              (PK)
+name            VARCHAR
+email           VARCHAR UNIQUE
+password_hash   TEXT
+role            ENUM('free','starter','pro')
+cert_quota      INT (remaining certs this month)
+created_at      TIMESTAMP
+updated_at      TIMESTAMP
+
+2. Templates Table
+
+Stores certificate template designs.
+
+Templates
+---------
+id              (PK)
+user_id         (FK → Users.id)
+title           VARCHAR
+background_url  TEXT (optional bg image)
+logo_url        TEXT (issuer logo)
+primary_color   VARCHAR(7) (hex)
+font_family     VARCHAR
+placeholders    JSONB (e.g. ["[Name]","[Course Title]"])
+created_at      TIMESTAMP
+
+3. Certificates Table
+
+Each generated certificate.
+
+Certificates
+------------
+id              (PK)
+user_id         (FK → Users.id)
+template_id     (FK → Templates.id)
+recipient_name  VARCHAR
+course_title    VARCHAR
+issue_date      DATE
+verification_id UUID (unique for public verify URL)
+pdf_url         TEXT (stored file path or S3 URL)
+status          ENUM('valid','revoked')
+sent_at         TIMESTAMP (null if not emailed)
+created_at      TIMESTAMP
+
+4. Billing / Payments Table
+
+Tracks subscription or credits.
+
+Payments
+--------
+id              (PK)
+user_id         (FK → Users.id)
+provider        ENUM('paystack','stripe','lemonsqueezy')
+plan            ENUM('free','starter','pro','credits')
+amount          DECIMAL(10,2)
+currency        VARCHAR(5)
+status          ENUM('pending','paid','failed')
+transaction_ref VARCHAR
+created_at      TIMESTAMP
+
+5. Usage Logs (Optional, MVP+)
+
+Tracks certificate generation for quota enforcement.
+
+UsageLogs
+---------
+id              (PK)
+user_id         (FK → Users.id)
+action          VARCHAR (e.g. "generate_certificate")
+meta            JSONB
+created_at      TIMESTAMP
+
+🏗 System Architecture Diagram (Textual)
+
+Here’s the high-level flow:
+
+[React Frontend (Vite + Tailwind)]
+      |
+      |  HTTPS / REST API
+      v
+[Flask Backend API]
+      |
+      |-- Auth & User Management
+      |-- Certificate Generation (ReportLab/WeasyPrint)
+      |-- Verification Service (/verify/:uuid)
+      |-- Billing Service (Paystack, Stripe, LemonSqueezy)
+      |
+      v
+[Database: PostgreSQL / SQLite MVP]
+
+      +--> [File Storage: Local → AWS S3 later]
+      +--> [Email Service: SendGrid/Mailgun]
+      +--> [Payments Gateway: Paystack (local), Stripe/LemonSqueezy (global)]
+
+🔄 App Flow (User Journey)
+
+Sign Up / Login
+→ React sends request → Flask Auth → JWT → React stores token.
+
+Create Template
+→ User uploads logo, sets placeholders → Stored in DB.
+
+Upload Recipients & Generate
+→ CSV uploaded → Flask generates PDFs → Saves to storage → Creates certificate records.
+
+Verify Certificate
+→ Public visits /verify/:uuid → Flask fetches certificate → Returns JSON + PDF preview.
+
+Send Certificates
+→ Flask triggers email service → Recipients receive certificate + verify link.
+
+Billing
+→ User clicks “Upgrade” → Flask creates checkout session (Paystack/Stripe).
+→ On success, user’s quota updated in DB.

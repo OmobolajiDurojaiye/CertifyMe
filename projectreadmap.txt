@@ -1,0 +1,86 @@
+Project Roadmap (Phase by Phase)
+Phase 1 – Foundation & Branding
+
+Finalize project name + logo.
+
+Set up repo structure (React frontend + Flask backend).
+
+Install dependencies (Tailwind, Vite, Flask blueprints, DB ORM).
+
+Apply color palette + branding assets globally.
+
+Phase 2 – Landing Page (Public)
+
+Clean, modern hero section (white background, CTA in blue).
+
+Showcase features:
+
+Issue Certificates
+
+Verify Badges
+
+Track Achievements
+
+Add pricing plans (Free / Pro).
+
+Integrate email capture (Mailchimp / simple DB).
+
+Phase 3 – Authentication & User Dashboard
+
+JWT-based auth (login/signup).
+
+User dashboard with:
+
+“My Certificates”
+
+“Create Certificate” button.
+
+Apply color scheme (Slate sidebar, white workspace, blue CTAs).
+
+Phase 4 – Certificate/Badge Creation
+
+Upload logo/seal (stored in S3/local).
+
+Choose from ready-made templates.
+
+Fill fields (Name, Course, Date, Signature).
+
+Preview in real-time.
+
+Save to DB + generate unique verification link.
+
+Phase 5 – Verification System
+
+Public verification page.
+
+Enter certificate ID / QR code scan → verify authenticity.
+
+Show green check (success) or red alert (invalid).
+
+Phase 6 – Payments
+
+Integrate Stripe (global) + Paystack (Nigeria/local).
+
+Free users: watermark.
+
+Paid users: high-res, custom branding.
+
+Pricing page → redirect to checkout.
+
+Phase 7 – Admin / Super Admin
+
+Admin can view all certificates issued.
+
+Manage templates + pricing.
+
+Handle user upgrade/downgrade.
+
+Phase 8 – Deployment
+
+Backend → Render / Railway / Fly.io.
+
+Frontend → Vercel / Netlify.
+
+Domain → Cloudflare / Namecheap (SSL).
+
+Connect payment webhooks.

@@ -1,0 +1,47 @@
+.auth-background {
+  min-height: 100vh;
+  background-color: #111827;
+  background-image: radial-gradient(
+      circle at 1px 1px,
+      rgba(255, 255, 255, 0.05) 1px,
+      transparent 0
+    ),
+    linear-gradient(145deg, #1e293b 0%, #000000 100%);
+  background-size: 20px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.auth-card {
+  max-width: 450px;
+  width: 100%;
+  border: none;
+  border-radius: 1.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  background-color: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
+}
+.auth-card .form-control {
+  border-radius: 0.75rem !important;
+  padding: 0.9rem 1rem !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.auth-card .form-control:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2) !important;
+}
+.btn-gradient {
+  background-image: linear-gradient(to right, #2563eb, #14b8a6);
+  border: none;
+  color: white;
+  font-weight: bold;
+  padding: 0.9rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  background-size: 200% auto;
+}
+.btn-gradient:hover {
+  background-position: right center;
+  transform: scale(1.02);
+}
