@@ -17,13 +17,16 @@ def create_template():
     if 'title' not in request.form:
         return jsonify({"msg": "Missing title part"}), 400
 
-    title = request.form.get('title')
-    primary_color = request.form.get('primary_color', '#2563EB')
-    font_family = request.form.get('font_family', 'Georgia')
+    data = request.form
+    title = data.get('title')
+    primary_color = data.get('primary_color', '#2563EB')
+    secondary_color = data.get('secondary_color', '#64748B')
+    body_font_color = data.get('body_font_color', '#333333')
+    font_family = data.get('font_family', 'Georgia')
+    layout_style = data.get('layout_style', 'modern')
     logo_url = None
     background_url = None
 
-    # Handle logo upload
     if 'logo' in request.files:
         logo_file = request.files['logo']
         if logo_file and allowed_file(logo_file.filename):
@@ -32,7 +35,6 @@ def create_template():
             logo_file.save(save_path)
             logo_url = f"/uploads/{filename}"
 
-    # Handle background image upload
     if 'background' in request.files:
         bg_file = request.files['background']
         if bg_file and allowed_file(bg_file.filename):
@@ -47,8 +49,11 @@ def create_template():
         logo_url=logo_url,
         background_url=background_url,
         primary_color=primary_color,
+        secondary_color=secondary_color,
+        body_font_color=body_font_color,
         font_family=font_family,
-        placeholders={}  # For future dynamic fields
+        layout_style=layout_style,
+        placeholders={}
     )
     db.session.add(new_template)
     db.session.commit()
@@ -58,14 +63,21 @@ def create_template():
 @jwt_required(locations=["headers"])
 def get_user_templates():
     user_id = int(get_jwt_identity())
-    templates = Template.query.filter_by(user_id=user_id).order_by(Template.created_at.desc()).all()
+    templates = Template.query.filter(
+        (Template.user_id == user_id) | (Template.is_public == True)
+    ).order_by(Template.is_public.asc(), Template.created_at.desc()).all()
+    
     templates_data = [{
         'id': t.id,
         'title': t.title,
         'logo_url': t.logo_url,
         'background_url': t.background_url,
         'primary_color': t.primary_color,
-        'font_family': t.font_family
+        'secondary_color': t.secondary_color,
+        'body_font_color': t.body_font_color,
+        'font_family': t.font_family,
+        'layout_style': t.layout_style,
+        'is_public': t.is_public
     } for t in templates]
     return jsonify(templates_data), 200
 
@@ -73,9 +85,14 @@ def get_user_templates():
 @jwt_required(locations=["headers"])
 def get_template(template_id):
     user_id = int(get_jwt_identity())
-    template = Template.query.filter_by(id=template_id, user_id=user_id).first()
+    template = Template.query.get(template_id)
+    
     if not template:
-        return jsonify({"msg": "Template not found or does not belong to user"}), 404
+        return jsonify({"msg": "Template not found"}), 404
+
+    # Allow access if the template is public OR belongs to the user
+    if not template.is_public and template.user_id != user_id:
+        return jsonify({"msg": "You do not have permission to view this template"}), 403
     
     template_data = {
         'id': template.id,
@@ -83,6 +100,10 @@ def get_template(template_id):
         'logo_url': template.logo_url,
         'background_url': template.background_url,
         'primary_color': template.primary_color,
-        'font_family': template.font_family
+        'secondary_color': template.secondary_color,
+        'body_font_color': template.body_font_color,
+        'font_family': template.font_family,
+        'layout_style': template.layout_style,
+        'is_public': template.is_public
     }
     return jsonify(template_data), 200
