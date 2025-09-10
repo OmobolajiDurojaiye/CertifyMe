@@ -13,3 +13,6 @@ frontend/build/
 # General
 *.env
 .DS_Store
+
+__pycache__/
+*.pyc
