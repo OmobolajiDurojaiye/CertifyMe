@@ -1,36 +1,47 @@
 import React from "react";
-import { Container, Row, Col, Button, Image } from "react-bootstrap";
+import { Container, Button, Image } from "react-bootstrap";
+import { Link } from "react-router-dom";
 
 function Hero() {
   return (
     <section id="home" className="hero-section">
-      <Container>
-        <Row className="align-items-center">
-          <Col lg={6} className="text-center text-lg-start">
-            <h1 className="display-3 fw-bolder mb-3">
-              Issue Certificates & Badges in Minutes.
-            </h1>
-            <p className="lead text-white-50 mb-4">
-              CertifyMe helps schools, trainers, and businesses create and share
-              verifiable certificates with ease.
-            </p>
-            <Button variant="success" size="lg" className="me-3 px-4 py-3">
-              Get Started Free
-            </Button>
-            <Button variant="outline-light" size="lg" className="px-4 py-3">
-              See How It Works
-            </Button>
-          </Col>
-          <Col lg={6} className="d-none d-lg-block text-center">
-            {/* Using the local app icon from the /public/images/ folder */}
-            <Image
-              src="/images/certbadge.png"
-              alt="CertifyMe App Icon"
-              className="hero-image"
-              style={{ maxWidth: "350px" }} // Control the size of the icon
-            />
-          </Col>
-        </Row>
+      <div className="hero-bg-shape shape-1"></div>
+      <div className="hero-bg-shape shape-2"></div>
+      <Container className="text-center position-relative">
+        <div className="hero-content">
+          <h1 className="display-3 fw-bolder mb-3">
+            Issue Professional Certificates in Minutes
+          </h1>
+          <p className="lead text-white-50 mb-4 mx-auto">
+            The simplest way for schools and businesses to create, manage, and
+            deliver secure, verifiable digital credentials.
+          </p>
+          <Button
+            as={Link}
+            to="/signup"
+            variant="success"
+            size="lg"
+            className="me-3 px-4 py-2"
+          >
+            Start for Free
+          </Button>
+          <Button
+            href="#features"
+            variant="outline-light"
+            size="lg"
+            className="px-4 py-2"
+          >
+            Learn More
+          </Button>
+        </div>
+        <div className="mt-5">
+          <Image
+            src="/images/hero-cert.png"
+            alt="Certificate Preview"
+            className="hero-certificate-img"
+            style={{ maxWidth: "700px" }}
+          />
+        </div>
       </Container>
     </section>
   );

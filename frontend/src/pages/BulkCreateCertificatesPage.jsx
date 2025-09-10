@@ -12,6 +12,7 @@ import { getTemplates, bulkCreateCertificates } from "../api";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
 import QRCode from "react-qr-code";
+import { SERVER_BASE_URL } from "../config";
 
 const CertificatePreview = ({ template, formData }) => {
   if (!template) {
@@ -31,7 +32,7 @@ const CertificatePreview = ({ template, formData }) => {
     );
   }
 
-  const serverUrl = "http://127.0.0.1:5000"; // Define server URL
+  const serverUrl = SERVER_BASE_URL;
   const {
     layout_style,
     primary_color,

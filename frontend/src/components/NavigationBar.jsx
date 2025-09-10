@@ -25,14 +25,13 @@ function NavigationBar() {
       className={scrolled ? "navbar-sticky navbar-scrolled" : "navbar-sticky"}
     >
       <Container>
-        <Navbar.Brand as={Link} to="/" className="fw-bold fs-4">
+        <Navbar.Brand href="#home" className="fw-bold fs-4">
           <span style={{ color: "#22C55E" }}>Certify</span>
           <span style={{ color: "#2563EB" }}>Me</span>
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
           <Nav className="mx-auto">
-            {/* These links would be for scrolling, which we can implement later if needed */}
             <Nav.Link href="#features" className="mx-2">
               Features
             </Nav.Link>

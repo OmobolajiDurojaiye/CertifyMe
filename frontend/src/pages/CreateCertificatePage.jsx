@@ -8,6 +8,7 @@ import {
   updateCertificate,
 } from "../api";
 import QRCode from "react-qr-code";
+import { SERVER_BASE_URL } from "../config";
 import { Calendar, CheckCircle, Info } from "lucide-react";
 
 const CertificatePreview = ({ template, formData }) => {
@@ -21,7 +22,7 @@ const CertificatePreview = ({ template, formData }) => {
     );
   }
 
-  const serverUrl = "http://127.0.0.1:5000"; // Define server URL
+  const serverUrl = SERVER_BASE_URL;
   const {
     layout_style,
     primary_color,

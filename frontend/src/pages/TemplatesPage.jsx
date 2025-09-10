@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getTemplates, createTemplate, updateTemplate } from "../api";
 import { CheckCircle, Info, Edit2, Expand, X } from "lucide-react";
+import { SERVER_BASE_URL } from "../config";
 
 // This is the enhanced preview component
 const TemplatePreview = ({ previewData, isFullscreen = false }) => {
@@ -349,10 +350,10 @@ function TemplatesPage() {
     setPreviewData({
       ...template,
       logo_url: template.logo_url
-        ? `http://127.0.0.1:5000${template.logo_url}`
+        ? `${SERVER_BASE_URL}${template.logo_url}`
         : null,
       background_url: template.background_url
-        ? `http://127.0.0.1:5000${template.background_url}`
+        ? `${SERVER_BASE_URL}${template.background_url}`
         : null,
     });
     setShowEditModal(true);
@@ -518,7 +519,7 @@ function TemplatesPage() {
                   style={{
                     backgroundColor: t.primary_color,
                     backgroundImage: t.background_url
-                      ? `url(http://127.0.0.1:5000${t.background_url})`
+                      ? `url(${SERVER_BASE_URL}${t.background_url})`
                       : "none",
                     backgroundSize: "cover",
                   }}
@@ -527,7 +528,7 @@ function TemplatesPage() {
                   <div className="flex items-center">
                     {t.logo_url && (
                       <img
-                        src={`http://127.0.0.1:5000${t.logo_url}`}
+                        src={`${SERVER_BASE_URL}${t.logo_url}`}
                         alt="Logo"
                         className="w-10 h-10 rounded-full mr-3 object-cover bg-gray-100"
                       />

@@ -9,8 +9,8 @@ import {
   Badge,
 } from "react-bootstrap";
 import { CheckCircleFill } from "react-bootstrap-icons";
+import { Link } from "react-router-dom";
 
-// Data for the pricing plans
 const plans = [
   {
     title: "Free",
@@ -21,11 +21,11 @@ const plans = [
       "Issue up to 10 certificates/mo",
       "Basic templates",
       "Public verification pages",
-      "CertifyMe branding included",
+      "CertifyMe branding",
     ],
     buttonText: "Start for Free",
     buttonVariant: "outline-primary",
-    highlighted: false,
+    link: "/signup",
   },
   {
     title: "Monthly",
@@ -33,22 +33,22 @@ const plans = [
     priceDetails: "/ month",
     description: "For professionals and growing businesses.",
     features: [
-      "Unlimited certificates & badges",
+      "Unlimited certificates",
       "Custom branding (your logo)",
       "Access to all templates",
-      "Certificate analytics",
       "Email delivery & support",
     ],
     buttonText: "Choose Monthly",
-    buttonVariant: "success",
+    buttonVariant: "primary",
     highlighted: true,
     badge: "Most Popular",
+    link: "/signup",
   },
   {
     title: "Lifetime",
     price: "$99",
     priceDetails: "one-time",
-    description: "Pay once, own it forever. The best value.",
+    description: "Pay once, own it forever. The absolute best value.",
     features: [
       "Everything in Monthly, forever",
       "Lifetime access, no recurring fees",
@@ -56,26 +56,19 @@ const plans = [
       "Premium support",
     ],
     buttonText: "Get Lifetime Access",
-    buttonVariant: "primary",
-    highlighted: false,
+    buttonVariant: "outline-primary",
     badge: "Best Value",
+    link: "/signup",
   },
 ];
 
 function Pricing() {
   return (
-    <section
-      id="pricing"
-      className="py-5"
-      style={{
-        background: "linear-gradient(180deg, #0B0F19 0%, #111827 100%)",
-        color: "white",
-      }}
-    >
+    <section id="pricing" className="py-5 bg-light">
       <Container>
         <div className="text-center mb-5">
           <h2 className="display-5 fw-bold">Simple, Transparent Pricing</h2>
-          <p className="lead text-white-50">
+          <p className="lead text-muted">
             Choose the plan that's right for you.
           </p>
         </div>
@@ -91,23 +84,13 @@ function Pricing() {
                   {plan.badge && (
                     <Badge
                       pill
-                      bg={plan.title === "Lifetime" ? "" : "success"}
-                      style={
-                        plan.title === "Lifetime"
-                          ? { backgroundColor: "#FACC15", color: "#1E293B" }
-                          : {}
-                      }
+                      bg={plan.highlighted ? "primary" : "secondary"}
                       className="position-absolute top-0 start-50 translate-middle"
                     >
                       {plan.badge}
                     </Badge>
                   )}
-                  {/* Added specific classes for each title for easier styling */}
-                  <h3
-                    className={`fw-bold plan-title ${plan.title.toLowerCase()}-title`}
-                  >
-                    {plan.title}
-                  </h3>
+                  <h3 className="fw-bold plan-title">{plan.title}</h3>
                   <p className="fs-1 fw-bolder mb-0">
                     {plan.price}
                     <span className="fs-5 text-muted">
@@ -115,7 +98,7 @@ function Pricing() {
                       {plan.priceDetails}
                     </span>
                   </p>
-                  <p className="mb-4">{plan.description}</p>
+                  <p className="text-muted mb-4">{plan.description}</p>
                   <ListGroup variant="flush" className="mb-4">
                     {plan.features.map((feature, i) => (
                       <ListGroup.Item
@@ -128,6 +111,8 @@ function Pricing() {
                     ))}
                   </ListGroup>
                   <Button
+                    as={Link}
+                    to={plan.link}
                     variant={plan.buttonVariant}
                     className="mt-auto fw-bold py-2"
                   >

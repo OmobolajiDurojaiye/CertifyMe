@@ -37,7 +37,8 @@ def create_template():
             filename = secure_filename(f"{user_id}_logo_{logo_file.filename}")
             save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             logo_file.save(save_path)
-            logo_url = f"/Uploads/{filename}"
+            # --- FIX: Use lowercase 'uploads' to match the route ---
+            logo_url = f"/uploads/{filename}"
 
     if 'background' in request.files:
         bg_file = request.files['background']
@@ -45,7 +46,8 @@ def create_template():
             filename = secure_filename(f"{user_id}_bg_{bg_file.filename}")
             save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             bg_file.save(save_path)
-            background_url = f"/Uploads/{filename}"
+            # --- FIX: Use lowercase 'uploads' to match the route ---
+            background_url = f"/uploads/{filename}"
 
     new_template = Template(
         user_id=user_id,
@@ -144,34 +146,30 @@ def update_template(template_id):
     if 'logo' in request.files:
         logo_file = request.files['logo']
         if logo_file and allowed_file(logo_file.filename):
-            # Optionally remove old logo file
             if template.logo_url:
                 old_logo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(template.logo_url))
                 if os.path.exists(old_logo_path):
-                    try:
-                        os.remove(old_logo_path)
-                    except Exception as e:
-                        current_app.logger.error(f"Failed to delete old logo: {e}")
+                    try: os.remove(old_logo_path)
+                    except Exception as e: current_app.logger.error(f"Failed to delete old logo: {e}")
             filename = secure_filename(f"{user_id}_logo_{logo_file.filename}")
             save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             logo_file.save(save_path)
-            template.logo_url = f"/Uploads/{filename}"
+            # --- FIX: Use lowercase 'uploads' to match the route ---
+            template.logo_url = f"/uploads/{filename}"
 
     if 'background' in request.files:
         bg_file = request.files['background']
         if bg_file and allowed_file(bg_file.filename):
-            # Optionally remove old background file
             if template.background_url:
                 old_bg_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(template.background_url))
                 if os.path.exists(old_bg_path):
-                    try:
-                        os.remove(old_bg_path)
-                    except Exception as e:
-                        current_app.logger.error(f"Failed to delete old background: {e}")
+                    try: os.remove(old_bg_path)
+                    except Exception as e: current_app.logger.error(f"Failed to delete old background: {e}")
             filename = secure_filename(f"{user_id}_bg_{bg_file.filename}")
             save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
             bg_file.save(save_path)
-            template.background_url = f"/Uploads/{filename}"
+            # --- FIX: Use lowercase 'uploads' to match the route ---
+            template.background_url = f"/uploads/{filename}"
 
     db.session.commit()
     return jsonify({"msg": "Template updated successfully", "template_id": template.id}), 200

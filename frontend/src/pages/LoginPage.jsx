@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Form, Button, Alert } from "react-bootstrap";
+import { Link, useNavigate } from "react-router-dom";
+import { Form, Button, Alert, Spinner } from "react-bootstrap";
 import { loginUser } from "../api";
 import "../styles/Auth.css";
 
@@ -31,62 +31,59 @@ function LoginPage() {
   };
 
   return (
-    <div className="auth-background">
-      <div className="auth-card p-5">
-        <h2 className="text-center mb-4 fw-bold">Sign In</h2>
-        {error && (
-          <Alert variant="danger" className="rounded">
-            {error}
-          </Alert>
-        )}
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3" controlId="email">
-            <Form.Label>Email Address</Form.Label>
-            <Form.Control
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3" controlId="password">
-            <Form.Label>Password</Form.Label>
-            <Form.Control
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-              required
-            />
-          </Form.Group>
-          <Button
-            className="btn-gradient w-100 py-2"
-            type="submit"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm me-2"
+    <div className="auth-container">
+      <div className="auth-wrapper">
+        <div className="auth-panel">
+          <h2>Welcome Back to CertifyMe</h2>
+          <p>The smartest way to issue and manage your digital credentials.</p>
+        </div>
+        <div className="auth-form-container">
+          <h3>Sign In</h3>
+          {error && <Alert variant="danger">{error}</Alert>}
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3" controlId="email">
+              <Form.Label>Email Address</Form.Label>
+              <Form.Control
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-4" controlId="password">
+              <Form.Label>Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter your password"
+                required
+              />
+            </Form.Group>
+            <Button className="btn-auth w-100" type="submit" disabled={loading}>
+              {loading ? (
+                <Spinner
+                  as="span"
+                  animation="border"
+                  size="sm"
                   role="status"
                   aria-hidden="true"
-                ></span>
-                Signing In...
-              </>
-            ) : (
-              "Sign In"
-            )}
-          </Button>
-        </Form>
-        <p className="text-center mt-3 text-muted">
-          Don't have an account?{" "}
-          <a href="/signup" className="text-primary">
-            Sign Up
-          </a>
-        </p>
+                />
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </Form>
+          <p className="text-center mt-4 text-muted">
+            Don't have an account?{" "}
+            <Link to="/signup" className="auth-switch-link">
+              Sign Up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

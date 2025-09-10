@@ -2,13 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Container, Form, Button, Alert, Card, Spinner } from "react-bootstrap";
 import { verifyCertificate } from "../api";
+import { SERVER_BASE_URL } from "../config";
 import QRCode from "react-qr-code";
 
 // Reusable Certificate Display Component (borrowed from ViewCertificatePage)
 const CertificateDisplay = ({ certificate, template }) => {
   if (!certificate || !template) return null;
 
-  const serverUrl = "http://127.0.0.1:5000";
+  const serverUrl = SERVER_BASE_URL;
   const {
     layout_style,
     primary_color,

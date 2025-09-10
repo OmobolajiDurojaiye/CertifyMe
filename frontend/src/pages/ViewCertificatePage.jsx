@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Container, Button, Alert, Spinner } from "react-bootstrap";
 import { getCertificate, getTemplate, getCertificatePDF } from "../api";
+import { SERVER_BASE_URL } from "../config";
 import QRCode from "react-qr-code";
 
 function ViewCertificatePage() {
@@ -59,7 +60,7 @@ function ViewCertificatePage() {
   const CertificateDisplay = () => {
     if (!certificate || !template) return null;
 
-    const serverUrl = "http://127.0.0.1:5000";
+    const serverUrl = SERVER_BASE_URL;
     const {
       layout_style,
       primary_color,
