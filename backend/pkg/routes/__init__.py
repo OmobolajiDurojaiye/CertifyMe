@@ -1,8 +1,8 @@
-# --- START OF FILE backend/pkg/routes/__init__.py ---
-# Import ALL of your blueprints here
 from .auth import auth_bp
 from .templates import template_bp
 from .certificates import certificate_bp
+from .payments import payments_bp
+from .users import users_bp
 
 def register_blueprints(app):
     """
@@ -12,8 +12,10 @@ def register_blueprints(app):
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(template_bp, url_prefix='/api/templates')
     app.register_blueprint(certificate_bp, url_prefix='/api/certificates')
+    app.register_blueprint(payments_bp, url_prefix='/api/payments')
+    app.register_blueprint(users_bp, url_prefix='/api/users')
+
 
     @app.route('/api/health')
     def health_check():
         return {"status": "ok"}
-# --- END OF FILE backend/pkg/routes/__init__.py ---

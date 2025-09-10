@@ -1,3 +1,4 @@
+// frontend/src/pages/CreateCertificatePage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -7,17 +8,195 @@ import {
   updateCertificate,
 } from "../api";
 import QRCode from "react-qr-code";
+import { Calendar, CheckCircle, Info } from "lucide-react";
+
+const CertificatePreview = ({ template, formData }) => {
+  if (!template) {
+    return (
+      <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+        <p className="text-gray-500">
+          No templates available. Please create a template first.
+        </p>
+      </div>
+    );
+  }
+
+  const serverUrl = "http://127.0.0.1:5000"; // Define server URL
+  const {
+    layout_style,
+    primary_color,
+    secondary_color,
+    body_font_color,
+    font_family,
+    background_url,
+    logo_url,
+  } = template;
+  const {
+    recipient_name = "Recipient Name",
+    course_title = "Course Title",
+    issue_date = new Date().toLocaleDateString("en-CA"),
+    signature = "Signature",
+    issuer_name = "Issuer Name",
+    verification_id = "pending",
+  } = formData;
+
+  const textStyle = { color: body_font_color || "#333" };
+  const backgroundStyle = {
+    fontFamily: font_family,
+    backgroundImage: background_url
+      ? `url(${serverUrl}${background_url})`
+      : "none",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  };
+
+  switch (layout_style) {
+    case "modern":
+      return (
+        <div
+          className="flex h-full shadow-lg rounded-xl overflow-hidden bg-gray-800 text-white"
+          style={{ fontFamily: font_family }}
+        >
+          <div
+            className="w-1/3 p-6 flex flex-col justify-between items-center"
+            style={{ backgroundColor: primary_color }}
+          >
+            <div className="text-center">
+              {logo_url && (
+                <img
+                  src={`${serverUrl}${logo_url}`}
+                  className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                />
+              )}
+              <p className="font-bold text-center mt-3">{issuer_name}</p>
+            </div>
+            <div className="bg-white p-1 rounded-md">
+              <QRCode
+                value={`${window.location.origin}/verify/${verification_id}`}
+                size={80}
+              />
+            </div>
+          </div>
+          <div
+            className="w-2/3 p-8 flex flex-col justify-center relative"
+            style={backgroundStyle}
+          >
+            <h1
+              className="text-xl font-light uppercase tracking-wider"
+              style={{ color: primary_color }}
+            >
+              Certificate of Achievement
+            </h1>
+            <h2 className="text-4xl font-bold my-2">{recipient_name}</h2>
+            <p className="text-gray-300">has successfully completed</p>
+            <p
+              className="text-lg font-semibold mt-1"
+              style={{ color: primary_color }}
+            >
+              {course_title}
+            </p>
+            <div className="flex justify-between mt-8 text-sm">
+              <div>
+                <p>Date: {issue_date}</p>
+                <p>Signature: {signature || issuer_name}</p>
+              </div>
+              <p>Verification ID: {verification_id}</p>
+            </div>
+          </div>
+        </div>
+      );
+    case "classic":
+      return (
+        <div
+          className="h-full shadow-lg rounded-xl overflow-hidden bg-white relative"
+          style={{ fontFamily: font_family, ...backgroundStyle }}
+        >
+          <div style={{ borderBottom: `5px solid ${primary_color}` }}></div>
+          <div className="flex-grow flex flex-col justify-center items-center text-center p-6">
+            {logo_url && (
+              <img
+                src={`${serverUrl}${logo_url}`}
+                alt="Logo"
+                className="mb-4"
+                style={{ width: 120, height: 120, objectFit: "contain" }}
+              />
+            )}
+            <h1
+              className="font-bold mb-3"
+              style={{ fontSize: "2rem", color: primary_color }}
+            >
+              Certificate of Completion
+            </h1>
+            <p className="text-gray-500 mb-1 text-base">
+              This is to certify that
+            </p>
+            <h2
+              className="font-bold mb-3"
+              style={{ fontSize: "2.5rem", ...textStyle }}
+            >
+              {recipient_name}
+            </h2>
+            <p className="text-gray-500 mb-1 text-base">
+              has successfully completed the course
+            </p>
+            <p
+              className="font-bold mb-4"
+              style={{ fontSize: "1.5rem", color: secondary_color }}
+            >
+              {course_title}
+            </p>
+            <div className="flex justify-around w-full mt-4">
+              <div className="text-center">
+                <p className="font-bold mb-0" style={textStyle}>
+                  {issue_date}
+                </p>
+                <hr
+                  className="w-1/2 mx-auto my-1"
+                  style={{ borderColor: primary_color }}
+                />
+                <span className="text-gray-500 text-sm">Date</span>
+              </div>
+              <div className="text-center">
+                <p className="font-bold mb-0" style={textStyle}>
+                  {signature || issuer_name}
+                </p>
+                <hr
+                  className="w-1/2 mx-auto my-1"
+                  style={{ borderColor: primary_color }}
+                />
+                <span className="text-gray-500 text-sm">Signature</span>
+              </div>
+            </div>
+            <div className="absolute bottom-4 right-4 bg-white p-1 rounded-md">
+              <QRCode
+                value={`${window.location.origin}/verify/${verification_id}`}
+                size={80}
+              />
+            </div>
+            <p className="absolute bottom-4 left-4" style={textStyle}>
+              Issued by: {issuer_name}
+            </p>
+            <p className="absolute bottom-2 left-4 text-gray-500 text-sm">
+              Verification ID: {verification_id}
+            </p>
+          </div>
+        </div>
+      );
+    default:
+      return <div>Unsupported layout</div>;
+  }
+};
 
 function CreateCertificatePage() {
-  const { certId } = useParams();
-  const isEditMode = !!certId;
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [formData, setFormData] = useState({
-    recipient_name: "",
-    course_title: "",
-    issue_date: "",
     template_id: "",
+    recipient_name: "",
+    recipient_email: "",
+    course_title: "",
+    issuer_name: "",
+    issue_date: "",
     signature: "",
     verification_id: "",
   });
@@ -25,68 +204,47 @@ function CreateCertificatePage() {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { certId } = useParams();
+  const isEditMode = !!certId;
 
   useEffect(() => {
-    const fetchAndProcessData = async () => {
+    const loadData = async () => {
       setLoading(true);
-      setError("");
       try {
-        // Fetch templates
-        const templateResponse = await getTemplates();
-        const fetchedTemplates = templateResponse.data;
-        setTemplates(fetchedTemplates);
+        const templatesResponse = await getTemplates();
+        setTemplates(templatesResponse.data);
 
-        if (fetchedTemplates.length === 0) {
-          setError("No templates found. Please create one first.");
-          setLoading(false);
-          return;
-        }
-
-        // Handle Edit Mode or Create Mode
+        let template;
         if (isEditMode) {
-          // Fetch existing certificate data
           const certResponse = await getCertificate(certId);
-          const cert = certResponse.data;
-
+          const certData = certResponse.data;
           setFormData({
-            recipient_name: cert.recipient_name,
-            course_title: cert.course_title,
-            issue_date: cert.issue_date,
-            template_id: cert.template_id,
-            signature: cert.signature || "",
-            verification_id: cert.verification_id,
+            ...certData,
+            issue_date: certData.issue_date.split("T")[0],
           });
-
-          // Find and set the correct template for the certificate
-          const templateForCert = fetchedTemplates.find(
-            (t) => t.id == cert.template_id
+          template = templatesResponse.data.find(
+            (t) => t.id === certData.template_id
           );
-          setSelectedTemplate(templateForCert || fetchedTemplates[0]);
         } else {
-          // Create Mode, set the default template
-          const defaultTemplate = fetchedTemplates[0];
-          setSelectedTemplate(defaultTemplate);
-          setFormData((prev) => ({
-            ...prev,
-            recipient_name: "",
-            course_title: "",
-            issue_date: "",
-            signature: "",
-            verification_id: "",
-            template_id: defaultTemplate.id,
-          }));
+          // Auto-select default template
+          template =
+            templatesResponse.data.find(
+              (t) => t.is_public && t.title === "Default Classic"
+            ) ||
+            templatesResponse.data.find((t) => t.is_public) ||
+            templatesResponse.data[0];
+          if (template) {
+            setFormData((prev) => ({ ...prev, template_id: template.id }));
+          }
         }
+        setSelectedTemplate(template);
       } catch (err) {
-        console.error("Failed to fetch data:", err);
-        setError(
-          "Could not fetch required data for the page. Please try again."
-        );
+        setError("Failed to load data.");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchAndProcessData();
+    loadData();
   }, [certId, isEditMode]);
 
   const handleChange = (e) => {
@@ -106,281 +264,156 @@ function CreateCertificatePage() {
     setError("");
     setSuccess("");
     setLoading(true);
-
     if (!formData.template_id) {
       setError("Please select a template.");
       setLoading(false);
       return;
     }
-
     try {
-      let response;
       if (isEditMode) {
-        response = await updateCertificate(certId, formData);
-        setSuccess("Certificate updated successfully! Redirecting...");
+        await updateCertificate(certId, formData);
+        setSuccess("Certificate updated successfully!");
       } else {
-        response = await createCertificate(formData);
-        setSuccess(
-          `Certificate created successfully! Verification ID: ${response.data.verification_id}. Redirecting...`
-        );
+        await createCertificate(formData);
+        setSuccess("Certificate created successfully!");
       }
       setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err) {
-      setError("Failed to save certificate. Please check all fields.");
+      setError(err.response?.data?.msg || "Failed to save certificate.");
     } finally {
       setLoading(false);
     }
   };
 
-  const CertificatePreview = () => {
-    if (!selectedTemplate) {
-      return (
-        <div className="text-center text-gray-500 p-8">
-          <img
-            src="/images/certbadge.png"
-            alt="Badge"
-            className="w-24 mx-auto mb-4"
-          />
-          <p>Select a template to see a live preview.</p>
-        </div>
-      );
-    }
-
-    return (
-      <div
-        className="certificate-preview-container bg-white shadow-lg rounded-xl p-8 flex flex-col justify-between"
-        style={{
-          background: selectedTemplate.background_url
-            ? `url(http://127.0.0.1:5000${selectedTemplate.background_url}) no-repeat center/cover`
-            : "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
-          minHeight: "450px",
-          fontFamily: selectedTemplate.font_family || "Georgia, serif",
-        }}
-      >
-        {selectedTemplate.logo_url && (
-          <img
-            src={`http://127.0.0.1:5000${selectedTemplate.logo_url}`}
-            alt="Logo"
-            className="w-24 h-24 mx-auto rounded opacity-90 mb-4"
+  const FormInput = ({
+    name,
+    label,
+    placeholder,
+    type = "text",
+    required = false,
+  }) => (
+    <div>
+      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
+        {label}
+      </label>
+      <div className="mt-1 relative">
+        <input
+          type={type}
+          name={name}
+          id={name}
+          className="w-full p-3 bg-gray-50 rounded-md border-gray-200 focus:ring-indigo-500 focus:border-indigo-500"
+          placeholder={placeholder}
+          required={required}
+          value={formData[name]}
+          onChange={handleChange}
+        />
+        {type === "date" && (
+          <Calendar
+            className="absolute right-3 top-3.5 text-gray-400"
+            size={20}
           />
         )}
-        <div className="text-center flex-grow-1 flex flex-col justify-center">
-          <h1
-            className="font-bold text-3xl mb-4"
-            style={{ color: selectedTemplate.primary_color || "#2563EB" }}
-          >
-            Certificate of Achievement
-          </h1>
-          <p className="text-lg text-gray-700">
-            Awarded to{" "}
-            <strong>{formData.recipient_name || "Recipient Name"}</strong>
-          </p>
-          <p className="text-base text-gray-600">
-            For successfully completing{" "}
-            <strong>{formData.course_title || "Course Title"}</strong>
-          </p>
-          <p className="text-sm text-gray-600">
-            Issued on{" "}
-            {formData.issue_date
-              ? new Date(formData.issue_date).toLocaleDateString()
-              : "Issue Date"}
-          </p>
-          {formData.signature && (
-            <div
-              className="mt-4 border-t border-gray-300 pt-2 w-64 mx-auto text-left"
-              style={{ color: selectedTemplate.primary_color || "#2563EB" }}
-            >
-              Signed: {formData.signature}
-            </div>
-          )}
-          <div className="mt-4 text-right text-sm text-gray-600 bg-white bg-opacity-80 p-2 rounded">
-            Verification ID:{" "}
-            {formData.verification_id || "Unique ID will be generated"}
-          </div>
-          <div className="mt-4 text-center">
-            <QRCode
-              value={`${window.location.origin}/verify/${
-                formData.verification_id || "pending"
-              }`}
-              size={80}
-            />
-          </div>
-        </div>
       </div>
+    </div>
+  );
+
+  if (loading)
+    return (
+      <div className="text-center p-12">Loading certificate editor...</div>
     );
-  };
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      {loading ? (
-        <div className="text-center py-12">
-          <svg
-            className="animate-spin h-8 w-8 mx-auto text-indigo-600"
-            viewBox="0 0 24 24"
+    <div
+      className="max-w-screen-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8 grid grid-cols-12 gap-8"
+      style={{ height: "calc(100vh - 4rem)" }}
+    >
+      <div className="col-span-12 lg:col-span-4 bg-white p-8 rounded-xl shadow-lg overflow-y-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {isEditMode ? "Edit Certificate" : "Create Certificate"}
+          </h2>
+          <button
+            onClick={handleSubmit}
+            className="bg-green-600 text-white rounded-md py-2 px-6 font-semibold hover:bg-green-700 disabled:opacity-50"
+            disabled={loading}
           >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-              fill="none"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
-            />
-          </svg>
+            {isEditMode ? "Update" : "Publish"}
+          </button>
         </div>
-      ) : (
-        <>
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">
-                {isEditMode ? "Edit Certificate" : "Create a New Certificate"}
-              </h2>
-              <p className="text-gray-500">
-                {isEditMode
-                  ? "Update the certificate details below."
-                  : "Design a professional certificate with real-time preview. Fill in the details and publish."}
-              </p>
-            </div>
-            <button
-              onClick={handleSubmit}
-              className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-md py-2 px-6 hover:from-green-600 hover:to-green-700 transition-colors disabled:opacity-50"
-              disabled={loading}
+        {error && (
+          <div className="bg-red-100 border-red-500 text-red-700 border-l-4 p-4 mb-6 rounded-md flex items-center">
+            <Info className="mr-2" />
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="bg-green-100 border-green-500 text-green-700 border-l-4 p-4 mb-6 rounded-md flex items-center">
+            <CheckCircle className="mr-2" />
+            {success}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Select Template
+            </label>
+            <select
+              name="template_id"
+              onChange={handleTemplateChange}
+              value={formData.template_id}
+              className="w-full p-3 bg-gray-50 rounded-md border-gray-200 mt-1"
             >
-              {loading ? (
-                <>
-                  <svg
-                    className="animate-spin h-5 w-5 mr-2 inline-block"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
-                    />
-                  </svg>
-                  {isEditMode ? "Updating..." : "Publishing..."}
-                </>
-              ) : isEditMode ? (
-                "Update Certificate"
-              ) : (
-                "Publish Certificate"
-              )}
-            </button>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title} {t.is_public && "(System)"}
+                </option>
+              ))}
+            </select>
           </div>
-          {error && (
-            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded mb-6">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded mb-6">
-              {success}
-            </div>
-          )}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Select Template
-                  </label>
-                  <select
-                    name="template_id"
-                    onChange={handleTemplateChange}
-                    value={formData.template_id}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  >
-                    {templates.length === 0 ? (
-                      <option value="">No templates found</option>
-                    ) : (
-                      templates.map((template) => (
-                        <option key={template.id} value={template.id}>
-                          {template.title}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Recipient Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="recipient_name"
-                    placeholder="e.g., Jane Doe"
-                    onChange={handleChange}
-                    value={formData.recipient_name}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Course / Event Title
-                  </label>
-                  <input
-                    type="text"
-                    name="course_title"
-                    placeholder="e.g., Advanced React Workshop"
-                    onChange={handleChange}
-                    value={formData.course_title}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Issue Date
-                  </label>
-                  <input
-                    type="date"
-                    name="issue_date"
-                    onChange={handleChange}
-                    value={formData.issue_date}
-                    required
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Signature (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    name="signature"
-                    placeholder="e.g., Dr. John Smith"
-                    onChange={handleChange}
-                    value={formData.signature}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  />
-                </div>
-              </form>
-            </div>
-            <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <h4 className="text-xl font-bold text-gray-900 mb-6">
-                Live Preview
-              </h4>
-              <CertificatePreview />
-            </div>
-          </div>
-        </>
-      )}
+          <FormInput
+            name="recipient_name"
+            label="Recipient Full Name"
+            placeholder="e.g., Jane Doe"
+            required
+          />
+          <FormInput
+            name="recipient_email"
+            label="Recipient Email"
+            placeholder="jane.doe@example.com"
+            type="email"
+            required
+          />
+          <FormInput
+            name="course_title"
+            label="Course / Event Title"
+            placeholder="e.g., Advanced React Workshop"
+            required
+          />
+          <FormInput
+            name="issuer_name"
+            label="Issuer Name (Organization or Person)"
+            placeholder="e.g., ACME University"
+            required
+          />
+          <FormInput
+            name="issue_date"
+            label="Issue Date"
+            type="date"
+            required
+          />
+          <FormInput
+            name="signature"
+            label="Signature (Optional)"
+            placeholder="e.g., Dr. John Smith"
+          />
+        </form>
+      </div>
+      <div className="col-span-12 lg:col-span-8 bg-gray-200 p-8 rounded-xl shadow-inner">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Live Preview</h3>
+        <div className="aspect-[1.414/1] w-full">
+          <CertificatePreview template={selectedTemplate} formData={formData} />
+        </div>
+      </div>
     </div>
   );
 }

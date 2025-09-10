@@ -4,6 +4,7 @@ from flask_cors import CORS
 
 from .extensions import db, migrate, mail, jwt
 from .routes import register_blueprints
+from .models import Template
 
 def create_app():
     app = Flask(__name__)
@@ -15,6 +16,10 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = 'cvcdb746273988cyuvgc7324652dguh746729c'
     
     app.config['FRONTEND_URL'] = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+
+    # Paystack Configuration (Using Test Keys)
+    app.config['PAYSTACK_SECRET_KEY'] = os.environ.get('PAYSTACK_SECRET_KEY', 'sk_test_bc2b10958c6b2ece0cab41fe4a9ebb56fff3d84f')
+    app.config['PAYSTACK_PUBLIC_KEY'] = os.environ.get('PAYSTACK_PUBLIC_KEY', 'pk_test_e0d4baa25d66a069e4a300836f2f8fd04691b400')
     
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
@@ -46,22 +51,21 @@ def create_app():
     def serve_upload(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-    @app.cli.command("seed")
-    def seed_data():
-        from .models import Template
-        if Template.query.filter_by(is_public=True).first():
-            print("Default templates already exist.")
-            return
-        
-        print("Seeding default templates...")
-        default_templates = [
-            Template(title='Modern Elegance', primary_color='#0284C7', secondary_color='#E2E8F0', body_font_color='#1E293B', font_family='Lato', layout_style='modern', is_public=True),
-            Template(title='Classic Professional', primary_color='#BE185D', secondary_color='#FBCFE8', body_font_color='#333333', font_family='Georgia', layout_style='classic', is_public=True),
-            Template(title='Corporate Clean', primary_color='#166534', secondary_color='#D1D5DB', body_font_color='#111827', font_family='Roboto', layout_style='corporate', is_public=True),
-            Template(title='Creative Dark', primary_color='#F59E0B', secondary_color='#4B5563', body_font_color='#F9FAFB', font_family='Lato', layout_style='creative', is_public=True),
-        ]
-        db.session.add_all(default_templates)
-        db.session.commit()
-        print(f"Seeded {len(default_templates)} public templates.")
+    # Seed the database on app startup if the default template doesn't exist
+    with app.app_context():
+        if not Template.query.filter_by(is_public=True, title='Default Classic').first():
+            print("Seeding default template...")
+            default_template = Template(
+                title='Default Classic',
+                primary_color='#1E3A8A',  # Deep Blue
+                secondary_color='#D1D5DB',  # Light Gray
+                body_font_color='#111827',  # Dark Gray
+                font_family='Georgia',
+                layout_style='classic',
+                is_public=True
+            )
+            db.session.add(default_template)
+            db.session.commit()
+            print("Seeded default public template: Default Classic")
 
     return app
