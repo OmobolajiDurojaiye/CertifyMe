@@ -13,6 +13,7 @@ import {
 import { usePaystackPayment } from "react-paystack";
 import { getCurrentUser, initializePayment } from "../api";
 import toast, { Toaster } from "react-hot-toast";
+import { useNavigate } from "react-router-dom"; // <-- STEP 1: Import useNavigate
 
 const PlanCard = ({
   title,
@@ -69,10 +70,16 @@ const PlanCard = ({
 function SettingsPage() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
-  const [paymentConfig, setPaymentConfig] = useState(null);
   const [processingPlan, setProcessingPlan] = useState(null);
+  const navigate = useNavigate(); // <-- STEP 2: Initialize useNavigate
 
-  const initializePaystack = usePaystackPayment(paymentConfig);
+  // This is a special hook from the react-paystack library.
+  // We pass it a config object.
+  const initializePaystack = usePaystackPayment({
+    // STEP 3: Add this line to the config.
+    // This tells the library "DO NOT automatically redirect after payment".
+    redirect: false,
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -89,38 +96,37 @@ function SettingsPage() {
     fetchUser();
   }, []);
 
-  useEffect(() => {
-    if (paymentConfig) {
-      initializePaystack({
-        onSuccess: () => {
-          toast.success(
-            "Payment successful! Your plan will be updated shortly."
-          );
-          setProcessingPlan(null);
-          setPaymentConfig(null);
-          // Reload page to reflect new plan status
-          setTimeout(() => window.location.reload(), 3000);
-        },
-        onClose: () => {
-          toast.error("Payment modal closed.");
-          setProcessingPlan(null);
-          setPaymentConfig(null);
-        },
-      });
-    }
-  }, [paymentConfig, initializePaystack]);
-
   const handleUpgrade = async (plan) => {
     setProcessingPlan(plan);
     try {
+      // First, we ask our backend to prepare the payment
       const res = await initializePayment(plan);
       const { publicKey, amount, email, reference } = res.data;
-      setPaymentConfig({
+
+      // Then, we open the Paystack modal with the details from our backend
+      initializePaystack({
+        // This is what happens if payment is successful
+        onSuccess: () => {
+          toast.success("Payment successful! Redirecting to your dashboard...");
+          // STEP 4: WE are now in control. We manually and reliably
+          // navigate the user to the dashboard using React Router.
+          setTimeout(() => {
+            navigate("/dashboard");
+            window.location.reload(); // Force a reload to get new user data
+          }, 2000);
+        },
+        // This is what happens if the user closes the modal
+        onClose: () => {
+          toast.error("Payment modal closed.");
+          setProcessingPlan(null);
+        },
+        // Pass the payment details to the modal
         publicKey,
-        amount: amount, // Paystack hook expects amount in kobo/cents
+        amount,
         email,
         reference,
       });
+
     } catch (error) {
       toast.error(error.response?.data?.msg || "Failed to initialize payment.");
       setProcessingPlan(null);
@@ -280,8 +286,7 @@ function SettingsPage() {
                   Update Password
                 </Button>
               </Form>
-            </Card>
-          </Tab.Pane>
+            </Tab.Pane>
         </Tab.Content>
       </Tab.Container>
     </div>
