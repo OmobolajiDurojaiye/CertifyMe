@@ -13,7 +13,7 @@ import {
 import { usePaystackPayment } from "react-paystack";
 import { getCurrentUser, initializePayment } from "../api";
 import toast, { Toaster } from "react-hot-toast";
-import { useNavigate } from "react-router-dom"; // <-- STEP 1: Import useNavigate
+import { useNavigate } from "react-router-dom";
 
 const PlanCard = ({
   title,
@@ -71,13 +71,9 @@ function SettingsPage() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [processingPlan, setProcessingPlan] = useState(null);
-  const navigate = useNavigate(); // <-- STEP 2: Initialize useNavigate
+  const navigate = useNavigate();
 
-  // This is a special hook from the react-paystack library.
-  // We pass it a config object.
   const initializePaystack = usePaystackPayment({
-    // STEP 3: Add this line to the config.
-    // This tells the library "DO NOT automatically redirect after payment".
     redirect: false,
   });
 
@@ -87,7 +83,6 @@ function SettingsPage() {
         const res = await getCurrentUser();
         setUser(res.data);
       } catch (error) {
-        console.error("Failed to fetch user data", error);
         toast.error("Could not load user data. Please refresh.");
       } finally {
         setLoadingUser(false);
@@ -99,34 +94,26 @@ function SettingsPage() {
   const handleUpgrade = async (plan) => {
     setProcessingPlan(plan);
     try {
-      // First, we ask our backend to prepare the payment
       const res = await initializePayment(plan);
       const { publicKey, amount, email, reference } = res.data;
 
-      // Then, we open the Paystack modal with the details from our backend
       initializePaystack({
-        // This is what happens if payment is successful
         onSuccess: () => {
           toast.success("Payment successful! Redirecting to your dashboard...");
-          // STEP 4: WE are now in control. We manually and reliably
-          // navigate the user to the dashboard using React Router.
           setTimeout(() => {
             navigate("/dashboard");
-            window.location.reload(); // Force a reload to get new user data
+            window.location.reload();
           }, 2000);
         },
-        // This is what happens if the user closes the modal
         onClose: () => {
           toast.error("Payment modal closed.");
           setProcessingPlan(null);
         },
-        // Pass the payment details to the modal
         publicKey,
         amount,
         email,
         reference,
       });
-
     } catch (error) {
       toast.error(error.response?.data?.msg || "Failed to initialize payment.");
       setProcessingPlan(null);
@@ -286,7 +273,8 @@ function SettingsPage() {
                   Update Password
                 </Button>
               </Form>
-            </Tab.Pane>
+            </Card>
+          </Tab.Pane>
         </Tab.Content>
       </Tab.Container>
     </div>
