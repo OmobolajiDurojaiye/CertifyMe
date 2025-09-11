@@ -73,27 +73,57 @@ function SettingsPage() {
   const [processingPlan, setProcessingPlan] = useState(null);
   const navigate = useNavigate();
 
-  // State to hold the configuration for the payment modal
-  const [paymentConfig, setPaymentConfig] = useState(null);
+  const handleUpgrade = async (plan) => {
+    setProcessingPlan(plan);
+    try {
+      // Call backend to get payment details
+      const res = await initializePayment(plan);
+      const paymentData = res.data;
 
-  // onSuccess callback function
-  const onSuccess = () => {
-    toast.success("Payment successful! Redirecting to your dashboard...");
-    setTimeout(() => {
-      // We use navigate and then reload to ensure a clean state update
-      navigate("/dashboard");
-      window.location.reload();
-    }, 2000);
+      // Validate payment data
+      if (
+        !paymentData ||
+        !paymentData.publicKey ||
+        !paymentData.email ||
+        !paymentData.amount ||
+        !paymentData.reference
+      ) {
+        throw new Error("Incomplete payment data received from server");
+      }
+
+      // Paystack configuration
+      const config = {
+        publicKey: paymentData.publicKey,
+        email: paymentData.email,
+        amount: paymentData.amount,
+        currency: paymentData.currency || "NGN",
+        reference: paymentData.reference,
+        metadata: paymentData.metadata || {},
+      };
+
+      // Initialize Paystack payment
+      const initialize = usePaystackPayment(config);
+      initialize({
+        onSuccess: () => {
+          toast.success("Payment successful! Your plan will be updated.");
+          setProcessingPlan(null);
+          setTimeout(() => window.location.reload(), 2000);
+        },
+        onClose: () => {
+          toast.error("Payment modal closed.");
+          setProcessingPlan(null);
+        },
+      });
+    } catch (error) {
+      console.error("Payment initialization error:", error);
+      toast.error(
+        error.response?.data?.msg ||
+          error.message ||
+          "Failed to initialize payment."
+      );
+      setProcessingPlan(null);
+    }
   };
-
-  // onClose callback function
-  const onClose = () => {
-    toast.error("Payment modal closed.");
-    setProcessingPlan(null);
-  };
-
-  // The usePaystackPayment hook is initialized with the config state
-  const initializePaystackPayment = usePaystackPayment(paymentConfig || {});
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -101,48 +131,14 @@ function SettingsPage() {
         const res = await getCurrentUser();
         setUser(res.data);
       } catch (error) {
-        toast.error("Could not load user data. Please try logging in again.");
-        navigate("/login"); // Redirect if not authenticated
+        toast.error("Your session may have expired. Please log in again.");
+        navigate("/login");
       } finally {
         setLoadingUser(false);
       }
     };
     fetchUser();
   }, [navigate]);
-
-  const handleUpgrade = async (plan) => {
-    setProcessingPlan(plan);
-    try {
-      // 1. Get payment details from our backend
-      const res = await initializePayment(plan);
-      const { publicKey, amount, email, reference, currency, metadata } =
-        res.data;
-
-      // 2. Create the full config object for the Paystack hook
-      const config = {
-        publicKey,
-        amount,
-        email,
-        reference,
-        currency,
-        metadata,
-      };
-
-      // 3. Update the state with the new config
-      setPaymentConfig(config);
-    } catch (error) {
-      toast.error(error.response?.data?.msg || "Failed to initialize payment.");
-      setProcessingPlan(null);
-    }
-  };
-
-  // This useEffect will run ONLY when paymentConfig is updated
-  useEffect(() => {
-    if (paymentConfig) {
-      // 4. Call the initialize function to open the modal
-      initializePaystackPayment(onSuccess, onClose);
-    }
-  }, [paymentConfig, initializePaystackPayment]);
 
   const BillingContent = () => {
     if (loadingUser) return <Spinner animation="border" />;
@@ -161,6 +157,14 @@ function SettingsPage() {
           <p>
             Your remaining certificate quota is:{" "}
             <strong>{user.cert_quota}</strong>
+          </p>
+        )}
+        {user.role === "starter" && user.subscription_expiry && (
+          <p>
+            Your plan expires on:{" "}
+            <strong>
+              {new Date(user.subscription_expiry).toLocaleDateString()}
+            </strong>
           </p>
         )}
         <hr className="my-4" />

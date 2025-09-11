@@ -1,3 +1,4 @@
+
 import os
 from flask import Flask, send_from_directory
 from flask_cors import CORS
@@ -11,11 +12,6 @@ def create_app():
     load_dotenv()
     
     app = Flask(__name__)
-
-    print("--- Loading Environment Variables ---")
-    print(f"MAIL_USERNAME from env: {os.environ.get('MAIL_USERNAME')}")
-    print(f"MAIL_PASSWORD from env: {os.environ.get('MAIL_PASSWORD')}")
-    print("---------------------------------")
 
     # --- Config Section ---
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_default_secret_key_for_development')
@@ -34,7 +30,6 @@ def create_app():
     app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
     app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
-    # Use a simple string for the default sender.
     app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
 
     upload_path = os.path.abspath(os.path.join(app.root_path, '..', '..', 'uploads'))
@@ -55,7 +50,6 @@ def create_app():
     def serve_upload(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-    # ... (Seeder code remains the same) ...
     with app.app_context():
         try:
             if db.engine.dialect.has_table(db.engine.connect(), "templates"):

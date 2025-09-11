@@ -18,67 +18,55 @@ certificate_bp = Blueprint('certificates', __name__)
 def parse_flexible_date(date_string):
     formats_to_try = ['%Y-%m-%d', '%m/%d/%Y', '%m-%d-%Y', '%d-%b-%Y']
     for fmt in formats_to_try:
-        try:
-            return datetime.strptime(date_string, fmt).date()
-        except ValueError:
-            continue
+        try: return datetime.strptime(date_string, fmt).date()
+        except ValueError: continue
     raise ValueError(f"Date '{date_string}' could not be parsed.")
 
 def get_image_as_base64(image_path):
-    if not image_path:
-        return None
+    if not image_path: return None
     try:
         full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(image_path))
         if os.path.exists(full_path):
-            with open(full_path, "rb") as image_file:
-                return base64.b64encode(image_file.read()).decode('utf-8')
-    except Exception as e:
-        current_app.logger.error(f"Error encoding image {image_path}: {e}")
+            with open(full_path, "rb") as image_file: return base64.b64encode(image_file.read()).decode('utf-8')
+    except Exception as e: current_app.logger.error(f"Error encoding image {image_path}: {e}")
     return None
 
-def allowed_file(filename):
-    return filename.lower().endswith('.csv')
+def allowed_file(filename): return filename.lower().endswith('.csv')
 
-@certificate_bp.route('/', methods=['POST'])
-@jwt_required()
-def create_certificate():
-    user_id = int(get_jwt_identity())
-    data = request.get_json()
-    if not data:
-        return jsonify({"msg": "No data provided"}), 400
-    required_fields = ['template_id', 'recipient_name', 'recipient_email', 'course_title', 'issuer_name', 'issue_date']
-    if not all(field in data for field in required_fields):
-        return jsonify({"msg": "Missing required fields"}), 400
-    try:
-        issue_date = parse_flexible_date(data['issue_date'])
-    except ValueError as e:
-        return jsonify({"msg": str(e)}), 400
-    template = Template.query.get(data['template_id'])
-    if not template:
-        return jsonify({"msg": "Template not found"}), 404
-    if not template.is_public and template.user_id != user_id:
-        return jsonify({"msg": "Permission denied"}), 403
-    user = User.query.get(user_id)
-    # Check subscription status for starter plan
+def check_and_handle_expiry(user):
+    """Checks if a starter plan has expired and reverts user to free if so."""
     if user.role == 'starter' and user.subscription_expiry and user.subscription_expiry < datetime.utcnow():
         user.role = 'free'
         user.cert_quota = 10  # Reset to default free quota
         user.subscription_expiry = None
         db.session.commit()
         current_app.logger.info(f"User {user.id} starter plan expired, reverted to free.")
+        return True
+    return False
+
+@certificate_bp.route('/', methods=['POST'])
+@jwt_required()
+def create_certificate():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    check_and_handle_expiry(user) # Check for expiry before proceeding
+
+    data = request.get_json()
+    if not data: return jsonify({"msg": "No data provided"}), 400
+    required_fields = ['template_id', 'recipient_name', 'recipient_email', 'course_title', 'issuer_name', 'issue_date']
+    if not all(field in data for field in required_fields): return jsonify({"msg": "Missing required fields"}), 400
+    
+    try: issue_date = parse_flexible_date(data['issue_date'])
+    except ValueError as e: return jsonify({"msg": str(e)}), 400
+    
+    template = Template.query.get(data['template_id'])
+    if not template: return jsonify({"msg": "Template not found"}), 404
+    if not template.is_public and template.user_id != user_id: return jsonify({"msg": "Permission denied"}), 403
+    
     if user.role == 'free' and user.cert_quota <= 0:
-        return jsonify({"msg": "Certificate quota reached"}), 403
-    new_certificate = Certificate(
-        user_id=user_id,
-        template_id=data['template_id'],
-        recipient_name=data['recipient_name'],
-        recipient_email=data['recipient_email'],
-        course_title=data['course_title'],
-        issuer_name=data['issuer_name'],
-        issue_date=issue_date,
-        signature=data.get('signature'),
-        verification_id=str(uuid.uuid4())
-    )
+        return jsonify({"msg": "Certificate quota reached. Please upgrade your plan."}), 403
+
+    new_certificate = Certificate(user_id=user_id, template_id=data['template_id'], recipient_name=data['recipient_name'], recipient_email=data['recipient_email'], course_title=data['course_title'], issuer_name=data['issuer_name'], issue_date=issue_date, signature=data.get('signature'), verification_id=str(uuid.uuid4()))
     db.session.add(new_certificate)
     if user.role == 'free':
         user.cert_quota -= 1
@@ -90,28 +78,10 @@ def create_certificate():
 def get_certificates():
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
-    # Check subscription status for starter plan
-    if user.role == 'starter' and user.subscription_expiry and user.subscription_expiry < datetime.utcnow():
-        user.role = 'free'
-        user.cert_quota = 10
-        user.subscription_expiry = None
-        db.session.commit()
-        current_app.logger.info(f"User {user.id} starter plan expired, reverted to free.")
+    check_and_handle_expiry(user) # Check for expiry when user views their certs
     certs = Certificate.query.filter_by(user_id=user_id).order_by(Certificate.created_at.desc()).all()
-    return jsonify([{
-        'id': c.id,
-        'template_id': c.template_id,
-        'recipient_name': c.recipient_name,
-        'recipient_email': c.recipient_email,
-        'course_title': c.course_title,
-        'issuer_name': c.issuer_name,
-        'issue_date': c.issue_date.isoformat(),
-        'signature': c.signature,
-        'verification_id': c.verification_id,
-        'status': c.status,
-        'sent_at': c.sent_at.isoformat() if c.sent_at else None,
-        'created_at': c.created_at.isoformat()
-    } for c in certs]), 200
+    return jsonify([{'id': c.id, 'template_id': c.template_id, 'recipient_name': c.recipient_name, 'recipient_email': c.recipient_email, 'course_title': c.course_title, 'issuer_name': c.issuer_name, 'issue_date': c.issue_date.isoformat(), 'signature': c.signature, 'verification_id': c.verification_id, 'status': c.status, 'sent_at': c.sent_at.isoformat() if c.sent_at else None, 'created_at': c.created_at.isoformat()} for c in certs]), 200
+
 
 @certificate_bp.route('/<int:cert_id>', methods=['GET'])
 @jwt_required()
