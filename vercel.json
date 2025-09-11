@@ -1,8 +1,10 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api/|uploads/|images/|sw.js|robots.txt|manifest.json).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
 }
