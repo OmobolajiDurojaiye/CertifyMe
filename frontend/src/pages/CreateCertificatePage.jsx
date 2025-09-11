@@ -1,5 +1,5 @@
-// frontend/src/pages/CreateCertificatePage.jsx
-import React, { useState, useEffect } from "react";
+// CreateCertificatePage.jsx
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   getTemplates,
@@ -9,13 +9,15 @@ import {
 } from "../api";
 import QRCode from "react-qr-code";
 import { SERVER_BASE_URL } from "../config";
-import { Calendar, CheckCircle, Info } from "lucide-react";
+import { Calendar, CheckCircle, Info, Maximize2, X } from "lucide-react";
 
-const CertificatePreview = ({ template, formData }) => {
+const CertificatePreview = ({ template, formData, onFullscreen }) => {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   if (!template) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
-        <p className="text-gray-500">
+      <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg p-8">
+        <p className="text-gray-500 text-lg">
           No templates available. Please create a template first.
         </p>
       </div>
@@ -25,10 +27,10 @@ const CertificatePreview = ({ template, formData }) => {
   const serverUrl = SERVER_BASE_URL;
   const {
     layout_style,
-    primary_color,
-    secondary_color,
-    body_font_color,
-    font_family,
+    primary_color = "#0284C7",
+    secondary_color = "#3B82F6",
+    body_font_color = "#1F2937",
+    font_family = "serif",
     background_url,
     logo_url,
   } = template;
@@ -41,9 +43,8 @@ const CertificatePreview = ({ template, formData }) => {
     verification_id = "pending",
   } = formData;
 
-  const textStyle = { color: body_font_color || "#333" };
+  const textStyle = { color: body_font_color, fontFamily: font_family };
   const backgroundStyle = {
-    fontFamily: font_family,
     backgroundImage: background_url
       ? `url(${serverUrl}${background_url})`
       : "none",
@@ -51,144 +52,279 @@ const CertificatePreview = ({ template, formData }) => {
     backgroundPosition: "center",
   };
 
-  switch (layout_style) {
-    case "modern":
-      return (
+  const containerClass = isFullscreen
+    ? "fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+    : "relative shadow-2xl rounded-xl overflow-hidden";
+
+  const handleFullscreenToggle = () => {
+    if (onFullscreen) onFullscreen();
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const PreviewContent = () => (
+    <div
+      className={containerClass}
+      style={{
+        aspectRatio: "1.414 / 1",
+        width: isFullscreen ? "95vw" : "100%",
+        maxHeight: isFullscreen ? "95vh" : "100%",
+        fontFamily: font_family,
+        ...backgroundStyle,
+      }}
+    >
+      {!isFullscreen && (
+        <button
+          className="absolute top-2 right-2 z-10 bg-white bg-opacity-80 hover:bg-opacity-100 rounded-full p-2 shadow-lg transition-all"
+          onClick={handleFullscreenToggle}
+          title="Fullscreen Preview"
+        >
+          <Maximize2 className="w-5 h-5 text-gray-700" />
+        </button>
+      )}
+      {isFullscreen && (
+        <button
+          className="absolute top-4 right-4 z-10 bg-white rounded-full p-2 shadow-lg transition-all"
+          onClick={handleFullscreenToggle}
+          title="Exit Fullscreen"
+        >
+          <X className="w-6 h-6 text-gray-700" />
+        </button>
+      )}
+      {layout_style === "modern" && (
         <div
-          className="flex h-full shadow-lg rounded-xl overflow-hidden bg-gray-800 text-white"
-          style={{ fontFamily: font_family }}
+          className="flex h-full w-full rounded-xl overflow-hidden shadow-2xl border-4 border-opacity-20"
+          style={{ borderColor: primary_color }}
         >
           <div
-            className="w-1/3 p-6 flex flex-col justify-between items-center"
-            style={{ backgroundColor: primary_color }}
+            className="w-1/3 flex flex-col justify-between items-center p-6 bg-gradient-to-br"
+            style={{
+              background: `linear-gradient(135deg, ${primary_color}, ${secondary_color})`,
+              borderRight: `3px solid ${secondary_color}`,
+            }}
           >
-            <div className="text-center">
+            <div className="text-center space-y-2">
               {logo_url && (
                 <img
                   src={`${serverUrl}${logo_url}`}
-                  className="w-24 h-24 rounded-full border-4 border-white object-cover"
+                  className="w-20 h-20 rounded-full border-4 border-white object-cover shadow-lg"
+                  alt="Logo"
                 />
               )}
-              <p className="font-bold text-center mt-3">{issuer_name}</p>
+              <p
+                className="font-bold text-white text-sm uppercase tracking-wide"
+                style={{
+                  letterSpacing: "0.1em",
+                  textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
+                }}
+              >
+                {issuer_name}
+              </p>
             </div>
-            <div className="bg-white p-1 rounded-md">
+            <div className="bg-white p-2 rounded-lg shadow-md">
               <QRCode
                 value={`${window.location.origin}/verify/${verification_id}`}
-                size={80}
+                size={72}
+                viewBox="0 0 72 72"
               />
             </div>
           </div>
-          <div
-            className="w-2/3 p-8 flex flex-col justify-center relative"
-            style={backgroundStyle}
-          >
+          <div className="w-2/3 flex flex-col justify-center p-8 relative bg-white bg-opacity-10 backdrop-blur-sm">
             <h1
-              className="text-xl font-light uppercase tracking-wider"
-              style={{ color: primary_color }}
+              className="font-light uppercase tracking-widest mb-4"
+              style={{
+                fontSize: "1.4rem",
+                color: primary_color,
+                letterSpacing: "0.15em",
+                textShadow: "1px 1px 3px rgba(0,0,0,0.2)",
+              }}
             >
               Certificate of Achievement
             </h1>
-            <h2 className="text-4xl font-bold my-2">{recipient_name}</h2>
-            <p className="text-gray-300">has successfully completed</p>
+            <h2
+              className="font-black mb-3 tracking-tight"
+              style={{
+                fontSize: "2.8rem",
+                textShadow: "2px 2px 4px rgba(0,0,0,0.4)",
+                ...textStyle,
+              }}
+            >
+              {recipient_name}
+            </h2>
             <p
-              className="text-lg font-semibold mt-1"
-              style={{ color: primary_color }}
+              className="text-gray-200 italic mb-3 text-lg"
+              style={{ textShadow: "1px 1px 2px rgba(0,0,0,0.3)" }}
+            >
+              has successfully completed
+            </p>
+            <p
+              className="font-semibold uppercase mb-6 tracking-wide"
+              style={{
+                fontSize: "1.3rem",
+                color: secondary_color,
+                letterSpacing: "0.05em",
+                textShadow: "1px 1px 2px rgba(0,0,0,0.2)",
+              }}
             >
               {course_title}
             </p>
-            <div className="flex justify-between mt-8 text-sm">
-              <div>
-                <p>Date: {issue_date}</p>
-                <p>Signature: {signature || issuer_name}</p>
+            <div
+              className="flex justify-between items-end mt-auto pt-4 border-t-2"
+              style={{
+                borderColor: primary_color,
+                color: "#E5E7EB",
+                fontSize: "1rem",
+              }}
+            >
+              <div className="space-y-1">
+                <p className="mb-0 font-medium">Date: {issue_date}</p>
+                <p className="mb-0">Signature: {signature || issuer_name}</p>
               </div>
-              <p>Verification ID: {verification_id}</p>
+              <p className="mb-0 font-mono text-sm opacity-90">
+                ID: {verification_id}
+              </p>
             </div>
           </div>
         </div>
-      );
-    case "classic":
-      return (
+      )}
+      {layout_style === "classic" && (
         <div
-          className="h-full shadow-lg rounded-xl overflow-hidden bg-white relative"
-          style={{ fontFamily: font_family, ...backgroundStyle }}
+          className="h-full relative bg-white shadow-inner"
+          style={{
+            border: `8px double ${primary_color}`,
+            fontFamily: font_family,
+          }}
         >
-          <div style={{ borderBottom: `5px solid ${primary_color}` }}></div>
-          <div className="flex-grow flex flex-col justify-center items-center text-center p-6">
+          <div
+            className="h-3 bg-gradient-to-r"
+            style={{
+              background: `linear-gradient(to right, ${primary_color}, ${secondary_color})`,
+              borderBottom: `4px solid ${primary_color}`,
+            }}
+          />
+          <div className="flex-grow flex flex-col justify-center items-center text-center p-6 space-y-4">
             {logo_url && (
               <img
                 src={`${serverUrl}${logo_url}`}
                 alt="Logo"
-                className="mb-4"
-                style={{ width: 120, height: 120, objectFit: "contain" }}
+                className="rounded-lg shadow-md"
+                style={{
+                  width: "110px",
+                  height: "110px",
+                  objectFit: "contain",
+                  border: `2px solid ${secondary_color}`,
+                  borderRadius: "8px",
+                }}
               />
             )}
             <h1
-              className="font-bold mb-3"
-              style={{ fontSize: "2rem", color: primary_color }}
+              className="font-serif font-bold text-uppercase tracking-wide"
+              style={{
+                fontSize: "1.8rem",
+                color: primary_color,
+                letterSpacing: "0.08em",
+                textShadow: "1px 1px 3px rgba(0,0,0,0.1)",
+              }}
             >
               Certificate of Completion
             </h1>
-            <p className="text-gray-500 mb-1 text-base">
+            <p
+              className="italic text-blue-700 text-base"
+              style={{ fontSize: "1.1rem", color: "#4B5EAA" }}
+            >
               This is to certify that
             </p>
             <h2
-              className="font-bold mb-3"
-              style={{ fontSize: "2.5rem", ...textStyle }}
+              className="font-serif font-black tracking-tight"
+              style={{
+                fontSize: "2.3rem",
+                ...textStyle,
+                textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
+              }}
             >
               {recipient_name}
             </h2>
-            <p className="text-gray-500 mb-1 text-base">
+            <p
+              className="italic text-blue-700 text-base"
+              style={{ fontSize: "1.1rem", color: "#4B5EAA" }}
+            >
               has successfully completed the course
             </p>
             <p
-              className="font-bold mb-4"
-              style={{ fontSize: "1.5rem", color: secondary_color }}
+              className="font-bold uppercase tracking-wide"
+              style={{
+                fontSize: "1.4rem",
+                color: secondary_color,
+                letterSpacing: "0.04em",
+              }}
             >
               {course_title}
             </p>
-            <div className="flex justify-around w-full mt-4">
-              <div className="text-center">
-                <p className="font-bold mb-0" style={textStyle}>
+            <div className="flex justify-around w-full mt-6 space-x-8">
+              <div className="text-center min-w-0">
+                <p className="font-semibold mb-2" style={textStyle}>
                   {issue_date}
                 </p>
                 <hr
-                  className="w-1/2 mx-auto my-1"
-                  style={{ borderColor: primary_color }}
+                  className="w-full my-1"
+                  style={{ borderTop: `2px dashed ${primary_color}` }}
                 />
-                <span className="text-gray-500 text-sm">Date</span>
+                <small className="text-gray-500 block">Date</small>
               </div>
-              <div className="text-center">
-                <p className="font-bold mb-0" style={textStyle}>
+              <div className="text-center min-w-0">
+                <p className="font-semibold mb-2" style={textStyle}>
                   {signature || issuer_name}
                 </p>
                 <hr
-                  className="w-1/2 mx-auto my-1"
-                  style={{ borderColor: primary_color }}
+                  className="w-full my-1"
+                  style={{ borderTop: `2px dashed ${primary_color}` }}
                 />
-                <span className="text-gray-500 text-sm">Signature</span>
+                <small className="text-gray-500 block">Signature</small>
               </div>
             </div>
-            <div className="absolute bottom-4 right-4 bg-white p-1 rounded-md">
+            <div
+              className="absolute bottom-4 right-4 bg-white p-2 rounded-lg shadow-lg"
+              style={{ width: "75px", height: "75px" }}
+            >
               <QRCode
                 value={`${window.location.origin}/verify/${verification_id}`}
-                size={80}
+                size={65}
+                viewBox="0 0 65 65"
               />
             </div>
-            <p className="absolute bottom-4 left-4" style={textStyle}>
+            <p
+              className="absolute bottom-4 left-4 text-sm font-medium italic"
+              style={textStyle}
+            >
               Issued by: {issuer_name}
-            </p>
-            <p className="absolute bottom-2 left-4 text-gray-500 text-sm">
-              Verification ID: {verification_id}
             </p>
           </div>
         </div>
-      );
-    default:
-      return <div>Unsupported layout</div>;
+      )}
+    </div>
+  );
+
+  if (isFullscreen) {
+    return (
+      <div
+        className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+        onClick={handleFullscreenToggle}
+      >
+        <div
+          className="relative w-full max-w-4xl max-h-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <PreviewContent />
+        </div>
+      </div>
+    );
   }
+
+  return <PreviewContent />;
 };
 
-function CreateCertificatePage() {
+const CreateCertificatePage = () => {
+  const { id: certId } = useParams();
+  const navigate = useNavigate();
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [formData, setFormData] = useState({
@@ -197,77 +333,70 @@ function CreateCertificatePage() {
     recipient_email: "",
     course_title: "",
     issuer_name: "",
-    issue_date: "",
+    issue_date: new Date().toISOString().split("T")[0],
     signature: "",
-    verification_id: "",
   });
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const { certId } = useParams();
-  const isEditMode = !!certId;
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [showFullscreen, setShowFullscreen] = useState(false);
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
+    const fetchData = async () => {
       try {
-        const templatesResponse = await getTemplates();
-        setTemplates(templatesResponse.data);
+        const response = await getTemplates();
+        setTemplates(response.data);
 
-        let template;
-        if (isEditMode) {
+        if (certId) {
+          setIsEditMode(true);
           const certResponse = await getCertificate(certId);
-          const certData = certResponse.data;
+          const cert = certResponse.data;
           setFormData({
-            ...certData,
-            issue_date: certData.issue_date.split("T")[0],
+            template_id: cert.template_id,
+            recipient_name: cert.recipient_name,
+            recipient_email: cert.recipient_email,
+            course_title: cert.course_title,
+            issuer_name: cert.issuer_name,
+            issue_date: cert.issue_date.split("T")[0],
+            signature: cert.signature || "",
           });
-          template = templatesResponse.data.find(
-            (t) => t.id === certData.template_id
+          const templateResponse = await getTemplates();
+          const template = templateResponse.data.find(
+            (t) => t.id == cert.template_id
           );
-        } else {
-          // Auto-select default template
-          template =
-            templatesResponse.data.find(
-              (t) => t.is_public && t.title === "Default Classic"
-            ) ||
-            templatesResponse.data.find((t) => t.is_public) ||
-            templatesResponse.data[0];
-          if (template) {
-            setFormData((prev) => ({ ...prev, template_id: template.id }));
-          }
+          setSelectedTemplate(template);
         }
-        setSelectedTemplate(template);
       } catch (err) {
         setError("Failed to load data.");
       } finally {
         setLoading(false);
       }
     };
-    loadData();
-  }, [certId, isEditMode]);
+    fetchData();
+  }, [certId]);
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
   const handleTemplateChange = (e) => {
     const templateId = e.target.value;
     const template = templates.find((t) => t.id == templateId);
     setSelectedTemplate(template);
-    setFormData({ ...formData, template_id: templateId });
+    setFormData((prev) => ({ ...prev, template_id: templateId }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
-    setLoading(true);
+    setSubmitting(true);
     if (!formData.template_id) {
       setError("Please select a template.");
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
     try {
@@ -282,7 +411,7 @@ function CreateCertificatePage() {
     } catch (err) {
       setError(err.response?.data?.msg || "Failed to save certificate.");
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -293,130 +422,176 @@ function CreateCertificatePage() {
     type = "text",
     required = false,
   }) => (
-    <div>
-      <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-        {label}
+    <div className="space-y-2">
+      <label
+        htmlFor={name}
+        className="block text-sm font-semibold text-gray-700"
+      >
+        {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <div className="mt-1 relative">
+      <div className="relative">
         <input
+          key={name} // Ensure stable key
           type={type}
           name={name}
           id={name}
-          className="w-full p-3 bg-gray-50 rounded-md border-gray-200 focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
           placeholder={placeholder}
           required={required}
-          value={formData[name]}
+          value={formData[name] || ""}
           onChange={handleChange}
         />
         {type === "date" && (
-          <Calendar
-            className="absolute right-3 top-3.5 text-gray-400"
-            size={20}
-          />
+          <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         )}
       </div>
+      {required && <p className="text-xs text-gray-500 mt-1">Required field</p>}
     </div>
   );
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="text-center p-12">Loading certificate editor...</div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center p-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading certificate editor...</p>
+        </div>
+      </div>
     );
+  }
 
   return (
-    <div
-      className="max-w-screen-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8 grid grid-cols-12 gap-8"
-      style={{ height: "calc(100vh - 4rem)" }}
-    >
-      <div className="col-span-12 lg:col-span-4 bg-white p-8 rounded-xl shadow-lg overflow-y-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {isEditMode ? "Edit Certificate" : "Create Certificate"}
-          </h2>
-          <button
-            onClick={handleSubmit}
-            className="bg-green-600 text-white rounded-md py-2 px-6 font-semibold hover:bg-green-700 disabled:opacity-50"
-            disabled={loading}
-          >
-            {isEditMode ? "Update" : "Publish"}
-          </button>
-        </div>
-        {error && (
-          <div className="bg-red-100 border-red-500 text-red-700 border-l-4 p-4 mb-6 rounded-md flex items-center">
-            <Info className="mr-2" />
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-green-100 border-green-500 text-green-700 border-l-4 p-4 mb-6 rounded-md flex items-center">
-            <CheckCircle className="mr-2" />
-            {success}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Select Template
-            </label>
-            <select
-              name="template_id"
-              onChange={handleTemplateChange}
-              value={formData.template_id}
-              className="w-full p-3 bg-gray-50 rounded-md border-gray-200 mt-1"
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {isEditMode ? "Edit Certificate" : "Create Certificate"}
+            </h2>
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center space-x-2"
             >
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.title} {t.is_public && "(System)"}
-                </option>
-              ))}
-            </select>
+              {submitting && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              )}
+              <span>{isEditMode ? "Update" : "Publish"}</span>
+            </button>
           </div>
-          <FormInput
-            name="recipient_name"
-            label="Recipient Full Name"
-            placeholder="e.g., Jane Doe"
-            required
-          />
-          <FormInput
-            name="recipient_email"
-            label="Recipient Email"
-            placeholder="jane.doe@example.com"
-            type="email"
-            required
-          />
-          <FormInput
-            name="course_title"
-            label="Course / Event Title"
-            placeholder="e.g., Advanced React Workshop"
-            required
-          />
-          <FormInput
-            name="issuer_name"
-            label="Issuer Name (Organization or Person)"
-            placeholder="e.g., ACME University"
-            required
-          />
-          <FormInput
-            name="issue_date"
-            label="Issue Date"
-            type="date"
-            required
-          />
-          <FormInput
-            name="signature"
-            label="Signature (Optional)"
-            placeholder="e.g., Dr. John Smith"
-          />
-        </form>
-      </div>
-      <div className="col-span-12 lg:col-span-8 bg-gray-200 p-8 rounded-xl shadow-inner">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Live Preview</h3>
-        <div className="aspect-[1.414/1] w-full">
-          <CertificatePreview template={selectedTemplate} formData={formData} />
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl mb-6 flex items-center space-x-2">
+              <Info className="w-5 h-5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl mb-6 flex items-center space-x-2">
+              <CheckCircle className="w-5 h-5 flex-shrink-0" />
+              <span>{success}</span>
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Select Template
+              </label>
+              <select
+                name="template_id"
+                onChange={handleTemplateChange}
+                value={formData.template_id}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                required
+              >
+                <option value="">Select a template...</option>
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.title} {t.is_public && "(System)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <FormInput
+              name="recipient_name"
+              label="Recipient Full Name"
+              placeholder="e.g., Jane Doe"
+              required
+            />
+            <FormInput
+              name="recipient_email"
+              label="Recipient Email"
+              placeholder="jane.doe@example.com"
+              type="email"
+              required
+            />
+            <FormInput
+              name="course_title"
+              label="Course / Event Title"
+              placeholder="e.g., Advanced React Workshop"
+              required
+            />
+            <FormInput
+              name="issuer_name"
+              label="Issuer Name (Organization or Person)"
+              placeholder="e.g., ACME University"
+              required
+            />
+            <FormInput
+              name="issue_date"
+              label="Issue Date"
+              type="date"
+              required
+            />
+            <FormInput
+              name="signature"
+              label="Signature (Optional)"
+              placeholder="e.g., Dr. John Smith"
+            />
+          </form>
+        </div>
+        <div className="lg:col-span-3 bg-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-xl font-bold text-gray-800">Live Preview</h3>
+            {selectedTemplate && (
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
+                onClick={() => setShowFullscreen(true)}
+              >
+                <Maximize2 className="w-4 h-4" />
+                <span>Fullscreen</span>
+              </button>
+            )}
+          </div>
+          <div className="w-full h-[500px] flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden">
+            <CertificatePreview
+              template={selectedTemplate}
+              formData={formData}
+              onFullscreen={() => setShowFullscreen(true)}
+            />
+          </div>
         </div>
       </div>
+
+      {/* Fullscreen Overlay */}
+      {showFullscreen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowFullscreen(false)}
+        >
+          <div
+            className="relative w-full max-w-6xl max-h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CertificatePreview
+              template={selectedTemplate}
+              formData={formData}
+              onFullscreen={() => setShowFullscreen(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default CreateCertificatePage;

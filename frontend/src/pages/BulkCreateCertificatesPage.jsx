@@ -1,3 +1,4 @@
+// BulkCreateCertificatesPage.jsx
 import React, { useState, useEffect } from "react";
 import {
   Container,
@@ -7,18 +8,22 @@ import {
   Alert,
   Spinner,
   Table,
+  Modal,
 } from "react-bootstrap";
 import { getTemplates, bulkCreateCertificates } from "../api";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
 import QRCode from "react-qr-code";
+import { Maximize2, X } from "lucide-react";
 import { SERVER_BASE_URL } from "../config";
 
-const CertificatePreview = ({ template, formData }) => {
+const CertificatePreview = ({ template, formData, onFullscreen }) => {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
   if (!template) {
     return (
-      <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3">
-        <p className="text-muted">
+      <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3 p-4">
+        <p className="text-muted mb-0">
           No templates available. Please create a template first.
         </p>
       </div>
@@ -26,8 +31,8 @@ const CertificatePreview = ({ template, formData }) => {
   }
   if (!formData || formData.length === 0) {
     return (
-      <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3">
-        <p className="text-muted">Upload a CSV to see a preview</p>
+      <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3 p-4">
+        <p className="text-muted mb-0">Upload a CSV to see a preview</p>
       </div>
     );
   }
@@ -35,10 +40,10 @@ const CertificatePreview = ({ template, formData }) => {
   const serverUrl = SERVER_BASE_URL;
   const {
     layout_style,
-    primary_color,
-    secondary_color,
-    body_font_color,
-    font_family,
+    primary_color = "#0284C7",
+    secondary_color = "#3B82F6",
+    body_font_color = "#1F2937",
+    font_family = "serif",
     background_url,
     logo_url,
   } = template;
@@ -51,9 +56,8 @@ const CertificatePreview = ({ template, formData }) => {
     verification_id = "pending",
   } = formData[0] || {};
 
-  const textStyle = { color: body_font_color || "#333" };
+  const textStyle = { color: body_font_color, fontFamily: font_family };
   const backgroundStyle = {
-    fontFamily: font_family,
     backgroundImage: background_url
       ? `url(${serverUrl}${background_url})`
       : "none",
@@ -61,136 +65,173 @@ const CertificatePreview = ({ template, formData }) => {
     backgroundPosition: "center",
   };
 
-  switch (layout_style) {
-    case "classic":
-      return (
-        <div
-          className="h-full shadow-xl rounded-xl overflow-hidden bg-white relative"
-          style={{ border: `8px double ${primary_color}`, ...backgroundStyle }}
+  const containerClass = isFullscreen
+    ? "position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center p-4 bg-dark bg-opacity-75 z-index-1050"
+    : "shadow-lg rounded-3 overflow-hidden";
+
+  const handleFullscreenToggle = () => {
+    if (onFullscreen) onFullscreen();
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const PreviewContent = () => (
+    <div
+      className={`position-relative ${containerClass}`}
+      style={{
+        aspectRatio: "1.414 / 1",
+        width: isFullscreen ? "90vw" : "100%",
+        maxHeight: isFullscreen ? "90vh" : "400px",
+        ...backgroundStyle,
+      }}
+    >
+      {!isFullscreen && (
+        <button
+          className="position-absolute top-2 end-2 btn btn-sm btn-light z-3"
+          onClick={handleFullscreenToggle}
+          title="Fullscreen"
         >
+          <Maximize2 size={16} />
+        </button>
+      )}
+      {isFullscreen && (
+        <button
+          className="position-absolute top-4 end-4 btn btn-sm btn-light z-3"
+          onClick={handleFullscreenToggle}
+          title="Exit Fullscreen"
+        >
+          <X size={24} />
+        </button>
+      )}
+      {layout_style === "classic" && (
+        <>
           <div
+            className="position-relative w-100 h-100 bg-white d-flex flex-column overflow-hidden"
             style={{
-              borderBottom: `4px solid ${primary_color}`,
-              background: `linear-gradient(to right, ${primary_color}, ${secondary_color})`,
+              border: `8px double ${primary_color}`,
+              fontFamily: font_family,
             }}
-          ></div>
-          <div className="flex-grow flex flex-col justify-center items-center text-center p-8">
-            {logo_url && (
-              <img
-                src={`${serverUrl}${logo_url}`}
-                alt="Logo"
-                className="mb-6"
+          >
+            <div
+              style={{
+                height: "12px",
+                borderBottom: `4px solid ${primary_color}`,
+                background: `linear-gradient(to right, ${primary_color}, ${secondary_color})`,
+              }}
+            />
+            <div className="flex-grow d-flex flex-column justify-content-center align-items-center text-center p-4">
+              {logo_url && (
+                <img
+                  src={`${serverUrl}${logo_url}`}
+                  alt="Logo"
+                  className="mb-3 rounded shadow-sm"
+                  style={{
+                    width: "120px",
+                    height: "120px",
+                    objectFit: "contain",
+                    border: `2px solid ${secondary_color}`,
+                    borderRadius: "8px",
+                  }}
+                />
+              )}
+              <h1
+                className="fw-bold mb-3 text-uppercase"
                 style={{
-                  width: 140,
-                  height: 140,
-                  objectFit: "contain",
-                  border: `2px solid ${secondary_color}`,
-                  borderRadius: "10px",
+                  fontSize: "2rem",
+                  color: primary_color,
+                  letterSpacing: "0.05em",
+                  textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
                 }}
-              />
-            )}
-            <h1
-              className="font-bold mb-4"
-              style={{
-                fontSize: "2.5rem",
-                color: primary_color,
-                textTransform: "uppercase",
-                letterSpacing: "0.05em",
-                textShadow: "1px 1px 2px rgba(0,0,0,0.1)",
-              }}
-            >
-              Certificate of Completion
-            </h1>
-            <p
-              className="text-blue-700 mb-2 italic"
-              style={{ fontSize: "1.2rem" }}
-            >
-              This is to certify that
-            </p>
-            <h2
-              className="font-extrabold mb-4"
-              style={{
-                fontSize: "3rem",
-                fontFamily: "'Georgia', serif",
-                ...textStyle,
-              }}
-            >
-              {recipient_name}
-            </h2>
-            <p
-              className="text-blue-700 mb-2 italic"
-              style={{ fontSize: "1.2rem" }}
-            >
-              has successfully completed the course
-            </p>
-            <p
-              className="font-bold mb-6"
-              style={{
-                fontSize: "1.8rem",
-                color: secondary_color,
-                textTransform: "uppercase",
-              }}
-            >
-              {course_title}
-            </p>
-            <div className="flex justify-around w-full mt-6">
-              <div className="text-center">
-                <p
-                  className="font-semibold mb-0"
-                  style={{ ...textStyle, fontSize: "1.1rem" }}
-                >
-                  {issue_date}
-                </p>
-                <hr
-                  className="w-3/5 mx-auto my-2"
-                  style={{ borderColor: primary_color }}
-                />
-                <span className="text-gray-500 text-sm">Date</span>
+              >
+                Certificate of Completion
+              </h1>
+              <p
+                className="mb-2 fst-italic"
+                style={{ fontSize: "1.1rem", color: "#4B5EAA" }}
+              >
+                This is to certify that
+              </p>
+              <h2
+                className="fw-bolder mb-3"
+                style={{
+                  fontSize: "2.5rem",
+                  fontFamily: "'Georgia', serif",
+                  ...textStyle,
+                }}
+              >
+                {recipient_name}
+              </h2>
+              <p
+                className="mb-2 fst-italic"
+                style={{ fontSize: "1.1rem", color: "#4B5EAA" }}
+              >
+                has successfully completed the course
+              </p>
+              <p
+                className="fw-bold mb-4 text-uppercase"
+                style={{
+                  fontSize: "1.5rem",
+                  color: secondary_color,
+                  letterSpacing: "0.03em",
+                }}
+              >
+                {course_title}
+              </p>
+              <div className="d-flex justify-content-around w-100 mt-4">
+                <div className="text-center">
+                  <p className="fw-semibold mb-1" style={textStyle}>
+                    {issue_date}
+                  </p>
+                  <hr
+                    className="w-75 mx-auto my-1"
+                    style={{ borderTop: `2px solid ${primary_color}` }}
+                  />
+                  <small className="text-muted">Date</small>
+                </div>
+                <div className="text-center">
+                  <p className="fw-semibold mb-1" style={textStyle}>
+                    {signature || issuer_name}
+                  </p>
+                  <hr
+                    className="w-75 mx-auto my-1"
+                    style={{ borderTop: `2px solid ${primary_color}` }}
+                  />
+                  <small className="text-muted">Signature</small>
+                </div>
               </div>
-              <div className="text-center">
-                <p
-                  className="font-semibold mb-0"
-                  style={{ ...textStyle, fontSize: "1.1rem" }}
-                >
-                  {signature || issuer_name}
-                </p>
-                <hr
-                  className="w-3/5 mx-auto my-2"
-                  style={{ borderColor: primary_color }}
+              <div
+                className="position-absolute bottom-0 end-0 m-3 bg-white p-2 rounded shadow"
+                style={{ width: "80px", height: "80px" }}
+              >
+                <QRCode
+                  value={`${window.location.origin}/verify/${verification_id}`}
+                  size={70}
+                  viewBox="0 0 70 70"
                 />
-                <span className="text-gray-500 text-sm">Signature</span>
               </div>
+              <small
+                className="position-absolute bottom-0 start-0 m-3 text-muted fw-medium"
+                style={textStyle}
+              >
+                Issued by: {issuer_name}
+              </small>
             </div>
-            <div className="absolute bottom-6 right-6 bg-white p-1 rounded-md shadow-md">
-              <QRCode
-                value={`${window.location.origin}/verify/${verification_id}`}
-                size={90}
-              />
-            </div>
-            <p
-              className="absolute bottom-6 left-6 font-medium"
-              style={{ ...textStyle, fontSize: "1.1rem" }}
-            >
-              Issued by: {issuer_name}
-            </p>
-            <p
-              className="absolute bottom-3 left-6 text-gray-500"
-              style={{ fontSize: "0.9rem" }}
-            >
-              Verification ID: {verification_id}
-            </p>
           </div>
-        </div>
-      );
-    case "modern":
-      return (
+        </>
+      )}
+      {layout_style === "modern" && (
         <div
-          className="flex h-full shadow-xl rounded-xl overflow-hidden bg-gray-800 text-white border"
-          style={{ borderColor: primary_color, ...backgroundStyle }}
+          className="d-flex w-100 h-100 shadow-lg rounded-3 overflow-hidden text-white"
+          style={{
+            border: `6px solid ${primary_color}`,
+            background: `rgba(255,255,255,0.05)`,
+            fontFamily: font_family,
+            ...backgroundStyle,
+          }}
         >
           <div
-            className="w-[35%] p-8 flex flex-col justify-between items-center"
+            className="d-flex flex-column justify-content-between align-items-center p-4 bg-gradient"
             style={{
+              width: "35%",
               background: `linear-gradient(135deg, ${primary_color}, ${secondary_color})`,
               borderRight: `3px solid ${secondary_color}`,
             }}
@@ -199,30 +240,39 @@ const CertificatePreview = ({ template, formData }) => {
               {logo_url && (
                 <img
                   src={`${serverUrl}${logo_url}`}
-                  className="w-32 h-32 rounded-full border-4 border-white object-cover bg-white shadow-lg"
+                  alt="Logo"
+                  className="rounded-circle border-4 border-white shadow mb-2"
+                  style={{
+                    width: "6rem",
+                    height: "6rem",
+                    objectFit: "cover",
+                  }}
                 />
               )}
               <p
-                className="font-bold text-center mt-4 text-lg uppercase tracking-wider"
-                style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.2)" }}
+                className="fw-bold text-uppercase small"
+                style={{ letterSpacing: "0.1em", color: "white" }}
               >
                 {issuer_name}
               </p>
             </div>
-            <div className="bg-white p-1 rounded-lg shadow-md">
+            <div
+              className="bg-white p-2 rounded shadow-sm"
+              style={{ width: "90px", height: "90px" }}
+            >
               <QRCode
                 value={`${window.location.origin}/verify/${verification_id}`}
-                size={100}
+                size={80}
+                viewBox="0 0 80 80"
               />
             </div>
           </div>
-          <div
-            className="w-[65%] p-10 flex flex-col justify-center"
-            style={{ background: "rgba(255,255,255,0.1)" }}
-          >
+          <div className="flex-grow p-5 d-flex flex-column justify-content-center position-relative">
             <h1
-              className="text-2xl font-light uppercase tracking-[0.15em]"
+              className="fw-light text-uppercase mb-3"
               style={{
+                fontSize: "1.5rem",
+                letterSpacing: "0.15em",
                 color: primary_color,
                 textShadow: "1px 1px 2px rgba(0,0,0,0.2)",
               }}
@@ -230,74 +280,88 @@ const CertificatePreview = ({ template, formData }) => {
               Certificate of Achievement
             </h1>
             <h2
-              className="text-5xl font-extrabold my-3"
+              className="fw-bolder mb-2"
               style={{
+                fontSize: "3rem",
                 fontFamily: "'Georgia', serif",
                 textShadow: "2px 2px 4px rgba(0,0,0,0.3)",
+                ...textStyle,
               }}
             >
               {recipient_name}
             </h2>
-            <p className="text-gray-200 text-lg italic">
+            <p
+              className="mb-2 fst-italic"
+              style={{ fontSize: "1.1rem", color: "#E5E7EB" }}
+            >
               has successfully completed
             </p>
             <p
-              className="text-xl font-semibold mt-2 uppercase tracking-wider"
-              style={{ color: secondary_color }}
+              className="fw-bold mb-4 text-uppercase"
+              style={{
+                fontSize: "1.4rem",
+                letterSpacing: "0.05em",
+                color: secondary_color,
+              }}
             >
               {course_title}
             </p>
             <div
-              className="flex justify-between mt-10 text-base"
+              className="d-flex justify-content-between mt-auto pt-3 border-top"
               style={{
-                borderTop: `2px solid ${primary_color}`,
-                paddingTop: "1rem",
+                borderColor: primary_color,
+                color: "#E5E7EB",
+                fontSize: "0.95rem",
               }}
             >
               <div>
-                <p>Date: {issue_date}</p>
-                <p>Signature: {signature || issuer_name}</p>
+                <p className="mb-1">Date: {issue_date}</p>
+                <p className="mb-0">Signature: {signature || issuer_name}</p>
               </div>
-              <p>Verification ID: {verification_id}</p>
+              <p className="mb-0">ID: {verification_id}</p>
             </div>
           </div>
         </div>
-      );
-    default:
-      return <div>Unsupported layout</div>;
+      )}
+    </div>
+  );
+
+  if (isFullscreen) {
+    return (
+      <Modal
+        show={true}
+        onHide={() => setIsFullscreen(false)}
+        size="xl"
+        centered
+      >
+        <Modal.Body className="p-0 border-0 bg-transparent">
+          <PreviewContent />
+        </Modal.Body>
+      </Modal>
+    );
   }
+
+  return <PreviewContent />;
 };
 
-function BulkCreateCertificatesPage() {
+const BulkCreateCertificatesPage = () => {
   const [templates, setTemplates] = useState([]);
-  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [csvFile, setCsvFile] = useState(null);
   const [csvData, setCsvData] = useState([]);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [showFullscreen, setShowFullscreen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
         const response = await getTemplates();
-        const validTemplates = response.data.filter((t) =>
-          ["classic", "modern"].includes(t.layout_style)
-        );
-        setTemplates(validTemplates);
-        const defaultTemplate =
-          validTemplates.find(
-            (t) => t.is_public && t.title === "Default Classic"
-          ) ||
-          validTemplates.find((t) => t.is_public) ||
-          validTemplates[0];
-        if (defaultTemplate) {
-          setSelectedTemplate(defaultTemplate);
-          setSelectedTemplateId(defaultTemplate.id);
-        }
+        setTemplates(response.data);
       } catch (err) {
         setError("Failed to load templates.");
       } finally {
@@ -319,40 +383,17 @@ function BulkCreateCertificatesPage() {
     if (file) {
       setCsvFile(file);
       Papa.parse(file, {
-        complete: (result) => {
-          if (!result.data || result.data.length < 2) {
-            setError("Invalid CSV format or empty file.");
-            setCsvData([]);
-            return;
-          }
-          const headers = result.data[0].map((header) =>
-            header.toLowerCase().trim()
-          );
-          const requiredHeaders = [
-            "recipient_name",
-            "recipient_email",
-            "course_title",
-            "issuer_name",
-            "issue_date",
-          ];
-          if (!requiredHeaders.every((header) => headers.includes(header))) {
-            setError(
-              "CSV must include columns: recipient_name, recipient_email, course_title, issuer_name, issue_date"
-            );
-            setCsvData([]);
-            return;
-          }
-          const data = result.data
-            .slice(1)
-            .filter((row) => row.some((cell) => cell.trim() !== ""))
-            .map((row) => {
-              const rowData = {};
-              headers.forEach((header, index) => {
-                rowData[header] = row[index] || "";
-              });
-              return rowData;
+        complete: (results) => {
+          const headers = results.data[0];
+          const data = results.data.slice(1).map((row) => {
+            const rowData = {};
+            headers.forEach((header, index) => {
+              rowData[header] = row[index] || "";
             });
+            return rowData;
+          });
           setCsvData(data);
+          setError("");
         },
         header: false,
         skipEmptyLines: true,
@@ -378,12 +419,12 @@ function BulkCreateCertificatesPage() {
     setError("");
     setSuccess("");
 
-    const formData = new FormData();
-    formData.append("template_id", selectedTemplateId);
-    formData.append("file", csvFile);
+    const formDataToSend = new FormData();
+    formDataToSend.append("template_id", selectedTemplateId);
+    formDataToSend.append("file", csvFile);
 
     try {
-      const response = await bulkCreateCertificates(formData);
+      const response = await bulkCreateCertificates(formDataToSend);
       setSuccess(`Successfully created ${response.data.created} certificates!`);
       setCsvData([]);
       setCsvFile(null);
@@ -404,28 +445,40 @@ function BulkCreateCertificatesPage() {
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" />
+        <p className="mt-2 text-muted">Loading templates...</p>
       </Container>
     );
   }
 
   return (
     <Container className="py-5">
-      <h2 className="fw-bold mb-4">Bulk Create Certificates</h2>
-      <div className="row">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h2 className="fw-bold mb-0">Bulk Create Certificates</h2>
+      </div>
+      <div className="row g-4">
         <div className="col-lg-4">
-          <Card className="shadow-sm mb-4">
-            <Card.Body>
-              <Card.Title>Upload Certificate Data</Card.Title>
-              {error && <Alert variant="danger">{error}</Alert>}
-              {success && <Alert variant="success">{success}</Alert>}
+          <Card className="h-100 shadow-sm border-0">
+            <Card.Body className="p-4">
+              <Card.Title className="fw-bold fs-5 mb-4">Upload Data</Card.Title>
+              {error && (
+                <Alert variant="danger" className="mb-3">
+                  {error}
+                </Alert>
+              )}
+              {success && (
+                <Alert variant="success" className="mb-3">
+                  {success}
+                </Alert>
+              )}
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Select Template</Form.Label>
+                  <Form.Label className="fw-medium">Select Template</Form.Label>
                   <Form.Select
                     value={selectedTemplateId}
                     onChange={handleTemplateChange}
+                    className="rounded-3"
                   >
-                    <option value="">Select a template</option>
+                    <option value="">Choose a template...</option>
                     {templates.map((template) => (
                       <option key={template.id} value={template.id}>
                         {template.title} {template.is_public && "(System)"}
@@ -434,19 +487,27 @@ function BulkCreateCertificatesPage() {
                   </Form.Select>
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label>Upload CSV File</Form.Label>
+                  <Form.Label className="fw-medium">Upload CSV</Form.Label>
                   <Form.Control
                     type="file"
                     accept=".csv"
                     id="csvFile"
                     onChange={handleFileChange}
+                    className="rounded-3"
                   />
-                  <Form.Text className="text-muted">
-                    CSV must have columns: recipient_name, recipient_email,
-                    course_title, issuer_name, issue_date, signature (optional)
+                  <Form.Text className="text-muted d-block mt-1">
+                    Columns: recipient_name, recipient_email, course_title,
+                    issuer_name, issue_date, signature (optional)
                   </Form.Text>
                 </Form.Group>
-                <Button variant="primary" type="submit" disabled={submitting}>
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={
+                    submitting || !selectedTemplateId || csvData.length === 0
+                  }
+                  className="w-100 rounded-3 py-2 fw-semibold"
+                >
                   {submitting ? (
                     <>
                       <Spinner size="sm" className="me-2" />
@@ -461,52 +522,94 @@ function BulkCreateCertificatesPage() {
           </Card>
         </div>
         <div className="col-lg-8">
-          <Card className="shadow-sm">
-            <Card.Body>
-              <Card.Title>Preview</Card.Title>
-              <div style={{ aspectRatio: "1.414 / 1", height: "400px" }}>
+          <Card className="shadow-sm border-0 h-100">
+            <Card.Body className="p-4">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <Card.Title className="fw-bold fs-5 mb-0">Preview</Card.Title>
+                {selectedTemplate && csvData.length > 0 && (
+                  <button
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => setShowFullscreen(true)}
+                  >
+                    <Maximize2 size={16} className="me-1" /> Fullscreen
+                  </button>
+                )}
+              </div>
+              <div
+                className="bg-light rounded-3 p-3 d-flex justify-content-center align-items-center"
+                style={{ height: "400px" }}
+              >
                 <CertificatePreview
                   template={selectedTemplate}
                   formData={csvData}
+                  onFullscreen={() => setShowFullscreen(true)}
                 />
               </div>
             </Card.Body>
           </Card>
           {csvData.length > 0 && (
-            <Card className="shadow-sm mt-4">
-              <Card.Body>
-                <Card.Title>Uploaded Data</Card.Title>
-                <Table striped bordered hover responsive>
-                  <thead>
-                    <tr>
-                      <th>Recipient Name</th>
-                      <th>Email</th>
-                      <th>Course Title</th>
-                      <th>Issuer Name</th>
-                      <th>Issue Date</th>
-                      <th>Signature</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {csvData.map((row, index) => (
-                      <tr key={index}>
-                        <td>{row.recipient_name}</td>
-                        <td>{row.recipient_email}</td>
-                        <td>{row.course_title}</td>
-                        <td>{row.issuer_name}</td>
-                        <td>{row.issue_date}</td>
-                        <td>{row.signature || "N/A"}</td>
+            <Card className="shadow-sm border-0 mt-4">
+              <Card.Body className="p-4">
+                <Card.Title className="fw-bold fs-5 mb-3">
+                  Uploaded Data ({csvData.length} rows)
+                </Card.Title>
+                <div className="table-responsive">
+                  <Table striped bordered hover className="mb-0">
+                    <thead className="table-dark">
+                      <tr>
+                        <th>Recipient Name</th>
+                        <th>Email</th>
+                        <th>Course Title</th>
+                        <th>Issuer Name</th>
+                        <th>Issue Date</th>
+                        <th>Signature</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </Table>
+                    </thead>
+                    <tbody>
+                      {csvData.slice(0, 5).map((row, index) => (
+                        <tr key={index}>
+                          <td>{row.recipient_name || "N/A"}</td>
+                          <td>{row.recipient_email || "N/A"}</td>
+                          <td>{row.course_title || "N/A"}</td>
+                          <td>{row.issuer_name || "N/A"}</td>
+                          <td>{row.issue_date || "N/A"}</td>
+                          <td>{row.signature || "N/A"}</td>
+                        </tr>
+                      ))}
+                      {csvData.length > 5 && (
+                        <tr>
+                          <td colSpan="6" className="text-center text-muted">
+                            ... and {csvData.length - 5} more rows
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </Table>
+                </div>
               </Card.Body>
             </Card>
           )}
         </div>
       </div>
+
+      {/* Fullscreen Modal */}
+      <Modal
+        show={showFullscreen}
+        onHide={() => setShowFullscreen(false)}
+        size="xl"
+        centered
+        className="p-0"
+      >
+        <Modal.Body className="p-0 bg-dark">
+          <CertificatePreview
+            template={selectedTemplate}
+            formData={csvData}
+            onFullscreen={() => setShowFullscreen(false)}
+          />
+        </Modal.Body>
+      </Modal>
     </Container>
   );
-}
+};
 
 export default BulkCreateCertificatesPage;
