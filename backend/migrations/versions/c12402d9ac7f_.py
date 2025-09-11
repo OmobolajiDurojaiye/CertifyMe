@@ -1,8 +1,8 @@
-"""Initial database setup.
+"""empty message
 
-Revision ID: c31c1bc761bc
+Revision ID: c12402d9ac7f
 Revises: 
-Create Date: 2025-09-07 17:02:33.990893
+Create Date: 2025-09-12 00:37:18.767590
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c31c1bc761bc'
+revision = 'c12402d9ac7f'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -25,10 +25,19 @@ def upgrade():
     sa.Column('password_hash', sa.Text(), nullable=False),
     sa.Column('role', sa.Enum('free', 'starter', 'pro', name='user_roles'), nullable=False),
     sa.Column('cert_quota', sa.Integer(), nullable=False),
+    sa.Column('subscription_expiry', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email')
+    )
+    op.create_table('groups',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('payments',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -46,12 +55,16 @@ def upgrade():
     )
     op.create_table('templates',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
     sa.Column('title', sa.String(length=150), nullable=False),
     sa.Column('background_url', sa.Text(), nullable=True),
     sa.Column('logo_url', sa.Text(), nullable=True),
     sa.Column('primary_color', sa.String(length=7), nullable=True),
+    sa.Column('secondary_color', sa.String(length=7), nullable=True),
+    sa.Column('body_font_color', sa.String(length=7), nullable=True),
     sa.Column('font_family', sa.String(length=50), nullable=True),
+    sa.Column('layout_style', sa.Enum('classic', 'modern', 'corporate', 'creative', name='template_layouts'), nullable=False),
+    sa.Column('is_public', sa.Boolean(), nullable=False),
     sa.Column('placeholders', sa.JSON(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
@@ -61,14 +74,19 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('template_id', sa.Integer(), nullable=False),
+    sa.Column('group_id', sa.Integer(), nullable=True),
     sa.Column('recipient_name', sa.String(length=150), nullable=False),
+    sa.Column('recipient_email', sa.String(length=120), nullable=False),
     sa.Column('course_title', sa.String(length=150), nullable=False),
+    sa.Column('issuer_name', sa.String(length=150), nullable=True),
     sa.Column('issue_date', sa.Date(), nullable=False),
+    sa.Column('signature', sa.String(length=150), nullable=True),
     sa.Column('verification_id', sa.String(length=36), nullable=False),
     sa.Column('pdf_url', sa.Text(), nullable=True),
     sa.Column('status', sa.Enum('valid', 'revoked', name='certificate_statuses'), nullable=False),
     sa.Column('sent_at', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['group_id'], ['groups.id'], ),
     sa.ForeignKeyConstraint(['template_id'], ['templates.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id'),
@@ -82,5 +100,6 @@ def downgrade():
     op.drop_table('certificates')
     op.drop_table('templates')
     op.drop_table('payments')
+    op.drop_table('groups')
     op.drop_table('users')
     # ### end Alembic commands ###

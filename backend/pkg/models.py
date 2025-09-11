@@ -1,7 +1,9 @@
+# models.py
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import uuid
 from .extensions import db
+from sqlalchemy import func
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -35,11 +37,20 @@ class Template(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     certificates = db.relationship('Certificate', backref='template', lazy=True)
 
+class Group(db.Model):
+    __tablename__ = 'groups'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    certificates = db.relationship('Certificate', backref='group', lazy=True)
+
 class Certificate(db.Model):
     __tablename__ = 'certificates'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     template_id = db.Column(db.Integer, db.ForeignKey('templates.id'), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
     recipient_name = db.Column(db.String(150), nullable=False)
     recipient_email = db.Column(db.String(120), nullable=False)
     course_title = db.Column(db.String(150), nullable=False)

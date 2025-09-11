@@ -49,6 +49,9 @@ export const bulkCreateCertificates = (formData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 
+export const updateCertificateStatus = (certId, status) =>
+  apiClient.put(`/certificates/${certId}/status`, { status });
+
 export const sendCertificateEmail = (certId) =>
   apiClient.post(`/certificates/${certId}/send`);
 export const sendBulkEmails = (certificateIds) =>
