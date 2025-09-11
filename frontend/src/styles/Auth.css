@@ -1,3 +1,4 @@
+/* frontend/src/styles/Auth.css */
 .auth-container {
   min-height: 100vh;
   width: 100%;
@@ -16,6 +17,18 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   border-radius: 1.5rem;
   overflow: hidden;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .auth-panel {
@@ -46,6 +59,11 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.auth-logo {
+  max-height: 35px; /* Further reduced logo size */
+  margin-bottom: 2rem;
 }
 
 .auth-form-container h3 {

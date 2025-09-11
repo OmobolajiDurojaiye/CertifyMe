@@ -1,3 +1,4 @@
+// frontend/src/pages/LoginPage.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
@@ -38,6 +39,12 @@ function LoginPage() {
           <p>The smartest way to issue and manage your digital credentials.</p>
         </div>
         <div className="auth-form-container">
+          <img
+            src="/images/certbadge.png"
+            alt="CertifyMe Logo"
+            className="auth-logo mx-auto d-block"
+            style={{ maxHeight: "35px" }} // Further reduced logo size
+          />
           <h3>Sign In</h3>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>

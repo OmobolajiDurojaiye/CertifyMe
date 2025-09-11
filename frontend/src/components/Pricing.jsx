@@ -1,3 +1,4 @@
+// frontend/src/components/Pricing.jsx
 import React from "react";
 import {
   Container,
@@ -15,13 +16,13 @@ const plans = [
   {
     title: "Free",
     price: "$0",
-    priceDetails: "/ month",
+    priceDetails: "forever",
     description: "For individuals and small teams getting started.",
     features: [
-      "Issue up to 10 certificates/mo",
+      "Issue up to 10 certificates/month",
       "Basic templates",
       "Public verification pages",
-      "CertifyMe branding",
+      "CertifyMe branding on certs",
     ],
     buttonText: "Start for Free",
     buttonVariant: "outline-primary",
@@ -33,10 +34,11 @@ const plans = [
     priceDetails: "/ month",
     description: "For professionals and growing businesses.",
     features: [
-      "Unlimited certificates",
+      "Unlimited certificates & badges",
       "Custom branding (your logo)",
       "Access to all templates",
       "Email delivery & support",
+      "Certificate analytics",
     ],
     buttonText: "Choose Monthly",
     buttonVariant: "primary",
@@ -53,7 +55,7 @@ const plans = [
       "Everything in Monthly, forever",
       "Lifetime access, no recurring fees",
       "Early access to new features",
-      "Premium support",
+      "Premium, priority support",
     ],
     buttonText: "Get Lifetime Access",
     buttonVariant: "outline-primary",
@@ -64,49 +66,41 @@ const plans = [
 
 function Pricing() {
   return (
-    <section id="pricing" className="py-5 bg-light">
+    <section id="pricing" className="py-5 bg-white">
       <Container>
         <div className="text-center mb-5">
-          <h2 className="display-5 fw-bold">Simple, Transparent Pricing</h2>
+          <h2 className="display-4 fw-bold">Simple, Transparent Pricing</h2>
           <p className="lead text-muted">
-            Choose the plan that's right for you.
+            Choose the plan that scales with your success.
           </p>
         </div>
-        <Row className="justify-content-center align-items-stretch g-4">
+        <Row className="justify-content-center g-4">
           {plans.map((plan, index) => (
             <Col md={6} lg={4} key={index}>
               <Card
-                className={`p-4 h-100 pricing-card ${
-                  plan.highlighted ? "highlighted" : ""
+                className={`h-100 pricing-card ${
+                  plan.highlighted ? "highlighted shadow-lg" : "shadow"
                 }`}
               >
-                <Card.Body className="d-flex flex-column">
+                <Card.Body className="d-flex flex-column p-4">
                   {plan.badge && (
                     <Badge
                       pill
-                      bg={plan.highlighted ? "primary" : "secondary"}
+                      bg="primary"
                       className="position-absolute top-0 start-50 translate-middle"
                     >
                       {plan.badge}
                     </Badge>
                   )}
-                  <h3 className="fw-bold plan-title">{plan.title}</h3>
-                  <p className="fs-1 fw-bolder mb-0">
-                    {plan.price}
-                    <span className="fs-5 text-muted">
-                      {" "}
-                      {plan.priceDetails}
-                    </span>
-                  </p>
+                  <h3 className="fw-bold plan-title mb-2">{plan.title}</h3>
+                  <p className="display-5 fw-bold mb-1">{plan.price}</p>
+                  <p className="text-muted small mb-4">{plan.priceDetails}</p>
                   <p className="text-muted mb-4">{plan.description}</p>
-                  <ListGroup variant="flush" className="mb-4">
+                  <ListGroup variant="flush" className="mb-4 flex-grow-1">
                     {plan.features.map((feature, i) => (
-                      <ListGroup.Item
-                        key={i}
-                        className="bg-transparent border-0 px-0 d-flex"
-                      >
-                        <CheckCircleFill className="text-success me-2 mt-1 flex-shrink-0" />
-                        <span>{feature}</span>
+                      <ListGroup.Item key={i} className="border-0 px-0 pb-2">
+                        <CheckCircleFill className="text-primary me-2" />
+                        {feature}
                       </ListGroup.Item>
                     ))}
                   </ListGroup>
@@ -114,7 +108,7 @@ function Pricing() {
                     as={Link}
                     to={plan.link}
                     variant={plan.buttonVariant}
-                    className="mt-auto fw-bold py-2"
+                    className="mt-auto py-3 fw-bold"
                   >
                     {plan.buttonText}
                   </Button>

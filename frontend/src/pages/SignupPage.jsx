@@ -1,3 +1,4 @@
+// frontend/src/pages/SignupPage.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
@@ -43,6 +44,12 @@ function SignupPage() {
           </p>
         </div>
         <div className="auth-form-container">
+          <img
+            src="/images/certbadge.png"
+            alt="CertifyMe Logo"
+            className="auth-logo mx-auto d-block"
+            style={{ maxHeight: "35px" }} // Further reduced logo size
+          />
           <h3>Create an Account</h3>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
