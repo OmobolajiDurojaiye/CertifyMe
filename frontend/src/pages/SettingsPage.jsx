@@ -73,9 +73,27 @@ function SettingsPage() {
   const [processingPlan, setProcessingPlan] = useState(null);
   const navigate = useNavigate();
 
-  const initializePaystack = usePaystackPayment({
-    redirect: false,
-  });
+  // State to hold the configuration for the payment modal
+  const [paymentConfig, setPaymentConfig] = useState(null);
+
+  // onSuccess callback function
+  const onSuccess = () => {
+    toast.success("Payment successful! Redirecting to your dashboard...");
+    setTimeout(() => {
+      // We use navigate and then reload to ensure a clean state update
+      navigate("/dashboard");
+      window.location.reload();
+    }, 2000);
+  };
+
+  // onClose callback function
+  const onClose = () => {
+    toast.error("Payment modal closed.");
+    setProcessingPlan(null);
+  };
+
+  // The usePaystackPayment hook is initialized with the config state
+  const initializePaystackPayment = usePaystackPayment(paymentConfig || {});
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -83,48 +101,53 @@ function SettingsPage() {
         const res = await getCurrentUser();
         setUser(res.data);
       } catch (error) {
-        toast.error("Could not load user data. Please refresh.");
+        toast.error("Could not load user data. Please try logging in again.");
+        navigate("/login"); // Redirect if not authenticated
       } finally {
         setLoadingUser(false);
       }
     };
     fetchUser();
-  }, []);
+  }, [navigate]);
 
   const handleUpgrade = async (plan) => {
     setProcessingPlan(plan);
     try {
+      // 1. Get payment details from our backend
       const res = await initializePayment(plan);
-      const { publicKey, amount, email, reference } = res.data;
+      const { publicKey, amount, email, reference, currency, metadata } =
+        res.data;
 
-      initializePaystack({
-        onSuccess: () => {
-          toast.success("Payment successful! Redirecting to your dashboard...");
-          setTimeout(() => {
-            navigate("/dashboard");
-            window.location.reload();
-          }, 2000);
-        },
-        onClose: () => {
-          toast.error("Payment modal closed.");
-          setProcessingPlan(null);
-        },
+      // 2. Create the full config object for the Paystack hook
+      const config = {
         publicKey,
         amount,
         email,
         reference,
-      });
+        currency,
+        metadata,
+      };
+
+      // 3. Update the state with the new config
+      setPaymentConfig(config);
     } catch (error) {
       toast.error(error.response?.data?.msg || "Failed to initialize payment.");
       setProcessingPlan(null);
     }
   };
 
+  // This useEffect will run ONLY when paymentConfig is updated
+  useEffect(() => {
+    if (paymentConfig) {
+      // 4. Call the initialize function to open the modal
+      initializePaystackPayment(onSuccess, onClose);
+    }
+  }, [paymentConfig, initializePaystackPayment]);
+
   const BillingContent = () => {
     if (loadingUser) return <Spinner animation="border" />;
     if (!user)
       return <Alert variant="danger">Could not load user information.</Alert>;
-
     return (
       <Card className="page-content-card">
         <Card.Title as="h5" className="fw-bold mb-4">
@@ -141,7 +164,6 @@ function SettingsPage() {
           </p>
         )}
         <hr className="my-4" />
-
         <h5 className="fw-bold mb-3">Upgrade Your Plan</h5>
         <Row>
           <Col md={6} className="mb-3">
@@ -185,7 +207,6 @@ function SettingsPage() {
     <div>
       <Toaster position="top-center" />
       <h2 className="fw-bold mb-4">Settings</h2>
-
       <Tab.Container id="settings-tabs" defaultActiveKey="billing">
         <Nav variant="tabs" className="mb-4 settings-tabs">
           <Nav.Item>
@@ -198,7 +219,6 @@ function SettingsPage() {
             <Nav.Link eventKey="security">Security</Nav.Link>
           </Nav.Item>
         </Nav>
-
         <Tab.Content>
           <Tab.Pane eventKey="profile">
             <Card className="page-content-card">
@@ -240,11 +260,9 @@ function SettingsPage() {
               )}
             </Card>
           </Tab.Pane>
-
           <Tab.Pane eventKey="billing">
             <BillingContent />
           </Tab.Pane>
-
           <Tab.Pane eventKey="security">
             <Card className="page-content-card">
               <Card.Title as="h5" className="fw-bold mb-4">

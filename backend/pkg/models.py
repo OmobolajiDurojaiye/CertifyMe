@@ -11,6 +11,7 @@ class User(db.Model):
     password_hash = db.Column(db.Text, nullable=False)
     role = db.Column(db.Enum('free', 'starter', 'pro', name='user_roles'), default='free', nullable=False)
     cert_quota = db.Column(db.Integer, default=10, nullable=False)
+    subscription_expiry = db.Column(db.DateTime, nullable=True)  # New field for subscription expiry
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     templates = db.relationship('Template', backref='user', lazy=True)
@@ -28,7 +29,6 @@ class Template(db.Model):
     secondary_color = db.Column(db.String(7), default='#64748B') 
     body_font_color = db.Column(db.String(7), default='#333333') 
     font_family = db.Column(db.String(50), default='Georgia')
-    # ADDED 'corporate' and 'creative' layouts
     layout_style = db.Column(db.Enum('classic', 'modern', 'corporate', 'creative', name='template_layouts'), default='modern', nullable=False) 
     is_public = db.Column(db.Boolean, default=False, nullable=False)
     placeholders = db.Column(db.JSON, default={})
@@ -41,7 +41,7 @@ class Certificate(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     template_id = db.Column(db.Integer, db.ForeignKey('templates.id'), nullable=False)
     recipient_name = db.Column(db.String(150), nullable=False)
-    recipient_email = db.Column(db.String(120), nullable=False) # NEW FIELD
+    recipient_email = db.Column(db.String(120), nullable=False)
     course_title = db.Column(db.String(150), nullable=False)
     issuer_name = db.Column(db.String(150), nullable=True) 
     issue_date = db.Column(db.Date, nullable=False)
@@ -49,7 +49,7 @@ class Certificate(db.Model):
     verification_id = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     pdf_url = db.Column(db.Text)
     status = db.Column(db.Enum('valid', 'revoked', name='certificate_statuses'), default='valid', nullable=False)
-    sent_at = db.Column(db.DateTime, nullable=True) # Will be used to track email status
+    sent_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Payment(db.Model):

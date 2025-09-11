@@ -1,4 +1,4 @@
-const CACHE_NAME = "certifyme-cache-v2"; // Increment cache version to force update
+const CACHE_NAME = "certifyme-cache-v3"; // Increment cache version
 const urlsToCache = ["/", "/index.html"];
 
 // Install event: cache the basic shell of the app
@@ -23,8 +23,16 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch event: "Network First" strategy
+// Fetch event: "Network First" strategy, but IGNORE non-GET requests
 self.addEventListener("fetch", (event) => {
+  // --- THIS IS THE FIX ---
+  // If the request is not a GET request, do not handle it with the service worker.
+  // Let the browser handle it normally.
+  if (event.request.method !== "GET") {
+    return;
+  }
+  // --- END OF FIX ---
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
