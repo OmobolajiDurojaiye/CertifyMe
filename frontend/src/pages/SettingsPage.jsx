@@ -13,7 +13,7 @@ import {
 import { usePaystackPayment } from "react-paystack";
 import { getCurrentUser, initializePayment } from "../api";
 import toast, { Toaster } from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const PlanCard = ({
   title,
@@ -72,6 +72,33 @@ function SettingsPage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [processingPlan, setProcessingPlan] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await getCurrentUser();
+        setUser(res.data);
+      } catch (error) {
+        toast.error("Your session may have expired. Please log in again.");
+        navigate("/login");
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+    fetchUser();
+
+    // Handle Paystack callback
+    const params = new URLSearchParams(location.search);
+    const paymentStatus = params.get("trxref") || params.get("reference");
+    if (paymentStatus) {
+      toast.success("Payment processed! Refreshing your plan...");
+      setTimeout(() => {
+        fetchUser(); // Refresh user data
+        navigate("/dashboard/settings", { replace: true }); // Redirect to settings
+      }, 2000);
+    }
+  }, [navigate, location]);
 
   const handleUpgrade = async (plan) => {
     setProcessingPlan(plan);
@@ -99,15 +126,17 @@ function SettingsPage() {
         currency: paymentData.currency || "NGN",
         reference: paymentData.reference,
         metadata: paymentData.metadata || {},
+        channels: ["card", "bank", "ussd", "mobile_money"], // Add supported channels
       };
 
       // Initialize Paystack payment
       const initialize = usePaystackPayment(config);
       initialize({
-        onSuccess: () => {
-          toast.success("Payment successful! Your plan will be updated.");
+        onSuccess: (response) => {
+          toast.success("Payment successful! Redirecting...");
           setProcessingPlan(null);
-          setTimeout(() => window.location.reload(), 2000);
+          // Redirect to settings with reference to trigger useEffect
+          navigate(`/dashboard/settings?reference=${response.reference}`);
         },
         onClose: () => {
           toast.error("Payment modal closed.");
@@ -124,21 +153,6 @@ function SettingsPage() {
       setProcessingPlan(null);
     }
   };
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await getCurrentUser();
-        setUser(res.data);
-      } catch (error) {
-        toast.error("Your session may have expired. Please log in again.");
-        navigate("/login");
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-    fetchUser();
-  }, [navigate]);
 
   const BillingContent = () => {
     if (loadingUser) return <Spinner animation="border" />;
