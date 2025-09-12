@@ -2,9 +2,13 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+
+// Import all necessary stylesheets for the entire application
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./styles/App.css"; // Main stylesheet for dashboard
 import "./styles/Auth.css"; // Styles for Login/Signup
+import "./styles/LandingPage.css"; // Styles for the new minimal landing page
+import "./styles/VerifyPage.css"; // Styles for the new verification page
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
@@ -15,6 +19,7 @@ root.render(
   </React.StrictMode>
 );
 
+// Service Worker registration logic
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker

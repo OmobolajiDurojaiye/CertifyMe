@@ -222,11 +222,53 @@ def get_certificate_pdf(cert_id):
 
 def _create_email_message(certificate, template, pdf_buffer):
     verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
+    
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4; }}
+            .container {{ max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 1px solid #dddddd; }}
+            .header img {{ max-height: 50px; }}
+            .content {{ padding: 20px 0; }}
+            .content h1 {{ color: #333333; }}
+            .content p {{ color: #555555; line-height: 1.6; }}
+            .button-container {{ text-align: center; padding: 20px 0; }}
+            .button {{ background-color: #2563EB; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; }}
+            .footer {{ text-align: center; font-size: 12px; color: #888888; padding-top: 20px; border-top: 1px solid #dddddd; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <img src="https://certifyme.com.ng/images/certbadge.png" alt="CertifyMe Logo">
+            </div>
+            <div class="content">
+                <h1>Congratulations, {certificate.recipient_name}!</h1>
+                <p>You have been awarded a certificate for successfully completing the course:</p>
+                <h2 style="color: #333;">{certificate.course_title}</h2>
+                <p>This credential was issued by <strong>{certificate.issuer_name}</strong>.</p>
+                <p>Your certificate is attached to this email. You can also view and verify its authenticity online by clicking the button below.</p>
+            </div>
+            <div class="button-container">
+                <a href="{verification_url}" class="button">Verify Certificate</a>
+            </div>
+            <div class="footer">
+                <p>This certificate was issued via CertifyMe.</p>
+                <p>Verification ID: {certificate.verification_id}</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
     msg = Message(
         subject=f"Your Certificate for {certificate.course_title}",
-        sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')), # EXPLICIT SENDER
+        sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')),
         recipients=[certificate.recipient_email],
-        body=f"Dear {certificate.recipient_name},\n\nCongratulations on completing {certificate.course_title}! Attached is your certificate.\n\nVerify your certificate at: {verification_url}\n\nBest regards,\n{certificate.issuer_name}"
+        html=html_body  # Use the new html body
     )
     msg.attach(f"certificate_{certificate.verification_id}.pdf", "application/pdf", pdf_buffer.getvalue())
     return msg

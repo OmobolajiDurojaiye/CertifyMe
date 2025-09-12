@@ -9,7 +9,7 @@ import base64
 from io import BytesIO
 from weasyprint import HTML
 from flask import render_template_string
-from .certificates import get_image_as_base64, _create_email_message
+from .certificates import get_image_as_base64, _create_email_message, get_classic_pdf_template, get_modern_pdf_template
 from pkg.pdf_templates import get_classic_pdf_template, get_modern_pdf_template
 
 groups_bp = Blueprint('groups', __name__)

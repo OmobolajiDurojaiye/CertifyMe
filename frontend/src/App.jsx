@@ -21,7 +21,8 @@ const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 function App() {
   return (
     <Routes>
-      {/* Publicly Accessible Routes */}
+      {/* --- THIS IS THE FIX --- */}
+      {/* Public routes no longer use a wrapper layout */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
@@ -30,8 +31,9 @@ function App() {
         path="/verify/:verificationId"
         element={<VerifyCertificatePage />}
       />
+      {/* --- END OF FIX --- */}
 
-      {/* Protected Routes */}
+      {/* Protected Routes (This part is correct and remains the same) */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<MyCertificatesPage />} />
