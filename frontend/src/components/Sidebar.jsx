@@ -8,7 +8,9 @@ import {
   Gear,
   BoxArrowRight,
   PlusCircle,
+  Folder, // <-- IMPORT FOLDER ICON
 } from "react-bootstrap-icons";
+
 function Sidebar() {
   const navigate = useNavigate();
   const handleLogout = (e) => {
@@ -33,6 +35,14 @@ function Sidebar() {
               <span>My Certificates</span>
             </NavLink>
           </Nav.Item>
+          {/* --- ADD NEW GROUP LINK --- */}
+          <Nav.Item as="li">
+            <NavLink to="/dashboard/groups" className="nav-link">
+              <Folder />
+              <span>Groups</span>
+            </NavLink>
+          </Nav.Item>
+          {/* --- END OF ADDITION --- */}
           <Nav.Item as="li">
             <NavLink to="/dashboard/templates" className="nav-link">
               <Collection />

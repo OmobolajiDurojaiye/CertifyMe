@@ -3,6 +3,7 @@ from .templates import template_bp
 from .certificates import certificate_bp
 from .payments import payments_bp
 from .users import users_bp
+from .groups import groups_bp
 
 def register_blueprints(app):
     """
@@ -14,6 +15,7 @@ def register_blueprints(app):
     app.register_blueprint(certificate_bp, url_prefix='/api/certificates')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     app.register_blueprint(users_bp, url_prefix='/api/users')
+    app.register_blueprint(groups_bp, url_prefix='/api/groups') 
 
 
     @app.route('/api/health')

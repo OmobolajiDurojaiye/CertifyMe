@@ -14,6 +14,7 @@ import ViewCertificatePage from "./pages/ViewCertificatePage";
 import VerifyCertificatePage from "./pages/VerifyCertificatePage";
 import BulkCreateCertificatesPage from "./pages/BulkCreateCertificatesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import GroupsPage from "./pages/GroupsPage";
 
 const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 
@@ -35,6 +36,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<MyCertificatesPage />} />
           <Route path="templates" element={<TemplatesPage />} />
+          <Route path="groups" element={<GroupsPage />} />
           <Route path="create" element={<CreateCertificatePage />} />
           <Route path="edit/:certId" element={<CreateCertificatePage />} />
           <Route path="view/:certId" element={<ViewCertificatePage />} />

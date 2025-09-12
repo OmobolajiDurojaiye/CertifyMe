@@ -67,3 +67,11 @@ export const getCertificatePDF = (certId) =>
 export const getCurrentUser = () => apiClient.get("/users/me");
 export const initializePayment = (plan) =>
   apiClient.post("/payments/initialize", { plan });
+
+// --- NEW GROUP API Calls ---
+export const getGroups = (page = 1) => apiClient.get(`/groups/?page=${page}`);
+export const createGroup = (name) => apiClient.post("/groups/", { name });
+export const getGroupDetails = (groupId) => apiClient.get(`/groups/${groupId}`);
+export const deleteGroup = (groupId) => apiClient.delete(`/groups/${groupId}`);
+export const sendGroupBulkEmail = (groupId) =>
+  apiClient.post(`/groups/${groupId}/send-bulk-email`);

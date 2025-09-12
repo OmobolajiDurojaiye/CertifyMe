@@ -134,32 +134,67 @@ def verify_certificate(verification_id):
     certificate = Certificate.query.filter_by(verification_id=verification_id).first_or_404()
     template = Template.query.get_or_404(certificate.template_id)
     return jsonify({ "certificate": { 'recipient_name': certificate.recipient_name, 'course_title': certificate.course_title, 'issue_date': certificate.issue_date.isoformat(), 'issuer_name': certificate.issuer_name, 'signature': certificate.signature, 'verification_id': certificate.verification_id, 'status': certificate.status }, "template": { 'title': template.title, 'logo_url': template.logo_url, 'background_url': template.background_url, 'primary_color': template.primary_color, 'secondary_color': template.secondary_color, 'body_font_color': template.body_font_color, 'font_family': template.font_family, 'layout_style': template.layout_style } }), 200
+
 @certificate_bp.route('/bulk', methods=['POST'])
 @jwt_required()
 def bulk_create_certificates():
     user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    check_and_handle_expiry(user) # Check for expiry first
+
     if 'file' not in request.files: return jsonify({"msg": "No file part"}), 400
     file = request.files['file']
     if not file or not allowed_file(file.filename): return jsonify({"msg": "Invalid file type, must be CSV"}), 400
-    template = Template.query.get(request.form.get('template_id'))
-    if not template: return jsonify({"msg": "Template not found"}), 404
-    if not template.is_public and template.user_id != user_id: return jsonify({"msg": "Permission denied"}), 403
-    user = User.query.get(user_id)
+    
+    template_id = request.form.get('template_id')
+    group_id = request.form.get('group_id') # <-- GET THE GROUP ID FROM THE FORM
+    
+    if not template_id or not group_id:
+        return jsonify({"msg": "Template ID and Group ID are required"}), 400
+
+    template = Template.query.get(template_id)
+    if not template or (not template.is_public and template.user_id != user_id):
+        return jsonify({"msg": "Template not found or permission denied"}), 404
+
     try:
         csv_data = StringIO(file.read().decode('utf-8'))
         reader = csv.DictReader(csv_data)
         created, errors = 0, []
+        
+        certs_to_add = []
+        
         for row in reader:
-            if user.cert_quota <= 0: errors.append({"row": row, "msg": "Quota exceeded"}); continue
+            if user.role == 'free' and user.cert_quota <= 0:
+                errors.append({"row": row, "msg": "Quota exceeded"})
+                continue
             try:
-                new_cert = Certificate(user_id=user_id, template_id=template.id, recipient_name=row['recipient_name'], recipient_email=row['recipient_email'], course_title=row['course_title'], issuer_name=row['issuer_name'], issue_date=parse_flexible_date(row['issue_date']), signature=row.get('signature'))
-                db.session.add(new_cert)
-                user.cert_quota -= 1; created += 1
-            except (ValueError, KeyError) as e: errors.append({"row": row, "msg": str(e)})
+                new_cert = Certificate(
+                    user_id=user_id,
+                    template_id=template.id,
+                    group_id=group_id, # <-- ADD THE GROUP ID
+                    recipient_name=row['recipient_name'],
+                    recipient_email=row['recipient_email'],
+                    course_title=row['course_title'],
+                    issuer_name=row['issuer_name'],
+                    issue_date=parse_flexible_date(row['issue_date']),
+                    signature=row.get('signature')
+                )
+                certs_to_add.append(new_cert)
+                if user.role == 'free':
+                    user.cert_quota -= 1
+                created += 1
+            except (ValueError, KeyError) as e:
+                errors.append({"row": row, "msg": f"Missing or invalid data: {str(e)}"})
+        
+        db.session.bulk_save_objects(certs_to_add) # More efficient bulk insert
         db.session.commit()
+        
         if errors: return jsonify({"msg": f"Created {created} certificates with errors", "created": created, "errors": errors}), 207
         return jsonify({"msg": f"Successfully created {created} certificates"}), 201
-    except Exception as e: current_app.logger.error(f"CSV Error: {e}"); return jsonify({"msg": "Failed to process CSV"}), 500
+    except Exception as e:
+        current_app.logger.error(f"CSV Error: {e}")
+        return jsonify({"msg": "Failed to process CSV file"}), 500
+    
 @certificate_bp.route('/<int:cert_id>/pdf', methods=['GET'])
 @jwt_required()
 def get_certificate_pdf(cert_id):
