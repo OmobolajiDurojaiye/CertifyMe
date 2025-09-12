@@ -1,15 +1,14 @@
-
 import os
 from flask import Flask, send_from_directory
 from flask_cors import CORS
-from dotenv import load_dotenv
+# The dotenv imports are now removed from this file.
 
 from .extensions import db, migrate, mail, jwt
 from .routes import register_blueprints
 from .models import Template
 
 def create_app():
-    load_dotenv()
+    # The load_dotenv() call is now removed from here.
     
     app = Flask(__name__)
 
@@ -52,18 +51,28 @@ def create_app():
 
     with app.app_context():
         try:
-            if db.engine.dialect.has_table(db.engine.connect(), "templates"):
-                if not Template.query.filter_by(is_public=True, title='Default Classic').first():
-                    print("Seeding default template...")
-                    default_template = Template(title='Default Classic', primary_color='#1E3A8A', secondary_color='#D1D5DB', body_font_color='#111827', font_family='Georgia', layout_style='classic', is_public=True, custom_text={
+            with db.engine.connect() as connection:
+                if db.engine.dialect.has_table(connection, "templates"):
+                    if not Template.query.filter_by(is_public=True, title='Default Classic').first():
+                        print("Seeding default template...")
+                        default_template = Template(
+                            title='Default Classic',
+                            primary_color='#1E3A8A',
+                            secondary_color='#D1D5DB',
+                            body_font_color='#111827',
+                            font_family='Georgia',
+                            layout_style='classic',
+                            is_public=True,
+                            custom_text={
                                 "title": "Certificate of Completion",
                                 "body": "has successfully completed the course"
-                            })
-                    db.session.add(default_template)
-                    db.session.commit()
-                    print("Seeded default public template: Default Classic")
-            else:
-                print("Skipping seeder: 'templates' table not found. Run 'flask db upgrade' first.")
+                            }
+                        )
+                        db.session.add(default_template)
+                        db.session.commit()
+                        print("Seeded default public template: Default Classic")
+                else:
+                    print("Skipping seeder: 'templates' table not found. Run 'flask db upgrade' first.")
         except Exception as e:
             print(f"Database connection error during seeding: {e}")
 
