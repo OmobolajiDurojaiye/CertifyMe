@@ -50,21 +50,21 @@ def create_app():
     def serve_upload(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-    # with app.app_context():
-    #     try:
-    #         if db.engine.dialect.has_table(db.engine.connect(), "templates"):
-    #             if not Template.query.filter_by(is_public=True, title='Default Classic').first():
-    #                 print("Seeding default template...")
-    #                 default_template = Template(title='Default Classic', primary_color='#1E3A8A', secondary_color='#D1D5DB', body_font_color='#111827', font_family='Georgia', layout_style='classic', is_public=True, custom_text={
-    #                             "title": "Certificate of Completion",
-    #                             "body": "has successfully completed the course"
-    #                         })
-    #                 db.session.add(default_template)
-    #                 db.session.commit()
-    #                 print("Seeded default public template: Default Classic")
-    #         else:
-    #             print("Skipping seeder: 'templates' table not found. Run 'flask db upgrade' first.")
-    #     except Exception as e:
-    #         print(f"Database connection error during seeding: {e}")
+    with app.app_context():
+        try:
+            if db.engine.dialect.has_table(db.engine.connect(), "templates"):
+                if not Template.query.filter_by(is_public=True, title='Default Classic').first():
+                    print("Seeding default template...")
+                    default_template = Template(title='Default Classic', primary_color='#1E3A8A', secondary_color='#D1D5DB', body_font_color='#111827', font_family='Georgia', layout_style='classic', is_public=True, custom_text={
+                                "title": "Certificate of Completion",
+                                "body": "has successfully completed the course"
+                            })
+                    db.session.add(default_template)
+                    db.session.commit()
+                    print("Seeded default public template: Default Classic")
+            else:
+                print("Skipping seeder: 'templates' table not found. Run 'flask db upgrade' first.")
+        except Exception as e:
+            print(f"Database connection error during seeding: {e}")
 
     return app
