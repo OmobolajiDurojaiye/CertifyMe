@@ -1,197 +1,241 @@
-/* ... (Navbar and other styles remain the same) ... */
-.navbar-sticky {
-  background-color: transparent !important;
-  padding: 1.5rem 0;
-  transition: all 0.3s ease-in-out;
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --bg-color: #0b0f19; /* A deep, modern dark blue */
+  --primary-blue: #3b82f6;
+  --text-dark: #ffffff;
+  --text-light: #9ca3af;
+  --border-color: #374151;
+  --card-bg: #1e293b;
+  --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
-.navbar-scrolled {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-  padding: 1rem 0;
-  backdrop-filter: blur(10px);
+
+/* ===== BASE & LAYOUT ===== */
+.chrono-body {
+  font-family: "Inter", sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-dark);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100vw;
+  overflow-x: hidden; /* Allow vertical scroll but not horizontal */
 }
-.navbar-scrolled .navbar-brand .green,
-.navbar-scrolled .navbar-brand .blue {
-  color: #111827 !important;
-}
-.navbar-scrolled .nav-link {
-  color: #111827 !important;
-}
-.navbar-scrolled .nav-link:hover {
-  color: #2563eb !important;
-}
-.nav-link {
-  font-weight: 500;
-  position: relative;
-  transition: color 0.3s ease;
-}
-.nav-link::after {
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 2px;
-  bottom: -5px;
+
+/* ===== HEADER / NAVIGATION ===== */
+.chrono-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 32px;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #2563eb;
-  transition: width 0.3s ease;
+  z-index: 1000;
 }
-.nav-link:hover::after {
-  width: 100%;
-}
-
-/* --- HERO SECTION - FINAL, BULLETPROOF FIX --- */
-.hero-section {
-  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
-  color: white;
-  padding: 180px 0 120px;
-  position: relative; /* Establishes the stacking context */
+.nav-left {
   display: flex;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  gap: 12px;
+}
+.logo-text {
+  font-weight: 600;
+  font-size: 1.25rem;
 }
 
-/* Layer 1: The absolute background container */
-.hero-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 1; /* Sits at the very back */
+/* --- THIS IS THE FIX --- */
+.logo-icon {
+  height: 28px; /* Constrains the height of the navbar logo */
+  width: auto; /* Ensures the width scales proportionally */
+}
+/* --- END OF FIX --- */
+
+.nav-right {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 24px;
 }
-
-/* The decorative image itself, inside the background container */
-.hero-graphic {
-  width: 60%;
-  max-width: 800px;
-  opacity: 0.15;
-  animation: float 20s infinite ease-in-out;
+.signin-link {
+  text-decoration: none;
+  color: var(--text-light);
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 0.2s ease;
 }
-
-/* The blurry shapes, also inside the background container */
-.hero-bg-shape {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(120px);
-}
-.shape-1 {
-  width: 500px;
-  height: 500px;
-  background: #2563eb;
-  opacity: 0.3;
-  top: -200px;
-  left: -200px;
-}
-.shape-2 {
-  width: 400px;
-  height: 400px;
-  background: #22c55e;
-  opacity: 0.2;
-  bottom: -150px;
-  right: -150px;
-}
-
-/* Layer 2: The container for all the text and buttons */
-.hero-content-container {
-  position: relative; /* Must be relative to accept a z-index */
-  z-index: 2; /* Sits on top of the background layer */
-  text-align: center;
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(20px) rotate(5deg);
-  }
-}
-
-.hero-content h1 {
+.signin-link:hover {
   color: white;
-  font-size: clamp(2.5rem, 5vw, 4.5rem);
-  line-height: 1.1;
-  margin-bottom: 1.5rem;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
-/* --- END OF HERO FIX --- */
-
-/* --- Features Section etc. (No changes below this line) --- */
-.feature-card {
+.demo-button-secondary {
+  background-color: white;
+  color: var(--bg-color);
+  text-decoration: none;
   border: none;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-  padding: 2rem;
-  cursor: default;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
 }
-.feature-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+.demo-button-secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
 }
-.feature-icon {
-  width: 70px;
-  height: 70px;
-  border-radius: 20px;
-  background: rgba(37, 99, 235, 0.1);
-  transition: background 0.3s ease;
+
+/* ===== MAIN CONTENT ===== */
+.chrono-main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 120px 32px 60px; /* Padding top for fixed header */
 }
-.feature-card:hover .feature-icon {
-  background: rgba(37, 99, 235, 0.2);
+
+.hero-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
-.testimonial-carousel .carousel-item {
-  transition: transform 0.5s ease;
+.hero-logo {
+  margin-bottom: 24px;
 }
-.testimonial-carousel .card {
-  transition: all 0.3s ease;
+/* Added this rule for consistency */
+.hero-logo img {
+  height: 64px;
 }
-.testimonial-carousel .card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1) !important;
+.hero-headline {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 16px 0;
+  color: var(--text-dark);
+  max-width: 700px;
+}
+.hero-subheadline {
+  font-size: 1.125rem;
+  color: var(--text-light);
+  margin: 0 0 32px 0;
+  max-width: 600px;
+  line-height: 1.6;
+}
+.demo-button-primary {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 14px 28px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.3);
+}
+.demo-button-primary:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.2);
+}
+
+/* ===== PRICING SECTION ===== */
+.pricing-section {
+  display: flex;
+  gap: 2rem;
+  margin-top: 6rem;
+  width: 100%;
+  max-width: 800px;
+  justify-content: center;
 }
 .pricing-card {
-  border-radius: 20px;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(37, 99, 235, 0.1);
-}
-.pricing-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  transition: all 0.2s ease-in-out;
 }
 .pricing-card.highlighted {
-  border: 2px solid #2563eb;
-  transform: scale(1.05) translateY(-10px);
-  box-shadow: 0 30px 60px rgba(37, 99, 235, 0.2);
+  border-color: var(--primary-blue);
+  transform: translateY(-8px);
 }
 .plan-title {
-  font-size: 1.75rem;
-}
-.accordion-item {
-  border: none;
-  margin-bottom: 1rem;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-}
-.accordion-button {
+  font-size: 1.25rem;
   font-weight: 600;
-  padding: 1.5rem;
-}
-.accordion-button:not(.collapsed) {
-  background: #2563eb;
   color: white;
 }
-.accordion-body {
-  padding: 1.5rem;
+.plan-price {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0.5rem 0;
 }
-footer a:hover {
-  color: #2563eb !important;
-  transition: color 0.3s ease;
+.plan-suffix {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text-light);
+}
+.plan-features {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0;
+  color: var(--text-light);
+  flex-grow: 1;
+}
+.plan-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.plan-features svg {
+  color: var(--primary-blue);
+}
+.plan-button,
+.plan-button-highlighted {
+  width: 100%;
+  text-align: center;
+  padding: 0.75rem;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.plan-button {
+  background-color: #374151;
+  color: white;
+}
+.plan-button:hover {
+  background-color: #4b5563;
+}
+.plan-button-highlighted {
+  background-color: var(--primary-blue);
+  color: white;
+}
+.plan-button-highlighted:hover {
+  background-color: #2563eb;
+}
+
+/* ===== FOOTER ===== */
+.chrono-footer {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 32px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.9rem;
 }
