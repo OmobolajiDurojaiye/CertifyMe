@@ -55,7 +55,10 @@ def create_app():
             if db.engine.dialect.has_table(db.engine.connect(), "templates"):
                 if not Template.query.filter_by(is_public=True, title='Default Classic').first():
                     print("Seeding default template...")
-                    default_template = Template(title='Default Classic', primary_color='#1E3A8A', secondary_color='#D1D5DB', body_font_color='#111827', font_family='Georgia', layout_style='classic', is_public=True)
+                    default_template = Template(title='Default Classic', primary_color='#1E3A8A', secondary_color='#D1D5DB', body_font_color='#111827', font_family='Georgia', layout_style='classic', is_public=True, custom_text={
+                                "title": "Certificate of Completion",
+                                "body": "has successfully completed the course"
+                            })
                     db.session.add(default_template)
                     db.session.commit()
                     print("Seeded default public template: Default Classic")

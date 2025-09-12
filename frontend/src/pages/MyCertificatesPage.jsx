@@ -85,7 +85,7 @@ function MyCertificatesPage() {
         getCurrentUser(),
       ]);
       setCertificates(certResponse.data);
-      setTemplates(templateResponse.data);
+      setTemplates(templateResponse.data.templates);
       setUser(userResponse.data);
     } catch (err) {
       console.error("Fetch error:", err);

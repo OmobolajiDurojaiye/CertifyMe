@@ -43,7 +43,13 @@ const CertificateDisplay = ({ certificate, template }) => {
     font_family,
     background_url,
     logo_url,
+    custom_text,
   } = template;
+
+  const certificateTitle = custom_text?.title || "Certificate of Completion";
+  const certificateBody =
+    custom_text?.body || "has successfully completed the course";
+
   const {
     recipient_name,
     course_title,

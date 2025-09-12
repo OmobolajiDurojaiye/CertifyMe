@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from ..models import db, Template
+import json
 
 template_bp = Blueprint('templates', __name__)
 
@@ -18,48 +19,38 @@ def create_template():
         return jsonify({"msg": "Missing title part"}), 400
 
     data = request.form
-    title = data.get('title')
-    primary_color = data.get('primary_color', '#2563EB')
-    secondary_color = data.get('secondary_color', '#64748B')
-    body_font_color = data.get('body_font_color', '#333333')
-    font_family = data.get('font_family', 'Georgia')
-    layout_style = data.get('layout_style', 'modern')
     
-    if layout_style not in ['classic', 'modern']:
-        return jsonify({"msg": "Unsupported layout style. Use 'classic' or 'modern'."}), 400
+    custom_text_data = {
+        "title": data.get('custom_title', 'Certificate of Completion'),
+        "body": data.get('custom_body', 'has successfully completed the course')
+    }
 
-    logo_url = None
-    background_url = None
-
+    logo_url, background_url = None, None
     if 'logo' in request.files:
         logo_file = request.files['logo']
         if logo_file and allowed_file(logo_file.filename):
             filename = secure_filename(f"{user_id}_logo_{logo_file.filename}")
-            save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            logo_file.save(save_path)
-            # --- FIX: Use lowercase 'uploads' to match the route ---
+            logo_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
             logo_url = f"/uploads/{filename}"
 
     if 'background' in request.files:
         bg_file = request.files['background']
         if bg_file and allowed_file(bg_file.filename):
             filename = secure_filename(f"{user_id}_bg_{bg_file.filename}")
-            save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            bg_file.save(save_path)
-            # --- FIX: Use lowercase 'uploads' to match the route ---
+            bg_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
             background_url = f"/uploads/{filename}"
 
     new_template = Template(
         user_id=user_id,
-        title=title,
+        title=data.get('title'),
         logo_url=logo_url,
         background_url=background_url,
-        primary_color=primary_color,
-        secondary_color=secondary_color,
-        body_font_color=body_font_color,
-        font_family=font_family,
-        layout_style=layout_style,
-        placeholders={}
+        primary_color=data.get('primary_color', '#2563EB'),
+        secondary_color=data.get('secondary_color', '#64748B'),
+        body_font_color=data.get('body_font_color', '#333333'),
+        font_family=data.get('font_family', 'Georgia'),
+        layout_style=data.get('layout_style', 'modern'),
+        custom_text=custom_text_data
     )
     db.session.add(new_template)
     db.session.commit()
@@ -83,93 +74,69 @@ def get_user_templates():
         'body_font_color': t.body_font_color,
         'font_family': t.font_family,
         'layout_style': t.layout_style,
-        'is_public': t.is_public
+        'is_public': t.is_public,
+        'custom_text': t.custom_text
     } for t in templates]
-    return jsonify(templates_data), 200
+    
+    # --- THIS IS THE FIX ---
+    # Return an object with a 'templates' key, containing the array.
+    return jsonify({"templates": templates_data}), 200
+    # --- END OF FIX ---
 
 @template_bp.route('/<int:template_id>', methods=['GET'])
 @jwt_required(locations=["headers"])
 def get_template(template_id):
     user_id = int(get_jwt_identity())
-    template = Template.query.get(template_id)
-    
-    if not template:
-        return jsonify({"msg": "Template not found"}), 404
-
+    template = Template.query.get_or_404(template_id)
     if not template.is_public and template.user_id != user_id:
-        return jsonify({"msg": "You do not have permission to view this template"}), 403
+        return jsonify({"msg": "Permission denied"}), 403
     
-    template_data = {
-        'id': template.id,
-        'title': template.title,
-        'logo_url': template.logo_url,
-        'background_url': template.background_url,
-        'primary_color': template.primary_color,
-        'secondary_color': template.secondary_color,
-        'body_font_color': template.body_font_color,
-        'font_family': template.font_family,
-        'layout_style': template.layout_style,
-        'is_public': template.is_public
-    }
-    return jsonify(template_data), 200
+    return jsonify({
+        'id': template.id, 'title': template.title, 'logo_url': template.logo_url,
+        'background_url': template.background_url, 'primary_color': template.primary_color,
+        'secondary_color': template.secondary_color, 'body_font_color': template.body_font_color,
+        'font_family': template.font_family, 'layout_style': template.layout_style,
+        'is_public': template.is_public, 'custom_text': template.custom_text
+    }), 200
 
 @template_bp.route('/<int:template_id>', methods=['PUT'])
 @jwt_required(locations=["headers"])
 def update_template(template_id):
     user_id = int(get_jwt_identity())
-    template = Template.query.get(template_id)
-    
-    if not template:
-        return jsonify({"msg": "Template not found"}), 404
-    
+    template = Template.query.get_or_404(template_id)
     if template.is_public or template.user_id != user_id:
-        return jsonify({"msg": "You do not have permission to update this template"}), 403
+        return jsonify({"msg": "Permission denied"}), 403
 
     data = request.form
-    if 'title' in data:
-        template.title = data.get('title')
     
-    if 'primary_color' in data:
-        template.primary_color = data.get('primary_color')
-    if 'secondary_color' in data:
-        template.secondary_color = data.get('secondary_color')
-    if 'body_font_color' in data:
-        template.body_font_color = data.get('body_font_color')
-    if 'font_family' in data:
-        template.font_family = data.get('font_family')
-    if 'layout_style' in data:
-        layout_style = data.get('layout_style')
-        if layout_style not in ['classic', 'modern']:
-            return jsonify({"msg": "Unsupported layout style. Use 'classic' or 'modern'."}), 400
-        template.layout_style = layout_style
+    # Update main fields
+    if 'title' in data: template.title = data.get('title')
+    if 'primary_color' in data: template.primary_color = data.get('primary_color')
+    if 'secondary_color' in data: template.secondary_color = data.get('secondary_color')
+    if 'body_font_color' in data: template.body_font_color = data.get('body_font_color')
+    if 'font_family' in data: template.font_family = data.get('font_family')
+    if 'layout_style' in data: template.layout_style = data.get('layout_style')
 
+    # Update custom text
+    custom_text_data = template.custom_text or {}
+    if 'custom_title' in data: custom_text_data['title'] = data.get('custom_title')
+    if 'custom_body' in data: custom_text_data['body'] = data.get('custom_body')
+    template.custom_text = custom_text_data
+
+    # Handle file uploads
     if 'logo' in request.files:
         logo_file = request.files['logo']
         if logo_file and allowed_file(logo_file.filename):
-            if template.logo_url:
-                old_logo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(template.logo_url))
-                if os.path.exists(old_logo_path):
-                    try: os.remove(old_logo_path)
-                    except Exception as e: current_app.logger.error(f"Failed to delete old logo: {e}")
             filename = secure_filename(f"{user_id}_logo_{logo_file.filename}")
-            save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            logo_file.save(save_path)
-            # --- FIX: Use lowercase 'uploads' to match the route ---
+            logo_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
             template.logo_url = f"/uploads/{filename}"
 
     if 'background' in request.files:
         bg_file = request.files['background']
         if bg_file and allowed_file(bg_file.filename):
-            if template.background_url:
-                old_bg_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(template.background_url))
-                if os.path.exists(old_bg_path):
-                    try: os.remove(old_bg_path)
-                    except Exception as e: current_app.logger.error(f"Failed to delete old background: {e}")
             filename = secure_filename(f"{user_id}_bg_{bg_file.filename}")
-            save_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-            bg_file.save(save_path)
-            # --- FIX: Use lowercase 'uploads' to match the route ---
+            bg_file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], filename))
             template.background_url = f"/uploads/{filename}"
 
     db.session.commit()
-    return jsonify({"msg": "Template updated successfully", "template_id": template.id}), 200
+    return jsonify({"msg": "Template updated successfully"}), 200

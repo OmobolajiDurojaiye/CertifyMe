@@ -75,3 +75,5 @@ export const getGroupDetails = (groupId) => apiClient.get(`/groups/${groupId}`);
 export const deleteGroup = (groupId) => apiClient.delete(`/groups/${groupId}`);
 export const sendGroupBulkEmail = (groupId) =>
   apiClient.post(`/groups/${groupId}/send-bulk-email`);
+export const downloadBulkTemplate = () =>
+  apiClient.get("/certificates/bulk-template", { responseType: "blob" });

@@ -12,13 +12,21 @@ import {
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
 import QRCode from "react-qr-code";
-import { Maximize2, X, Info, CheckCircle, Upload } from "lucide-react";
+import {
+  Maximize2,
+  X,
+  Info,
+  CheckCircle,
+  Upload,
+  Download,
+} from "lucide-react";
 import { SERVER_BASE_URL } from "../config";
 import {
   getTemplates,
   bulkCreateCertificates,
   getGroups,
   createGroup,
+  downloadBulkTemplate,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -33,14 +41,11 @@ const CertificatePreview = ({ template, formData }) => {
   if (!formData || !formData.recipient_name) {
     return (
       <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3 p-4">
-        <p className="text-muted mb-0">
-          Upload a CSV to see a preview of the first record.
-        </p>
+        <p className="text-muted mb-0">Upload a CSV to see a preview.</p>
       </div>
     );
   }
 
-  const serverUrl = SERVER_BASE_URL;
   const {
     layout_style,
     primary_color,
@@ -49,7 +54,16 @@ const CertificatePreview = ({ template, formData }) => {
     font_family,
     background_url,
     logo_url,
+    // --- THIS IS THE FIX ---
+    custom_text,
   } = template;
+
+  // Use custom text with fallbacks
+  const certificateTitle = custom_text?.title || "Certificate of Completion";
+  const certificateBody =
+    custom_text?.body || "has successfully completed the course";
+  // --- END OF FIX ---
+
   const {
     recipient_name = "Recipient Name",
     course_title = "Course Title",
@@ -62,13 +76,104 @@ const CertificatePreview = ({ template, formData }) => {
   const textStyle = { color: body_font_color, fontFamily: font_family };
   const backgroundStyle = {
     backgroundImage: background_url
-      ? `url(${serverUrl}${background_url})`
+      ? `url(${SERVER_BASE_URL}${background_url})`
       : "none",
     backgroundSize: "cover",
     backgroundPosition: "center",
   };
 
-  // Re-using the elegant designs from the PDF templates for consistency
+  const renderModern = () => (
+    <div
+      className="flex h-100 w-100 shadow-lg rounded-xl overflow-hidden text-white"
+      style={{
+        border: `6px solid ${primary_color}`,
+        ...backgroundStyle,
+        fontFamily: font_family,
+      }}
+    >
+      <div
+        className="flex flex-col justify-between items-center p-4"
+        style={{
+          width: "35%",
+          background: `linear-gradient(135deg, ${primary_color}, ${secondary_color})`,
+        }}
+      >
+        <div className="text-center">
+          {logo_url && (
+            <img
+              src={`${SERVER_BASE_URL}${logo_url}`}
+              className="rounded-circle border-4 border-white shadow mb-2"
+              style={{ width: "6rem", height: "6rem", objectFit: "cover" }}
+              alt="Logo"
+            />
+          )}
+          <p
+            className="font-bold uppercase small"
+            style={{ letterSpacing: "0.1em" }}
+          >
+            {issuer_name}
+          </p>
+        </div>
+        <div className="bg-white p-1 rounded shadow">
+          <QRCode
+            value={`${window.location.origin}/verify/${verification_id}`}
+            size={72}
+            viewBox="0 0 72 72"
+          />
+        </div>
+      </div>
+      <div className="flex-grow p-4 flex flex-col justify-center relative">
+        <h1
+          className="font-light uppercase mb-3"
+          style={{
+            fontSize: "1.5rem",
+            letterSpacing: "0.15em",
+            color: primary_color,
+          }}
+        >
+          {certificateTitle}
+        </h1>
+        <h2
+          className="font-bolder mb-2"
+          style={{
+            fontSize: "2.8rem",
+            fontFamily: "'Georgia', serif",
+            ...textStyle,
+          }}
+        >
+          {recipient_name}
+        </h2>
+        <p
+          className="italic mb-2"
+          style={{ fontSize: "1.1rem", color: "#666" }}
+        >
+          {certificateBody}
+        </p>
+        <p
+          className="font-bold uppercase mb-4"
+          style={{
+            fontSize: "1.4rem",
+            letterSpacing: "0.05em",
+            color: secondary_color,
+          }}
+        >
+          {course_title}
+        </p>
+        <div
+          className="d-flex justify-content-between mt-auto pt-3 border-top"
+          style={{ borderColor: primary_color, fontSize: "0.9rem" }}
+        >
+          <p>
+            Date: {issue_date}
+            <br />
+            Signature: {signature || issuer_name}
+          </p>
+          <p>ID: {verification_id}</p>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderClassic = () => (
     <div
       className="h-100 w-100 bg-white relative flex flex-col shadow-2xl rounded-xl overflow-hidden"
@@ -88,7 +193,7 @@ const CertificatePreview = ({ template, formData }) => {
       <div className="flex-grow flex flex-col justify-center items-center text-center p-4">
         {logo_url && (
           <img
-            src={`${serverUrl}${logo_url}`}
+            src={`${SERVER_BASE_URL}${logo_url}`}
             alt="Logo"
             className="mb-3"
             style={{ width: "120px", height: "120px", objectFit: "contain" }}
@@ -98,7 +203,7 @@ const CertificatePreview = ({ template, formData }) => {
           className="font-bold uppercase tracking-wider"
           style={{ fontSize: "2rem", color: primary_color }}
         >
-          Certificate of Completion
+          {certificateTitle}
         </h1>
         <p
           className="italic my-1"
@@ -120,7 +225,7 @@ const CertificatePreview = ({ template, formData }) => {
           className="italic my-1"
           style={{ fontSize: "1.1rem", color: "#4B5EAA" }}
         >
-          has successfully completed the course
+          {certificateBody}
         </p>
         <p
           className="font-bold uppercase my-2"
@@ -167,97 +272,6 @@ const CertificatePreview = ({ template, formData }) => {
     </div>
   );
 
-  const renderModern = () => (
-    <div
-      className="flex h-100 w-100 shadow-lg rounded-xl overflow-hidden text-white"
-      style={{
-        border: `6px solid ${primary_color}`,
-        ...backgroundStyle,
-        fontFamily: font_family,
-      }}
-    >
-      <div
-        className="flex flex-col justify-between items-center p-4"
-        style={{
-          width: "35%",
-          background: `linear-gradient(135deg, ${primary_color}, ${secondary_color})`,
-        }}
-      >
-        <div className="text-center">
-          {logo_url && (
-            <img
-              src={`${serverUrl}${logo_url}`}
-              className="rounded-circle border-4 border-white shadow mb-2"
-              style={{ width: "6rem", height: "6rem", objectFit: "cover" }}
-              alt="Logo"
-            />
-          )}
-          <p
-            className="font-bold uppercase small"
-            style={{ letterSpacing: "0.1em" }}
-          >
-            {issuer_name}
-          </p>
-        </div>
-        <div className="bg-white p-1 rounded shadow">
-          <QRCode
-            value={`${window.location.origin}/verify/${verification_id}`}
-            size={72}
-            viewBox="0 0 72 72"
-          />
-        </div>
-      </div>
-      <div className="flex-grow p-4 flex flex-col justify-center relative">
-        <h1
-          className="font-light uppercase mb-3"
-          style={{
-            fontSize: "1.5rem",
-            letterSpacing: "0.15em",
-            color: primary_color,
-          }}
-        >
-          Certificate of Achievement
-        </h1>
-        <h2
-          className="font-bolder mb-2"
-          style={{
-            fontSize: "2.8rem",
-            fontFamily: "'Georgia', serif",
-            ...textStyle,
-          }}
-        >
-          {recipient_name}
-        </h2>
-        <p
-          className="italic mb-2"
-          style={{ fontSize: "1.1rem", color: "#666" }}
-        >
-          has successfully completed
-        </p>
-        <p
-          className="font-bold uppercase mb-4"
-          style={{
-            fontSize: "1.4rem",
-            letterSpacing: "0.05em",
-            color: secondary_color,
-          }}
-        >
-          {course_title}
-        </p>
-        <div
-          className="d-flex justify-content-between mt-auto pt-3 border-top"
-          style={{ borderColor: primary_color, fontSize: "0.9rem" }}
-        >
-          <div>
-            <p className="mb-1">Date: {issue_date}</p>
-            <p className="mb-0">Signature: {signature || issuer_name}</p>
-          </div>
-          <p className="mb-0">ID: {verification_id}</p>
-        </div>
-      </div>
-    </div>
-  );
-
   return layout_style === "modern" ? renderModern() : renderClassic();
 };
 
@@ -285,7 +299,7 @@ const BulkCreateCertificatesPage = () => {
           getTemplates(),
           getGroups(),
         ]);
-        setTemplates(templateRes.data);
+        setTemplates(templateRes.data.templates);
         setGroups(groupRes.data.groups);
       } catch (err) {
         setError("Failed to load initial data. Please refresh the page.");
@@ -380,6 +394,25 @@ const BulkCreateCertificatesPage = () => {
     }
   };
 
+  const handleDownloadTemplate = async () => {
+    const promise = downloadBulkTemplate();
+    toast.promise(promise, {
+      loading: "Generating template...",
+      success: (response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "certifyme_bulk_template.csv");
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        return "Template download started!";
+      },
+      error: "Could not download template.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
@@ -468,6 +501,17 @@ const BulkCreateCertificatesPage = () => {
                 Columns must include: recipient_name, recipient_email,
                 course_title, issuer_name, issue_date
               </Form.Text>
+              <div className="mt-2">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="p-0 d-flex align-items-center"
+                  onClick={handleDownloadTemplate}
+                >
+                  <Download size={14} className="me-1" />
+                  Download sample CSV template
+                </Button>
+              </div>
             </Form.Group>
             <Button
               variant="primary"

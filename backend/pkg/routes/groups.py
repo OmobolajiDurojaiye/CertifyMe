@@ -9,8 +9,8 @@ import base64
 from io import BytesIO
 from weasyprint import HTML
 from flask import render_template_string
-from .certificates import get_image_as_base64, _create_email_message, get_classic_pdf_template, get_modern_pdf_template
-from pkg.pdf_templates import get_classic_pdf_template, get_modern_pdf_template
+from .certificates import get_image_as_base64, _create_email_message
+from ..pdf_templates import get_classic_pdf_template, get_modern_pdf_template
 
 groups_bp = Blueprint('groups', __name__)
 
@@ -20,18 +20,11 @@ def create_group():
     user_id = int(get_jwt_identity())
     data = request.get_json()
     name = data.get('name')
-
-    if not name:
-        return jsonify({"msg": "Group name is required"}), 400
-
+    if not name: return jsonify({"msg": "Group name is required"}), 400
     new_group = Group(user_id=user_id, name=name)
     db.session.add(new_group)
     db.session.commit()
-    
-    return jsonify({
-        "msg": "Group created successfully",
-        "group": { "id": new_group.id, "name": new_group.name, "certificate_count": 0 }
-    }), 201
+    return jsonify({"msg": "Group created successfully", "group": { "id": new_group.id, "name": new_group.name, "certificate_count": 0 }}), 201
 
 @groups_bp.route('/', methods=['GET'])
 @jwt_required()
@@ -39,61 +32,26 @@ def get_groups():
     user_id = int(get_jwt_identity())
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 10, type=int)
-    
     pagination = Group.query.filter_by(user_id=user_id).order_by(Group.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
-    
-    groups_data = []
-    for group in pagination.items:
-        groups_data.append({
-            "id": group.id,
-            "name": group.name,
-            "certificate_count": len(group.certificates),
-            "created_at": group.created_at.isoformat()
-        })
-
-    return jsonify({
-        "groups": groups_data,
-        "total": pagination.total,
-        "pages": pagination.pages,
-        "current_page": pagination.page
-    }), 200
+    groups_data = [{"id": group.id, "name": group.name, "certificate_count": len(group.certificates), "created_at": group.created_at.isoformat()} for group in pagination.items]
+    return jsonify({"groups": groups_data, "total": pagination.total, "pages": pagination.pages, "current_page": pagination.page}), 200
 
 @groups_bp.route('/<int:group_id>', methods=['GET'])
 @jwt_required()
 def get_group_details(group_id):
     user_id = int(get_jwt_identity())
     group = Group.query.filter_by(id=group_id, user_id=user_id).first_or_404()
-    
-    certificates_data = [{
-        'id': c.id,
-        'recipient_name': c.recipient_name,
-        'recipient_email': c.recipient_email,
-        'course_title': c.course_title,
-        'issue_date': c.issue_date.isoformat(),
-        'sent_at': c.sent_at.isoformat() if c.sent_at else None
-    } for c in group.certificates]
-
-    return jsonify({
-        "id": group.id,
-        "name": group.name,
-        "certificates": certificates_data
-    }), 200
+    certificates_data = [{'id': c.id, 'recipient_name': c.recipient_name, 'recipient_email': c.recipient_email, 'course_title': c.course_title, 'issue_date': c.issue_date.isoformat(), 'sent_at': c.sent_at.isoformat() if c.sent_at else None} for c in group.certificates]
+    return jsonify({"id": group.id, "name": group.name, "certificates": certificates_data}), 200
 
 @groups_bp.route('/<int:group_id>', methods=['DELETE'])
 @jwt_required()
 def delete_group(group_id):
     user_id = int(get_jwt_identity())
-    group = Group.query.filter_by(id=group_id, user_id=user_id).first()
-
-    if not group:
-        return jsonify({"msg": "Group not found or permission denied"}), 404
-
-    # Bulk delete associated certificates
+    group = Group.query.filter_by(id=group_id, user_id=user_id).first_or_404()
     Certificate.query.filter_by(group_id=group.id, user_id=user_id).delete()
-    
     db.session.delete(group)
     db.session.commit()
-    
     return jsonify({"msg": "Group and all associated certificates deleted successfully"}), 200
 
 @groups_bp.route('/<int:group_id>/send-bulk-email', methods=['POST'])
@@ -115,23 +73,32 @@ def send_bulk_email_for_group(group_id):
                     errors.append({"certificate_id": certificate.id, "msg": "Template not found"})
                     continue
                 
-                # --- PDF Generation Logic (copied from certificates.py) ---
                 qr = qrcode.QRCode(version=1, box_size=10, border=4)
                 verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
                 qr.add_data(verification_url)
                 qr_img = qr.make_image(fill_color="black", back_color="white")
-                qr_buffer = BytesIO()
-                qr_img.save(qr_buffer, format="PNG")
-                qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode('utf-8')
-                logo_base64 = get_image_as_base64(template.logo_url)
-                background_base64 = get_image_as_base64(template.background_url)
+                qr_buffer = BytesIO(); qr_img.save(qr_buffer, format="PNG")
+                
+                # --- THIS IS THE FIX ---
+                context = {
+                    "recipient_name": certificate.recipient_name, "course_title": certificate.course_title,
+                    "issue_date": certificate.issue_date.strftime('%B %d, %Y'),
+                    "signature": certificate.signature or certificate.issuer_name,
+                    "issuer_name": certificate.issuer_name, "verification_id": certificate.verification_id,
+                    "logo_base64": get_image_as_base64(template.logo_url),
+                    "background_base64": get_image_as_base64(template.background_url),
+                    "primary_color": template.primary_color, "secondary_color": template.secondary_color,
+                    "body_font_color": template.body_font_color, "font_family": template.font_family,
+                    "qr_base64": base64.b64encode(qr_buffer.getvalue()).decode('utf-8'),
+                    "custom_text": template.custom_text or {}
+                }
+                # --- END OF FIX ---
+                
                 html_template = {'classic': get_classic_pdf_template(), 'modern': get_modern_pdf_template()}.get(template.layout_style)
-                context = { "recipient_name": certificate.recipient_name, "course_title": certificate.course_title, "issue_date": certificate.issue_date.strftime('%B %d, %Y'), "signature": certificate.signature or certificate.issuer_name, "issuer_name": certificate.issuer_name, "verification_id": certificate.verification_id, "logo_base64": logo_base64, "background_base64": background_base64, "primary_color": template.primary_color, "secondary_color": template.secondary_color, "body_font_color": template.body_font_color, "font_family": template.font_family, "qr_base64": qr_base64 }
                 html_content = render_template_string(html_template, **context)
                 
                 pdf_buffer = BytesIO()
                 HTML(string=html_content).write_pdf(pdf_buffer)
-                # --- End PDF Generation ---
 
                 msg = _create_email_message(certificate, template, pdf_buffer)
                 conn.send(msg)
