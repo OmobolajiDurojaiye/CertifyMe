@@ -5,10 +5,10 @@ import {
   HouseDoor,
   FileEarmarkText,
   Collection,
-  Gear,
+  Gear, // <-- You correctly imported the Gear icon
   BoxArrowRight,
   PlusCircle,
-  Folder, // <-- IMPORT FOLDER ICON
+  Folder,
 } from "react-bootstrap-icons";
 
 function Sidebar() {
@@ -35,14 +35,12 @@ function Sidebar() {
               <span>My Certificates</span>
             </NavLink>
           </Nav.Item>
-          {/* --- ADD NEW GROUP LINK --- */}
           <Nav.Item as="li">
             <NavLink to="/dashboard/groups" className="nav-link">
               <Folder />
               <span>Groups</span>
             </NavLink>
           </Nav.Item>
-          {/* --- END OF ADDITION --- */}
           <Nav.Item as="li">
             <NavLink to="/dashboard/templates" className="nav-link">
               <Collection />
@@ -62,6 +60,7 @@ function Sidebar() {
             </NavLink>
           </Nav.Item>
           <Nav.Item as="li">
+            {/* --- THIS LINK IS ALREADY PERFECT! NO CHANGES NEEDED --- */}
             <NavLink to="/dashboard/settings" className="nav-link">
               <Gear />
               <span>Settings</span>

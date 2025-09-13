@@ -6,6 +6,7 @@ from .extensions import db
 from sqlalchemy import func
 
 class User(db.Model):
+    # ... (no changes in this model)
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -14,13 +15,15 @@ class User(db.Model):
     role = db.Column(db.Enum('free', 'starter', 'pro', name='user_roles'), default='free', nullable=False)
     cert_quota = db.Column(db.Integer, default=10, nullable=False)
     subscription_expiry = db.Column(db.DateTime, nullable=True)
+    signature_image_url = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     templates = db.relationship('Template', backref='user', lazy=True)
-    certificates = db.relationship('Certificate', backref='user', lazy=True)
+    certificates = db.relationship('Certificate', backref='issuer', lazy=True)
     payments = db.relationship('Payment', backref='user', lazy=True)
 
 class Template(db.Model):
+    # ... (no changes in this model)
     __tablename__ = 'templates'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) 
@@ -33,16 +36,15 @@ class Template(db.Model):
     font_family = db.Column(db.String(50), default='Georgia')
     layout_style = db.Column(db.Enum('classic', 'modern', name='template_layouts'), default='modern', nullable=False) 
     is_public = db.Column(db.Boolean, default=False, nullable=False)
-    # --- ADD THIS NEW FIELD ---
     custom_text = db.Column(db.JSON, nullable=False, default=lambda: {
         "title": "Certificate of Completion",
         "body": "has successfully completed the course"
     })
-    # --- END OF ADDITION ---
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     certificates = db.relationship('Certificate', backref='template', lazy=True)
 
 class Group(db.Model):
+    # ... (no changes in this model)
     __tablename__ = 'groups'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -62,12 +64,18 @@ class Certificate(db.Model):
     issuer_name = db.Column(db.String(150), nullable=True) 
     issue_date = db.Column(db.Date, nullable=False)
     signature = db.Column(db.String(150), nullable=True)
+    
+    # --- THIS IS THE NEW FIELD ---
+    extra_fields = db.Column(db.JSON, nullable=True)
+    # --- END OF NEW FIELD ---
+
     verification_id = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     status = db.Column(db.Enum('valid', 'revoked', name='certificate_statuses'), default='valid', nullable=False)
     sent_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Payment(db.Model):
+    # ... (no changes in this model)
     __tablename__ = 'payments'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

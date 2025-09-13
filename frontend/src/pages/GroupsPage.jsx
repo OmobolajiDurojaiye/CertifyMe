@@ -5,6 +5,7 @@ import {
   getGroupDetails,
   deleteGroup,
   sendGroupBulkEmail,
+  downloadGroupBulkPDF, // Import the new function
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -26,6 +27,7 @@ import {
   ChevronLeft,
   Mail,
   CheckCircle,
+  Download, // Import the download icon
 } from "lucide-react";
 
 function GroupsPage() {
@@ -38,6 +40,7 @@ function GroupsPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false); // New state for download
 
   const fetchGroups = async (page = 1) => {
     setLoading(true);
@@ -121,6 +124,31 @@ function GroupsPage() {
     });
   };
 
+  // --- NEW HANDLER FOR BULK DOWNLOAD ---
+  const handleBulkDownload = () => {
+    setIsBulkDownloading(true);
+    const promise = downloadGroupBulkPDF(viewingGroup.id);
+    toast.promise(promise, {
+      loading: "Generating zip file... This may take a moment.",
+      success: (response) => {
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        const filename = `${viewingGroup.name
+          .replace(/[^a-z0-9]/gi, "_")
+          .toLowerCase()}_certificates.zip`;
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        return "Download starting!";
+      },
+      error: (err) => err.response?.data?.msg || "Failed to download zip file.",
+    });
+    promise.finally(() => setIsBulkDownloading(false));
+  };
+
   if (loading) {
     return (
       <div className="text-center p-5">
@@ -129,7 +157,6 @@ function GroupsPage() {
     );
   }
 
-  // --- THIS IS THE NEW, REDESIGNED GROUP DETAILS VIEW ---
   if (viewingGroup) {
     return (
       <Container>
@@ -142,7 +169,7 @@ function GroupsPage() {
           <ChevronLeft size={16} className="me-1" />
           Back to All Groups
         </Button>
-        <div className="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded-3 shadow-sm">
+        <div className="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded-3 shadow-sm flex-wrap gap-3">
           <div>
             <h2 className="fw-bold mb-1">{viewingGroup.name}</h2>
             <p className="text-muted mb-0">
@@ -150,6 +177,19 @@ function GroupsPage() {
             </p>
           </div>
           <div className="d-flex gap-2">
+            <Button
+              variant="outline-secondary"
+              className="d-flex align-items-center"
+              onClick={handleBulkDownload}
+              disabled={isBulkDownloading}
+            >
+              {isBulkDownloading ? (
+                <Spinner size="sm" className="me-2" />
+              ) : (
+                <Download size={16} className="me-2" />
+              )}
+              Download All PDFs
+            </Button>
             <Button
               variant="primary"
               className="d-flex align-items-center"

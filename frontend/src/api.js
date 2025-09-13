@@ -1,8 +1,8 @@
 import axios from "axios";
-import { API_BASE_URL } from "./config"; // <-- Import the new config
+import { API_BASE_URL } from "./config";
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL, // <-- Use the config variable
+  baseURL: API_BASE_URL,
 });
 
 const authInterceptor = (config) => {
@@ -68,7 +68,13 @@ export const getCurrentUser = () => apiClient.get("/users/me");
 export const initializePayment = (plan) =>
   apiClient.post("/payments/initialize", { plan });
 
-// --- NEW GROUP API Calls ---
+// ---  SIGNATURE UPLOAD FUNCTION ---
+export const uploadUserSignature = (formData) =>
+  apiClient.post("/users/me/signature", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+// --- Group API Calls ---
 export const getGroups = (page = 1) => apiClient.get(`/groups/?page=${page}`);
 export const createGroup = (name) => apiClient.post("/groups/", { name });
 export const getGroupDetails = (groupId) => apiClient.get(`/groups/${groupId}`);
@@ -77,3 +83,9 @@ export const sendGroupBulkEmail = (groupId) =>
   apiClient.post(`/groups/${groupId}/send-bulk-email`);
 export const downloadBulkTemplate = () =>
   apiClient.get("/certificates/bulk-template", { responseType: "blob" });
+
+// --- NEW API FUNCTION ---
+export const downloadGroupBulkPDF = (groupId) =>
+  apiClient.get(`/groups/${groupId}/download-bulk-pdf`, {
+    responseType: "blob",
+  });

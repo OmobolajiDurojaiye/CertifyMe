@@ -8,7 +8,7 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import MyCertificatesPage from "./pages/MyCertificatesPage";
 import CreateCertificatePage from "./pages/CreateCertificatePage";
-import SettingsPage from "./pages/SettingsPage";
+import SettingsPage from "./pages/SettingsPage"; // <-- IMPORT NEW PAGE
 import TemplatesPage from "./pages/TemplatesPage";
 import ViewCertificatePage from "./pages/ViewCertificatePage";
 import VerifyCertificatePage from "./pages/VerifyCertificatePage";
@@ -21,8 +21,7 @@ const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 function App() {
   return (
     <Routes>
-      {/* --- THIS IS THE FIX --- */}
-      {/* Public routes no longer use a wrapper layout */}
+      {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
@@ -31,9 +30,8 @@ function App() {
         path="/verify/:verificationId"
         element={<VerifyCertificatePage />}
       />
-      {/* --- END OF FIX --- */}
 
-      {/* Protected Routes (This part is correct and remains the same) */}
+      {/* Protected Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<MyCertificatesPage />} />
@@ -43,6 +41,7 @@ function App() {
           <Route path="edit/:certId" element={<CreateCertificatePage />} />
           <Route path="view/:certId" element={<ViewCertificatePage />} />
           <Route path="bulk-create" element={<BulkCreateCertificatesPage />} />
+          {/* --- ADD NEW ROUTE FOR SETTINGS --- */}
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Route>

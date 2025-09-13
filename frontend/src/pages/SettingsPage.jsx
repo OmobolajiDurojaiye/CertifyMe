@@ -11,9 +11,11 @@ import {
   Alert,
 } from "react-bootstrap";
 import { usePaystackPayment } from "react-paystack";
-import { getCurrentUser, initializePayment } from "../api";
+import { getCurrentUser, initializePayment, uploadUserSignature } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
+import { SERVER_BASE_URL } from "../config"; // --- IMPORT SERVER URL ---
+import { UploadCloud } from "lucide-react";
 
 const PlanCard = ({
   title,
@@ -74,11 +76,18 @@ function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [signatureFile, setSignatureFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const res = await getCurrentUser();
         setUser(res.data);
+        if (res.data.signature_image_url) {
+          setPreview(SERVER_BASE_URL + res.data.signature_image_url);
+        }
       } catch (error) {
         toast.error("Your session may have expired. Please log in again.");
         navigate("/login");
@@ -152,6 +161,48 @@ function SettingsPage() {
       );
       setProcessingPlan(null);
     }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
+      setSignatureFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      toast.error("Please select a valid PNG or JPG image.");
+    }
+  };
+
+  const handleSubmitSignature = async (e) => {
+    e.preventDefault();
+    if (!signatureFile) {
+      toast.error("Please select a signature file to upload.");
+      return;
+    }
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("signature", signatureFile);
+
+    const promise = uploadUserSignature(formData);
+
+    toast.promise(promise, {
+      loading: "Uploading signature...",
+      success: (res) => {
+        setUser((prev) => ({
+          ...prev,
+          signature_image_url: res.data.signature_image_url,
+        }));
+        return res.data.msg;
+      },
+      error: (err) => err.response?.data?.msg || "Upload failed.",
+    });
+
+    promise.finally(() => setIsUploading(false));
   };
 
   const BillingContent = () => {
@@ -239,7 +290,8 @@ function SettingsPage() {
         </Nav>
         <Tab.Content>
           <Tab.Pane eventKey="profile">
-            <Card className="page-content-card">
+            {/* --- PROFILE INFO CARD --- */}
+            <Card className="page-content-card mb-4">
               <Card.Title as="h5" className="fw-bold mb-4">
                 Public Profile
               </Card.Title>
@@ -271,16 +323,66 @@ function SettingsPage() {
                       </Form.Group>
                     </Col>
                   </Row>
-                  <Button variant="primary" disabled>
-                    Update Profile
-                  </Button>
                 </Form>
               )}
             </Card>
+
+            {/* --- SIGNATURE MANAGEMENT CARD (NEW) --- */}
+            <Card className="page-content-card">
+              <Card.Title as="h5" className="fw-bold mb-4">
+                Signature Management
+              </Card.Title>
+              <Card.Text>
+                Upload a transparent PNG of your signature. This will be used on
+                all certificates you issue.
+              </Card.Text>
+              <Form onSubmit={handleSubmitSignature}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Upload Signature Image (PNG or JPG)</Form.Label>
+                  <Form.Control
+                    type="file"
+                    accept="image/png, image/jpeg"
+                    onChange={handleFileChange}
+                  />
+                </Form.Group>
+                {preview && (
+                  <div
+                    className="mb-3 p-3 border rounded text-center"
+                    style={{ backgroundColor: "#f8f9fa" }}
+                  >
+                    <p className="fw-bold text-muted">Signature Preview:</p>
+                    <img
+                      src={preview}
+                      alt="Signature Preview"
+                      style={{
+                        maxHeight: "80px",
+                        maxWidth: "100%",
+                        filter: "invert(0%)",
+                      }}
+                    />
+                  </div>
+                )}
+                <Button
+                  variant="primary"
+                  type="submit"
+                  disabled={isUploading || !signatureFile}
+                >
+                  {isUploading ? (
+                    <Spinner as="span" size="sm" />
+                  ) : (
+                    <UploadCloud size={16} className="me-2" />
+                  )}
+                  {isUploading ? " Uploading..." : " Save Signature"}
+                </Button>
+              </Form>
+            </Card>
+            {/* --- END OF SIGNATURE CARD --- */}
           </Tab.Pane>
+
           <Tab.Pane eventKey="billing">
             <BillingContent />
           </Tab.Pane>
+
           <Tab.Pane eventKey="security">
             <Card className="page-content-card">
               <Card.Title as="h5" className="fw-bold mb-4">

@@ -1,16 +1,14 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models import db, Group, Certificate, Template
 from ..extensions import mail
-from flask_mail import Message
 from datetime import datetime
-import qrcode
-import base64
 from io import BytesIO
-from weasyprint import HTML
-from flask import render_template_string
-from .certificates import get_image_as_base64, _create_email_message
-from ..pdf_templates import get_classic_pdf_template, get_modern_pdf_template
+import zipfile
+import re
+
+# Import the new reusable helper function
+from .certificates import _generate_certificate_pdf_in_memory, _create_email_message
 
 groups_bp = Blueprint('groups', __name__)
 
@@ -68,41 +66,9 @@ def send_bulk_email_for_group(group_id):
     with mail.connect() as conn:
         for certificate in certificates_to_send:
             try:
-                template = Template.query.get(certificate.template_id)
-                if not template:
-                    errors.append({"certificate_id": certificate.id, "msg": "Template not found"})
-                    continue
-                
-                qr = qrcode.QRCode(version=1, box_size=10, border=4)
-                verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
-                qr.add_data(verification_url)
-                qr_img = qr.make_image(fill_color="black", back_color="white")
-                qr_buffer = BytesIO(); qr_img.save(qr_buffer, format="PNG")
-                
-                # --- THIS IS THE FIX ---
-                context = {
-                    "recipient_name": certificate.recipient_name, "course_title": certificate.course_title,
-                    "issue_date": certificate.issue_date.strftime('%B %d, %Y'),
-                    "signature": certificate.signature or certificate.issuer_name,
-                    "issuer_name": certificate.issuer_name, "verification_id": certificate.verification_id,
-                    "logo_base64": get_image_as_base64(template.logo_url),
-                    "background_base64": get_image_as_base64(template.background_url),
-                    "primary_color": template.primary_color, "secondary_color": template.secondary_color,
-                    "body_font_color": template.body_font_color, "font_family": template.font_family,
-                    "qr_base64": base64.b64encode(qr_buffer.getvalue()).decode('utf-8'),
-                    "custom_text": template.custom_text or {}
-                }
-                # --- END OF FIX ---
-                
-                html_template = {'classic': get_classic_pdf_template(), 'modern': get_modern_pdf_template()}.get(template.layout_style)
-                html_content = render_template_string(html_template, **context)
-                
-                pdf_buffer = BytesIO()
-                HTML(string=html_content).write_pdf(pdf_buffer)
-
-                msg = _create_email_message(certificate, template, pdf_buffer)
+                pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
+                msg = _create_email_message(certificate, pdf_buffer)
                 conn.send(msg)
-                
                 certificate.sent_at = datetime.utcnow()
                 sent_certs.append(certificate.id)
             except Exception as e:
@@ -114,3 +80,39 @@ def send_bulk_email_for_group(group_id):
     if errors:
         return jsonify({"msg": f"Processed with errors. Sent: {len(sent_certs)}", "sent": sent_certs, "errors": errors}), 207
     return jsonify({"msg": f"Successfully sent {len(sent_certs)} emails"}), 200
+
+# --- NEW ENDPOINT FOR BULK PDF DOWNLOAD ---
+@groups_bp.route('/<int:group_id>/download-bulk-pdf', methods=['GET'])
+@jwt_required()
+def download_bulk_pdf_for_group(group_id):
+    user_id = int(get_jwt_identity())
+    group = Group.query.filter_by(id=group_id, user_id=user_id).first_or_404()
+
+    if not group.certificates:
+        return jsonify({"msg": "This group contains no certificates to download."}), 404
+
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for certificate in group.certificates:
+            try:
+                pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
+                # Sanitize recipient name for the filename
+                sane_name = re.sub(r'[\W_]+', '_', certificate.recipient_name)
+                filename = f"certificate_{sane_name}_{certificate.verification_id[:8]}.pdf"
+                zip_file.writestr(filename, pdf_buffer.getvalue())
+            except Exception as e:
+                current_app.logger.error(f"Skipping PDF for cert {certificate.id} due to error: {e}")
+                # Optionally, add an error file to the zip
+                zip_file.writestr(f"ERROR_cert_{certificate.id}.txt", f"Could not generate PDF for {certificate.recipient_name}. Error: {e}")
+
+    zip_buffer.seek(0)
+    
+    # Sanitize group name for the zip filename
+    sane_group_name = re.sub(r'[\W_]+', '_', group.name)
+    zip_filename = f"{sane_group_name}_certificates.zip"
+
+    return Response(
+        zip_buffer,
+        mimetype='application/zip',
+        headers={'Content-Disposition': f'attachment; filename={zip_filename}'}
+    )
