@@ -1,29 +1,22 @@
 import os
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
-# The dotenv imports are now removed from this file.
-
 from .extensions import db, migrate, mail, jwt
 from .routes import register_blueprints
 from .models import Template
 
 def create_app():
-    # The load_dotenv() call is now removed from here.
-    
     app = Flask(__name__)
 
-    # --- Config Section ---
+    # Config Section
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_default_secret_key_for_development')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'a_default_jwt_key_for_development')
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400  # 24 hours in seconds
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql+mysqlconnector://root@127.0.0.1/certifyme_db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['FRONTEND_URL'] = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
-
-    # Paystack Configuration
     app.config['PAYSTACK_SECRET_KEY'] = os.environ.get('PAYSTACK_SECRET_KEY')
     app.config['PAYSTACK_PUBLIC_KEY'] = os.environ.get('PAYSTACK_PUBLIC_KEY')
-    
-    # Mail Configuration
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
     app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
@@ -31,11 +24,11 @@ def create_app():
     app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
 
-    upload_path = os.path.abspath(os.path.join(app.root_path, '..', '..', 'uploads'))
+    upload_path = os.path.abspath(os.path.join(app.root_path, '..', '..', 'Uploads'))
     os.makedirs(upload_path, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = upload_path
 
-    # --- Initialization Section ---
+    # Initialization Section
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
@@ -45,9 +38,14 @@ def create_app():
 
     register_blueprints(app)
 
-    @app.route('/uploads/<path:filename>')
+    @app.route('/Uploads/<path:filename>')
     def serve_upload(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+    # Custom 404 handler
+    @app.errorhandler(404)
+    def not_found(error):
+        return jsonify({"msg": "Resources Not Found"}), 404
 
     with app.app_context():
         try:

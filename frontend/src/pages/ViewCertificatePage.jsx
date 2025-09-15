@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Component } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-// --- THIS IS THE FIX ---
 import {
   Container,
   Button,
@@ -8,11 +7,11 @@ import {
   Spinner,
   Modal,
   Card,
+  Row,
+  Col,
 } from "react-bootstrap";
-// --- END OF FIX ---
 import {
   getCertificate,
-  getTemplate,
   getCertificatePDF,
   updateCertificateStatus,
 } from "../api";
@@ -25,27 +24,55 @@ import {
   X,
   CheckCircle,
   AlertCircle,
-  RefreshCcw,
+  RefreshCw,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
+// Error Boundary Component
+class ErrorBoundary extends Component {
+  state = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <Alert variant="danger">
+          <Alert.Heading>Something went wrong</Alert.Heading>
+          <p>
+            {this.state.error?.message ||
+              "An error occurred while rendering the certificate."}
+          </p>
+        </Alert>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const CertificateDisplay = ({ certificate, template }) => {
-  if (!certificate || !template) return null;
+  if (!certificate || !template)
+    return (
+      <div className="text-center p-4 text-muted">Loading certificate...</div>
+    );
 
   const {
     layout_style,
-    primary_color,
-    secondary_color,
-    body_font_color,
-    font_family,
+    primary_color = "#2563EB",
+    secondary_color = "#64748B",
+    body_font_color = "#333333",
+    font_family = "Georgia",
     background_url,
     logo_url,
-    custom_text,
+    custom_text = {
+      title: "Certificate of Completion",
+      body: "has successfully completed the course",
+    },
   } = template;
 
-  const certificateTitle = custom_text?.title || "Certificate of Completion";
-  const certificateBody =
-    custom_text?.body || "has successfully completed the course";
+  console.log(`Rendering certificate with layout_style: ${layout_style}`);
 
   const {
     recipient_name,
@@ -54,7 +81,10 @@ const CertificateDisplay = ({ certificate, template }) => {
     signature,
     issuer_name,
     verification_id,
+    extra_fields = {},
+    status,
   } = certificate;
+
   const issueDateFormatted = new Date(issue_date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -62,107 +92,141 @@ const CertificateDisplay = ({ certificate, template }) => {
   });
 
   const textStyle = {
-    color: body_font_color || "#333",
+    color: body_font_color,
     fontFamily: font_family,
   };
-  const backgroundStyle = {
-    backgroundImage: background_url
-      ? `url(${SERVER_BASE_URL}${background_url})`
-      : "none",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
+
+  const backgroundStyle = background_url
+    ? {
+        backgroundImage: `url(${SERVER_BASE_URL}${background_url})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }
+    : {};
 
   const renderClassic = () => (
     <div
-      className="w-100 h-100 bg-white p-2"
-      style={{ fontFamily: font_family, ...backgroundStyle }}
+      className="h-100 w-100 bg-white relative flex flex-column shadow-2xl rounded-xl overflow-hidden"
+      style={{
+        border: `8px double ${primary_color}`,
+        ...backgroundStyle,
+        fontFamily: font_family,
+      }}
     >
       <div
-        className="d-flex flex-column justify-content-between w-100 h-100 p-4 text-center"
-        style={{ border: `4px solid ${primary_color}` }}
-      >
-        <header>
-          {logo_url && (
-            <img
-              src={`${SERVER_BASE_URL}${logo_url}`}
-              alt="Logo"
-              style={{
-                maxHeight: "100px",
-                maxWidth: "120px",
-                marginBottom: "1rem",
-              }}
-            />
-          )}
-          <h1
-            className="text-uppercase fw-bold"
+        style={{
+          height: "12px",
+          borderBottom: `4px solid ${primary_color}`,
+          background: `linear-gradient(to right, ${primary_color}, ${secondary_color})`,
+        }}
+      />
+      <div className="flex-grow flex flex-column justify-content-center align-items-center text-center p-4">
+        {logo_url && (
+          <img
+            src={`${SERVER_BASE_URL}${logo_url}`}
+            alt="Logo"
+            className="mb-3"
+            style={{ width: "140px", height: "140px", objectFit: "contain" }}
+          />
+        )}
+        <h1
+          className="font-bold uppercase tracking-wider"
+          style={{ fontSize: "2.5rem", color: primary_color }}
+        >
+          {custom_text.title}
+        </h1>
+        <p
+          className="italic my-1"
+          style={{ fontSize: "1.1rem", color: "#4B5EAA" }}
+        >
+          This is to certify that
+        </p>
+        <h2
+          className="font-extrabold my-2"
+          style={{
+            fontSize: "3rem",
+            fontFamily: "'Georgia', serif",
+            ...textStyle,
+          }}
+        >
+          {recipient_name}
+        </h2>
+        <p
+          className="italic my-2"
+          style={{ fontSize: "1.2rem", color: "#4B5EAA" }}
+        >
+          {custom_text.body}
+        </p>
+        <p
+          className="font-bold uppercase my-3"
+          style={{ fontSize: "1.8rem", color: secondary_color }}
+        >
+          {course_title}
+        </p>
+        <p
+          className="my-2"
+          style={{ fontSize: "1.2rem", color: body_font_color }}
+        >
+          Awarded on {issueDateFormatted}
+        </p>
+        {Object.keys(extra_fields).length > 0 && (
+          <div
+            className="mx-auto my-3 text-start"
             style={{
-              fontSize: "2.5rem",
-              color: primary_color,
-              letterSpacing: "0.1em",
+              width: "80%",
+              borderLeft: `3px solid ${primary_color}`,
+              paddingLeft: "1rem",
+              fontSize: "1rem",
+              color: "#4B5563",
             }}
           >
-            {certificateTitle}
-          </h1>
-        </header>
-        <main>
-          <p className="mb-2" style={{ fontSize: "1.2rem" }}>
-            This is to certify that
-          </p>
-          <h2
-            className="fw-bold my-3"
-            style={{ fontSize: "3rem", ...textStyle }}
-          >
-            {recipient_name}
-          </h2>
-          <p className="mb-2" style={{ fontSize: "1.2rem" }}>
-            {certificateBody}
-          </p>
-          <p
-            className="text-uppercase fw-bold mt-3"
-            style={{ fontSize: "1.8rem", color: secondary_color }}
-          >
-            {course_title}
-          </p>
-        </main>
-        <div className="d-flex justify-content-around align-items-end w-100 mt-4">
-          <div style={{ width: "40%" }}>
-            <p className="fw-bold mb-0" style={{ fontSize: "1.1rem" }}>
-              {issueDateFormatted}
-            </p>
-            <hr
-              className="my-1"
-              style={{ borderColor: primary_color, opacity: 1 }}
-            />
-            <span className="small text-muted">Date</span>
+            {Object.entries(extra_fields).map(([key, value]) => (
+              <div key={key} className="mb-2">
+                <span className="font-bold uppercase">
+                  {key.replace(/_/g, " ")}:
+                </span>
+                <span> {value}</span>
+              </div>
+            ))}
           </div>
-          <div style={{ width: "40%" }}>
-            <p className="fw-bold mb-0" style={{ fontSize: "1.1rem" }}>
+        )}
+        <div className="flex justify-content-around w-full mt-auto pt-4">
+          <div className="text-center" style={{ width: "45%" }}>
+            <p
+              className="font-semibold"
+              style={{ ...textStyle, fontSize: "1rem" }}
+            >
               {signature || issuer_name}
             </p>
             <hr
-              className="my-1"
-              style={{ borderColor: primary_color, opacity: 1 }}
+              className="w-3/5 mx-auto my-1"
+              style={{ borderColor: body_font_color }}
             />
-            <span className="small text-muted">Signature</span>
+            <span className="text-gray-500 text-sm">Authorized Signature</span>
+          </div>
+          <div className="text-center" style={{ width: "45%" }}>
+            <p
+              className="font-semibold"
+              style={{ ...textStyle, fontSize: "1rem" }}
+            >
+              {issuer_name}
+            </p>
+            <hr
+              className="w-3/5 mx-auto my-1"
+              style={{ borderColor: body_font_color }}
+            />
+            <span className="text-gray-500 text-sm">Issuer</span>
           </div>
         </div>
-        <div
-          className="position-absolute"
-          style={{ bottom: "1rem", right: "1rem" }}
-        >
+        <div className="absolute bottom-4 end-4 bg-white p-1 rounded-md shadow-md">
           <QRCode
-            value={`${window.location.origin}/verify/${verification_id}`}
+            value={`https://certifyme.com.ng/verify/${verification_id}`}
             size={80}
-            viewBox="0 0 80 80"
+            style={{ height: "auto", maxWidth: "80px" }}
           />
-        </div>
-        <div
-          className="position-absolute text-start small text-muted"
-          style={{ bottom: "1rem", left: "1rem" }}
-        >
-          <p className="mb-0">Issued by: {issuer_name}</p>
-          <p className="mb-0">ID: {verification_id}</p>
+          <p className="text-gray-500 text-center text-sm mt-1">
+            {verification_id}
+          </p>
         </div>
       </div>
     </div>
@@ -170,123 +234,182 @@ const CertificateDisplay = ({ certificate, template }) => {
 
   const renderModern = () => (
     <div
-      className="d-flex h-100 w-100"
+      className="flex h-100 w-100 shadow-lg rounded-xl overflow-hidden text-white"
       style={{
+        border: `6px solid ${primary_color}`,
+        ...backgroundStyle,
         fontFamily: font_family,
-        background: background_url ? "" : "#f8f9fa",
       }}
     >
       <div
-        className="d-flex flex-column justify-content-between align-items-center p-4 text-white"
-        style={{ width: "35%", backgroundColor: primary_color }}
+        className="flex flex-column justify-content-between align-items-center p-4"
+        style={{
+          width: "35%",
+          background: `linear-gradient(135deg, ${primary_color}, ${secondary_color})`,
+        }}
       >
         <div className="text-center">
           {logo_url && (
             <img
               src={`${SERVER_BASE_URL}${logo_url}`}
-              className="rounded-circle bg-white p-2 mb-3"
-              style={{ width: "100px", height: "100px", objectFit: "contain" }}
+              className="rounded-circle border-4 border-white shadow mb-2"
+              style={{ width: "6rem", height: "6rem", objectFit: "cover" }}
               alt="Logo"
             />
           )}
           <p
-            className="fw-bold text-uppercase"
+            className="font-bold uppercase small"
             style={{ letterSpacing: "0.1em" }}
           >
             {issuer_name}
           </p>
         </div>
-        <div className="bg-white p-1 rounded">
+        <div className="bg-white p-1 rounded shadow">
           <QRCode
-            value={`${window.location.origin}/verify/${verification_id}`}
-            size={90}
-            viewBox="0 0 90 90"
+            value={`https://certifyme.com.ng/verify/${verification_id}`}
+            size={72}
+            viewBox="0 0 72 72"
           />
+          <p className="text-center text-dark small font-bold mt-1">
+            {verification_id}
+          </p>
         </div>
       </div>
-      <div
-        className="d-flex flex-column justify-content-center p-5"
-        style={{ width: "65%", ...backgroundStyle }}
-      >
+      <div className="flex-grow p-4 flex flex-column justify-content-center relative bg-white bg-opacity-90">
         <h1
-          className="text-uppercase"
-          style={{ fontSize: "1.2rem", letterSpacing: "0.2em", color: "#888" }}
+          className="font-light uppercase mb-3"
+          style={{
+            fontSize: "1.5rem",
+            letterSpacing: "0.15em",
+            color: primary_color,
+          }}
         >
-          {certificateTitle}
+          {custom_text.title}
         </h1>
         <h2
-          className="fw-bold my-3"
-          style={{ fontSize: "3.5rem", ...textStyle }}
+          className="font-bolder mb-2"
+          style={{
+            fontSize: "2.8rem",
+            fontFamily: "'Georgia', serif",
+            ...textStyle,
+          }}
         >
           {recipient_name}
         </h2>
-        <p style={{ fontSize: "1.2rem", color: "#555" }}>{certificateBody}</p>
         <p
-          className="fw-bold mt-2 mb-4"
-          style={{ fontSize: "2rem", color: secondary_color }}
+          className="italic mb-2"
+          style={{ fontSize: "1.1rem", color: "#666" }}
+        >
+          {custom_text.body}
+        </p>
+        <p
+          className="font-bold uppercase mb-4"
+          style={{
+            fontSize: "1.4rem",
+            letterSpacing: "0.05em",
+            color: secondary_color,
+          }}
         >
           {course_title}
         </p>
+        <p style={{ ...textStyle, fontSize: "1rem" }}>
+          Awarded on {issueDateFormatted}
+        </p>
+        {Object.keys(extra_fields).length > 0 && (
+          <div
+            className="my-3 text-start"
+            style={{
+              borderLeft: `3px solid ${primary_color}`,
+              paddingLeft: "1rem",
+              fontSize: "1rem",
+              color: "#4B5563",
+            }}
+          >
+            {Object.entries(extra_fields).map(([key, value]) => (
+              <div key={key} className="mb-2">
+                <span className="font-bold uppercase">
+                  {key.replace(/_/g, " ")}:
+                </span>
+                <span> {value}</span>
+              </div>
+            ))}
+          </div>
+        )}
         <div
-          className="mt-auto pt-3 border-top d-flex justify-content-between small text-muted"
-          style={{ borderColor: primary_color }}
+          className="d-flex justify-content-between mt-auto pt-3 border-top"
+          style={{ borderColor: primary_color, fontSize: "0.9rem" }}
         >
           <div>
-            <p className="mb-1">
-              <strong>Date:</strong> {issueDateFormatted}
+            <p
+              className="font-semibold"
+              style={{ ...textStyle, fontSize: "1.2rem" }}
+            >
+              {signature || issuer_name}
             </p>
-            <p className="mb-0">
-              <strong>Signature:</strong> {signature || issuer_name}
-            </p>
+            <p className="text-gray-500">Authorized Signature</p>
           </div>
           <div>
-            <p className="mb-1">
-              <strong>Verification ID:</strong>
+            <p
+              className="font-semibold"
+              style={{ ...textStyle, fontSize: "1.2rem" }}
+            >
+              {issuer_name}
             </p>
-            <p className="mb-0">{verification_id}</p>
+            <p className="text-gray-500">Issuer</p>
           </div>
         </div>
       </div>
     </div>
   );
 
-  return layout_style === "modern" ? renderModern() : renderClassic();
+  return (
+    <div
+      className="w-100 h-100 position-relative"
+      style={{ aspectRatio: "1.414 / 1" }}
+    >
+      {layout_style === "classic" ? renderClassic() : renderModern()}
+    </div>
+  );
 };
 
 function ViewCertificatePage() {
   const { certId } = useParams();
+  const navigate = useNavigate();
   const [certificate, setCertificate] = useState(null);
   const [template, setTemplate] = useState(null);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
-  const navigate = useNavigate();
+  const statusVariant = certificate?.status === "valid" ? "success" : "danger";
+  const statusIcon =
+    certificate?.status === "valid" ? (
+      <CheckCircle size={16} className="me-1" />
+    ) : (
+      <AlertCircle size={16} className="me-1" />
+    );
 
   useEffect(() => {
-    const fetchCertificateData = async () => {
-      setLoading(true);
+    const fetchCertificate = async () => {
       try {
-        const certResponse = await getCertificate(certId);
-        setCertificate(certResponse.data);
-        if (certResponse.data.template_id) {
-          const templateResponse = await getTemplate(
-            certResponse.data.template_id
-          );
-          setTemplate(templateResponse.data);
-        }
+        const response = await getCertificate(certId);
+        setCertificate(response.data.certificate);
+        setTemplate(response.data.template);
       } catch (err) {
-        setError("Failed to load certificate details.");
+        setError(
+          err.response?.data?.msg ||
+            "Could not fetch certificate details. Please try again."
+        );
       } finally {
         setLoading(false);
       }
     };
-    fetchCertificateData();
+    fetchCertificate();
   }, [certId]);
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadPDF = () => {
     setDownloading(true);
-    const promise = getCertificatePDF(certificate.id);
+    const promise = getCertificatePDF(certId);
     toast.promise(promise, {
       loading: "Generating PDF...",
       success: (response) => {
@@ -301,20 +424,20 @@ function ViewCertificatePage() {
         link.click();
         link.parentNode.removeChild(link);
         window.URL.revokeObjectURL(url);
-        return "Download starting!";
+        return "Download started!";
       },
-      error: "Failed to download PDF.",
+      error: (err) => err.response?.data?.msg || "Failed to download PDF.",
     });
     promise.finally(() => setDownloading(false));
   };
 
-  const handleStatusChange = async (newStatus) => {
-    const promise = updateCertificateStatus(certificate.id, newStatus);
+  const handleStatusChange = (status) => {
+    const promise = updateCertificateStatus(certId, status);
     toast.promise(promise, {
-      loading: "Updating status...",
-      success: (res) => {
-        setCertificate((prev) => ({ ...prev, status: newStatus }));
-        return res.data.msg;
+      loading: `Updating status to ${status}...`,
+      success: () => {
+        setCertificate((prev) => ({ ...prev, status }));
+        return `Certificate ${status} successfully!`;
       },
       error: (err) => err.response?.data?.msg || "Failed to update status.",
     });
@@ -322,12 +445,9 @@ function ViewCertificatePage() {
 
   if (loading) {
     return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "80vh" }}
-      >
+      <Container className="py-5 text-center">
         <Spinner animation="border" />
-      </div>
+      </Container>
     );
   }
 
@@ -339,116 +459,172 @@ function ViewCertificatePage() {
     );
   }
 
-  if (!certificate || !template) {
-    return (
-      <Container className="py-5">
-        <Alert variant="warning">
-          Certificate or Template data is missing.
-        </Alert>
-      </Container>
-    );
-  }
-
-  const statusVariant = certificate.status === "valid" ? "success" : "danger";
-  const statusIcon =
-    certificate.status === "valid" ? (
-      <CheckCircle className="me-2" />
-    ) : (
-      <AlertCircle className="me-2" />
-    );
+  const issueDateFormatted = new Date(
+    certificate.issue_date
+  ).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
-    <Container className="py-5" style={{ maxWidth: "1200px" }}>
-      <Toaster position="top-center" />
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
-          <h1 className="fw-bold text-dark fs-3">Certificate Details</h1>
-          <p className="text-muted">Review and manage this certificate.</p>
-        </div>
-        <div className="d-flex gap-2">
-          <Button
-            variant="outline-primary"
-            className="d-flex align-items-center gap-1"
-            onClick={() => navigate(`/dashboard/edit/${certificate.id}`)}
-          >
-            <Edit3 size={16} /> Edit
-          </Button>
-          <Button
-            variant="success"
-            className="d-flex align-items-center gap-1"
-            onClick={handleDownloadPDF}
-            disabled={downloading}
-          >
-            {downloading ? <Spinner size="sm" /> : <Download size={16} />}{" "}
-            Download PDF
-          </Button>
-          <Button
-            variant="outline-secondary"
-            className="d-flex align-items-center gap-1"
-            onClick={() => setShowFullscreen(true)}
-          >
-            <Maximize2 size={16} /> Preview
-          </Button>
-        </div>
-      </div>
+    <ErrorBoundary>
+      <Toaster position="top-right" />
+      <Container className="py-5">
+        <Row>
+          <Col>
+            <div className="d-flex justify-content-between align-items-center mb-5">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Certificate Details
+              </h1>
+              <div className="d-flex gap-3">
+                <Button
+                  variant="primary"
+                  className="d-flex align-items-center gap-1"
+                  onClick={() => navigate(`/dashboard/edit/${certId}`)}
+                >
+                  <Edit3 size={16} /> Edit
+                </Button>
+                <Button
+                  variant="success"
+                  className="d-flex align-items-center gap-1"
+                  onClick={handleDownloadPDF}
+                  disabled={downloading}
+                >
+                  {downloading ? <Spinner size="sm" /> : <Download size={16} />}{" "}
+                  Download PDF
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  className="d-flex align-items-center gap-1"
+                  onClick={() => setShowFullscreen(true)}
+                >
+                  <Maximize2 size={16} /> Preview
+                </Button>
+              </div>
+            </div>
 
-      <Card className="shadow-sm mb-4">
-        <Card.Body className="d-flex justify-content-between align-items-center p-3">
-          <div>
-            <span
-              className={`badge bg-${statusVariant} fs-6 fw-semibold px-3 py-2`}
+            <Card className="shadow-sm mb-4">
+              <Card.Body className="d-flex justify-content-between align-items-center p-3">
+                <div>
+                  <span
+                    className={`badge bg-${statusVariant} fs-6 fw-semibold px-3 py-2`}
+                  >
+                    {statusIcon} Status: {certificate.status.toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  {certificate.status === "valid" ? (
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => handleStatusChange("revoked")}
+                    >
+                      <RefreshCw size={14} className="me-1" /> Revoke
+                      Certificate
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline-success"
+                      size="sm"
+                      onClick={() => handleStatusChange("valid")}
+                    >
+                      <RefreshCw size={14} className="me-1" /> Re-validate
+                      Certificate
+                    </Button>
+                  )}
+                </div>
+              </Card.Body>
+            </Card>
+
+            <div
+              className="shadow-lg rounded-3 overflow-hidden mb-4"
+              style={{ aspectRatio: "1.414 / 1" }}
             >
-              {statusIcon} Status: {certificate.status.toUpperCase()}
-            </span>
-          </div>
-          <div>
-            {certificate.status === "valid" ? (
-              <Button
-                variant="outline-danger"
-                size="sm"
-                onClick={() => handleStatusChange("revoked")}
-              >
-                <RefreshCcw size={14} className="me-1" /> Revoke Certificate
-              </Button>
-            ) : (
-              <Button
-                variant="outline-success"
-                size="sm"
-                onClick={() => handleStatusChange("valid")}
-              >
-                <RefreshCcw size={14} className="me-1" /> Re-validate
-                Certificate
-              </Button>
-            )}
-          </div>
-        </Card.Body>
-      </Card>
+              <CertificateDisplay
+                certificate={certificate}
+                template={template}
+              />
+            </div>
 
-      <div
-        className="shadow-lg rounded-3 overflow-hidden"
-        style={{ aspectRatio: "1.414 / 1" }}
-      >
-        <CertificateDisplay certificate={certificate} template={template} />
-      </div>
+            <Modal
+              show={showFullscreen}
+              onHide={() => setShowFullscreen(false)}
+              size="xl"
+              centered
+              dialogClassName="modal-fullscreen"
+            >
+              <Modal.Body className="p-0" style={{ aspectRatio: "1.414 / 1" }}>
+                <CertificateDisplay
+                  certificate={certificate}
+                  template={template}
+                />
+              </Modal.Body>
+              <Button
+                variant="light"
+                onClick={() => setShowFullscreen(false)}
+                className="position-absolute top-0 end-0 m-3 z-3 rounded-circle p-2"
+              >
+                <X size={24} />
+              </Button>
+            </Modal>
 
-      <Modal
-        show={showFullscreen}
-        onHide={() => setShowFullscreen(false)}
-        size="xl"
-        centered
-      >
-        <Modal.Body className="p-0" style={{ aspectRatio: "1.414 / 1" }}>
-          <CertificateDisplay certificate={certificate} template={template} />
-        </Modal.Body>
-        <Button
-          variant="light"
-          onClick={() => setShowFullscreen(false)}
-          className="position-absolute top-0 end-0 m-3 z-3"
-        >
-          <X />
-        </Button>
-      </Modal>
-    </Container>
+            <Card className="shadow-sm">
+              <Card.Body>
+                <Row>
+                  <Col md={6}>
+                    <h5 className="fw-bold mb-3">Certificate Information</h5>
+                    <dl className="row mb-0">
+                      <dt className="col-sm-4">Recipient:</dt>
+                      <dd className="col-sm-8">{certificate.recipient_name}</dd>
+                      <dt className="col-sm-4">Email:</dt>
+                      <dd className="col-sm-8">
+                        {certificate.recipient_email}
+                      </dd>
+                      <dt className="col-sm-4">Course:</dt>
+                      <dd className="col-sm-8">{certificate.course_title}</dd>
+                      <dt className="col-sm-4">Issue Date:</dt>
+                      <dd className="col-sm-8">{issueDateFormatted}</dd>
+                      <dt className="col-sm-4">Issuer:</dt>
+                      <dd className="col-sm-8">{certificate.issuer_name}</dd>
+                      <dt className="col-sm-4">Status:</dt>
+                      <dd className="col-sm-8">
+                        <span className={`badge bg-${statusVariant}`}>
+                          {certificate.status.toUpperCase()}
+                        </span>
+                      </dd>
+                    </dl>
+                  </Col>
+                  <Col md={6}>
+                    <h5 className="fw-bold mb-3">Verification</h5>
+                    <div className="text-center">
+                      <QRCode
+                        value={`https://certifyme.com.ng/verify/${certificate.verification_id}`}
+                        size={128}
+                        className="mb-2"
+                      />
+                      <p className="mb-2">
+                        <a
+                          href={`https://certifyme.com.ng/verify/${certificate.verification_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-outline-primary btn-sm"
+                        >
+                          Verify Online
+                        </a>
+                      </p>
+                      <small className="text-muted">
+                        Verification ID: {certificate.verification_id}
+                      </small>
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
+    </ErrorBoundary>
   );
 }
 

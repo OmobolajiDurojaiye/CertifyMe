@@ -84,7 +84,12 @@ function MyCertificatesPage() {
         getTemplates(),
         getCurrentUser(),
       ]);
-      setCertificates(certResponse.data);
+      // Sort certificates by issue_date in descending order (newest to oldest)
+      const sortedCertificates = certResponse.data.sort(
+        (a, b) =>
+          new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime()
+      );
+      setCertificates(sortedCertificates);
       setTemplates(templateResponse.data.templates);
       setUser(userResponse.data);
     } catch (err) {

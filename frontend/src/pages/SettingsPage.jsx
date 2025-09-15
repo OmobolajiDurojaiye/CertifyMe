@@ -1,3 +1,4 @@
+// SettingsPage.jsx
 import React, { useState, useEffect } from "react";
 import {
   Tab,
@@ -65,6 +66,90 @@ const PlanCard = ({
           </Button>
         )}
       </div>
+    </Card.Body>
+  </Card>
+);
+
+const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
+  <Card className="page-content-card mb-4">
+    <Card.Body>
+      <Card.Title as="h5" className="fw-bold mb-4">
+        Choose Your Plan
+      </Card.Title>
+      <Alert variant="info" className="mb-4">
+        Current Plan: {user?.role?.toUpperCase() || "FREE"} -{" "}
+        {user?.cert_quota || 10} certificates remaining
+      </Alert>
+      <Row>
+        <Col md={3}>
+          <PlanCard
+            title="Starter"
+            price="$15 for 500 certs"
+            features={[
+              "500 Certificate Credits",
+              "Unlimited Templates",
+              "Email Delivery",
+              "PDF Downloads",
+            ]}
+            actionText="Upgrade to Starter"
+            onAction={() => handleUpgrade("starter")}
+            current={user?.role === "starter"}
+            loading={processingPlan === "starter"}
+          />
+        </Col>
+        <Col md={3}>
+          <PlanCard
+            title="Growth"
+            price="$50 for 2,000 certs"
+            features={[
+              "2,000 Certificate Credits",
+              "Unlimited Templates",
+              "Email Delivery",
+              "PDF Downloads",
+              "Priority Support",
+            ]}
+            actionText="Upgrade to Growth"
+            onAction={() => handleUpgrade("growth")}
+            current={user?.role === "growth"}
+            loading={processingPlan === "growth"}
+          />
+        </Col>
+        <Col md={3}>
+          <PlanCard
+            title="Pro"
+            price="$100 for 5,000 certs"
+            features={[
+              "5,000 Certificate Credits",
+              "Unlimited Templates",
+              "Email Delivery",
+              "PDF Downloads",
+              "API Access",
+            ]}
+            actionText="Upgrade to Pro"
+            onAction={() => handleUpgrade("pro")}
+            current={user?.role === "pro"}
+            loading={processingPlan === "pro"}
+          />
+        </Col>
+        <Col md={3}>
+          <PlanCard
+            title="Enterprise"
+            price="$300 for 20,000 certs"
+            features={[
+              "20,000 Certificate Credits",
+              "Unlimited Templates",
+              "Email Delivery",
+              "PDF Downloads",
+              "Custom Support",
+              "API Access",
+            ]}
+            actionText="Upgrade to Enterprise"
+            onAction={() => handleUpgrade("enterprise")}
+            current={user?.role === "enterprise"}
+            loading={processingPlan === "enterprise"}
+          />
+        </Col>
+      </Row>
     </Card.Body>
   </Card>
 );
@@ -173,104 +258,34 @@ function SettingsPage() {
       };
       reader.readAsDataURL(file);
     } else {
-      toast.error("Please select a valid PNG or JPG image.");
+      toast.error("Please select a valid PNG or JPEG image.");
     }
   };
 
   const handleSubmitSignature = async (e) => {
     e.preventDefault();
-    if (!signatureFile) {
-      toast.error("Please select a signature file to upload.");
-      return;
-    }
+    if (!signatureFile) return;
 
     setIsUploading(true);
     const formData = new FormData();
     formData.append("signature", signatureFile);
 
-    const promise = uploadUserSignature(formData);
-
-    toast.promise(promise, {
-      loading: "Uploading signature...",
-      success: (res) => {
-        setUser((prev) => ({
-          ...prev,
-          signature_image_url: res.data.signature_image_url,
-        }));
-        return res.data.msg;
-      },
-      error: (err) => err.response?.data?.msg || "Upload failed.",
-    });
-
-    promise.finally(() => setIsUploading(false));
+    try {
+      const res = await uploadUserSignature(formData);
+      toast.success(res.data.msg);
+      setUser({ ...user, signature_image_url: res.data.signature_image_url });
+      setPreview(SERVER_BASE_URL + res.data.signature_image_url);
+      setSignatureFile(null);
+    } catch (error) {
+      toast.error("Failed to upload signature.");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
-  const BillingContent = () => {
-    if (loadingUser) return <Spinner animation="border" />;
-    if (!user)
-      return <Alert variant="danger">Could not load user information.</Alert>;
-    return (
-      <Card className="page-content-card">
-        <Card.Title as="h5" className="fw-bold mb-4">
-          Billing Information
-        </Card.Title>
-        <p>
-          You are currently on the{" "}
-          <strong className="text-capitalize">{user.role} Plan</strong>.
-        </p>
-        {user.role === "free" && (
-          <p>
-            Your remaining certificate quota is:{" "}
-            <strong>{user.cert_quota}</strong>
-          </p>
-        )}
-        {user.role === "starter" && user.subscription_expiry && (
-          <p>
-            Your plan expires on:{" "}
-            <strong>
-              {new Date(user.subscription_expiry).toLocaleDateString()}
-            </strong>
-          </p>
-        )}
-        <hr className="my-4" />
-        <h5 className="fw-bold mb-3">Upgrade Your Plan</h5>
-        <Row>
-          <Col md={6} className="mb-3">
-            <PlanCard
-              title="Monthly Plan"
-              price="$15 / month"
-              features={[
-                "Unlimited certificates",
-                "Custom branding",
-                "Email delivery",
-                "Priority support",
-              ]}
-              actionText="Upgrade to Monthly"
-              onAction={() => handleUpgrade("starter")}
-              current={user.role === "starter"}
-              disabled={user.role === "pro"}
-              loading={processingPlan === "starter"}
-            />
-          </Col>
-          <Col md={6} className="mb-3">
-            <PlanCard
-              title="Lifetime Plan"
-              price="$99 one-time"
-              features={[
-                "Everything in Monthly",
-                "Lifetime access",
-                "No recurring fees",
-              ]}
-              actionText="Go Lifetime"
-              onAction={() => handleUpgrade("pro")}
-              current={user.role === "pro"}
-              loading={processingPlan === "pro"}
-            />
-          </Col>
-        </Row>
-      </Card>
-    );
-  };
+  if (loadingUser) {
+    return <Spinner animation="border" className="d-block mx-auto mt-5" />;
+  }
 
   return (
     <div>
@@ -295,36 +310,32 @@ function SettingsPage() {
               <Card.Title as="h5" className="fw-bold mb-4">
                 Public Profile
               </Card.Title>
-              {loadingUser ? (
-                <Spinner />
-              ) : (
-                <Form>
-                  <Row>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Full Name</Form.Label>
-                        <Form.Control
-                          type="text"
-                          defaultValue={user?.name}
-                          disabled
-                          className="custom-form-control"
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label>Email Address</Form.Label>
-                        <Form.Control
-                          type="email"
-                          defaultValue={user?.email}
-                          disabled
-                          className="custom-form-control"
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                </Form>
-              )}
+              <Form>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Full Name</Form.Label>
+                      <Form.Control
+                        type="text"
+                        defaultValue={user?.name}
+                        disabled
+                        className="custom-form-control"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Email Address</Form.Label>
+                      <Form.Control
+                        type="email"
+                        defaultValue={user?.email}
+                        disabled
+                        className="custom-form-control"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+              </Form>
             </Card>
 
             {/* --- SIGNATURE MANAGEMENT CARD (NEW) --- */}
@@ -380,7 +391,11 @@ function SettingsPage() {
           </Tab.Pane>
 
           <Tab.Pane eventKey="billing">
-            <BillingContent />
+            <BillingContent
+              user={user}
+              processingPlan={processingPlan}
+              handleUpgrade={handleUpgrade}
+            />
           </Tab.Pane>
 
           <Tab.Pane eventKey="security">

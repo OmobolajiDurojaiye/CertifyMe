@@ -1,4 +1,3 @@
-// CreateCertificatePage.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -60,7 +59,6 @@ const CertificatePreview = ({ template, formData }) => {
     custom_text,
   } = template;
 
-  // Use the custom text from the template, with safe fallbacks
   const certificateTitle = custom_text?.title || "Certificate of Completion";
   const certificateBody =
     custom_text?.body || "has successfully completed the course";
@@ -91,175 +89,106 @@ const CertificatePreview = ({ template, formData }) => {
 
   const renderClassic = () => (
     <div
-      className="d-flex align-items-center justify-content-center h-100 w-100 position-relative"
+      className="h-100 w-100 bg-white relative flex flex-column shadow-2xl rounded-xl overflow-hidden"
       style={{
+        border: `8px double ${primary_color}`,
         ...backgroundStyle,
         fontFamily: font_family,
       }}
     >
       <div
-        className="d-flex flex-column justify-content-between align-items-center p-5 text-center position-relative"
         style={{
-          width: "95%",
-          height: "90%",
-          border: `1.5px solid ${primary_color}`,
-          padding: "5px",
+          height: "12px",
+          borderBottom: `4px solid ${primary_color}`,
+          background: `linear-gradient(to right, ${primary_color}, ${secondary_color})`,
         }}
-      >
-        <div
-          className="w-100 h-100 d-flex flex-column position-relative"
+      />
+      <div className="flex-grow flex flex-column justify-content-center align-items-center text-center p-4">
+        {logo_url && (
+          <img
+            src={`${SERVER_BASE_URL}${logo_url}`}
+            alt="Logo"
+            className="mb-3"
+            style={{ width: "140px", height: "140px", objectFit: "contain" }}
+          />
+        )}
+        <h1
+          className="font-bold uppercase tracking-wider"
+          style={{ fontSize: "2.5rem", color: primary_color }}
+        >
+          {certificateTitle}
+        </h1>
+        <p
+          className="italic my-1"
+          style={{ fontSize: "1.1rem", color: "#4B5EAA" }}
+        >
+          This is to certify that
+        </p>
+        <h2
+          className="font-extrabold my-2"
           style={{
-            border: `4px solid ${primary_color}`,
-            padding: "2rem",
+            fontSize: "3rem",
+            fontFamily: "'Georgia', serif",
+            ...textStyle,
           }}
         >
-          {/* Header */}
-          <div className="flex-shrink-0 mb-4">
-            {logo_url && (
-              <img
-                src={`${SERVER_BASE_URL}${logo_url}`}
-                alt="Logo"
-                className="mb-3"
-                style={{
-                  maxHeight: "80px",
-                  maxWidth: "150px",
-                }}
-              />
-            )}
-            <h1
-              className="text-uppercase fw-bold mb-0"
-              style={{
-                fontSize: "2.5rem",
-                fontWeight: "700",
-                color: primary_color,
-                letterSpacing: "0.2em",
-              }}
-            >
-              {certificateTitle}
-            </h1>
-          </div>
-
-          {/* Main Content */}
-          <div className="flex-grow-1 d-flex flex-column justify-content-center">
+          {recipient_name}
+        </h2>
+        <p
+          className="italic my-2"
+          style={{ fontSize: "1.2rem", color: "#4B5EAA" }}
+        >
+          {certificateBody}
+        </p>
+        <p
+          className="font-bold uppercase my-3"
+          style={{ fontSize: "1.8rem", color: secondary_color }}
+        >
+          {course_title}
+        </p>
+        <p
+          className="my-2"
+          style={{ fontSize: "1.2rem", color: body_font_color }}
+        >
+          Awarded on {issueDateFormatted}
+        </p>
+        <div className="flex justify-content-around w-full mt-auto pt-4">
+          <div className="text-center" style={{ width: "45%" }}>
             <p
-              className="mb-3"
-              style={{
-                fontSize: "1.1rem",
-                color: body_font_color,
-              }}
+              className="font-semibold"
+              style={{ ...textStyle, fontSize: "1rem" }}
             >
-              This is to certify that
+              {signature || issuer_name}
             </p>
-            <h2
-              className="fw-bold mb-3"
-              style={{
-                fontSize: "3.5rem",
-                color: body_font_color,
-                margin: "1rem 0",
-              }}
-            >
-              {recipient_name}
-            </h2>
-            <p
-              className="mb-4"
-              style={{
-                fontSize: "1.1rem",
-                color: body_font_color,
-              }}
-            >
-              {certificateBody}
-            </p>
-            <p
-              className="fw-bold text-uppercase mt-4 mb-0"
-              style={{
-                fontSize: "1.5rem",
-                color: secondary_color,
-              }}
-            >
-              {course_title}
-            </p>
-          </div>
-
-          {/* Footer */}
-          <div
-            className="d-flex justify-content-between w-80 mt-5"
-            style={{
-              width: "80%",
-              margin: "2rem auto 0",
-            }}
-          >
-            <div style={{ width: "45%" }}>
-              <p
-                className="border-top pt-2 fw-semibold mb-1 text-center"
-                style={{
-                  borderTop: `1.5px solid ${body_font_color}`,
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                }}
-              >
-                {issueDateFormatted}
-              </p>
-              <p
-                className="text-center small text-muted mb-0"
-                style={{
-                  fontSize: "0.8rem",
-                  color: "#666",
-                }}
-              >
-                Date
-              </p>
-            </div>
-            <div style={{ width: "45%" }}>
-              <p
-                className="border-top pt-2 fw-semibold mb-1 text-center"
-                style={{
-                  borderTop: `1.5px solid ${body_font_color}`,
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                }}
-              >
-                {signature || issuer_name}
-              </p>
-              <p
-                className="text-center small text-muted mb-0"
-                style={{
-                  fontSize: "0.8rem",
-                  color: "#666",
-                }}
-              >
-                Signature
-              </p>
-            </div>
-          </div>
-
-          {/* QR Code */}
-          <div
-            className="position-absolute"
-            style={{
-              bottom: "1rem",
-              right: "1rem",
-            }}
-          >
-            <QRCode
-              value={`${window.location.origin}/verify/${verification_id}`}
-              size={70}
-              viewBox="0 0 70 70"
+            <hr
+              className="w-3/5 mx-auto my-1"
+              style={{ borderColor: body_font_color }}
             />
+            <span className="text-gray-500 text-sm">Authorized Signature</span>
           </div>
-
-          {/* Verification ID */}
-          <div
-            className="position-absolute text-start small"
-            style={{
-              bottom: "1rem",
-              left: "1rem",
-              fontSize: "0.7rem",
-              color: "#999",
-            }}
-          >
-            <p className="mb-0">Verify at {window.location.origin}</p>
-            <p className="mb-0">ID: {verification_id}</p>
+          <div className="text-center" style={{ width: "45%" }}>
+            <p
+              className="font-semibold"
+              style={{ ...textStyle, fontSize: "1rem" }}
+            >
+              {issuer_name}
+            </p>
+            <hr
+              className="w-3/5 mx-auto my-1"
+              style={{ borderColor: body_font_color }}
+            />
+            <span className="text-gray-500 text-sm">Issuer</span>
           </div>
+        </div>
+        <div className="absolute bottom-4 end-4 bg-white p-1 rounded-md shadow-md">
+          <QRCode
+            value={`${window.location.origin}/verify/${verification_id}`}
+            size={80}
+            style={{ height: "auto", maxWidth: "80px" }}
+          />
+          <p className="text-gray-500 text-center text-sm mt-1">
+            {verification_id}
+          </p>
         </div>
       </div>
     </div>
@@ -267,189 +196,168 @@ const CertificatePreview = ({ template, formData }) => {
 
   const renderModern = () => (
     <div
-      className="d-flex h-100 w-100 position-relative"
+      className="flex h-100 w-100 shadow-lg rounded-xl overflow-hidden text-white"
       style={{
-        backgroundColor: "#111827",
+        border: `6px solid ${primary_color}`,
         ...backgroundStyle,
         fontFamily: font_family,
       }}
     >
-      {/* Sidebar */}
       <div
-        className="d-flex flex-column justify-content-between align-items-center p-5 text-white"
+        className="flex flex-column justify-content-between align-items-center p-4"
         style={{
-          width: "38%",
-          backgroundColor: primary_color,
-          padding: "3rem",
+          width: "35%",
+          background: `linear-gradient(135deg, ${primary_color}, ${secondary_color})`,
         }}
       >
         <div className="text-center">
           {logo_url && (
             <img
               src={`${SERVER_BASE_URL}${logo_url}`}
+              className="rounded-circle border-4 border-white shadow mb-2"
+              style={{ width: "6rem", height: "6rem", objectFit: "cover" }}
               alt="Logo"
-              className="mb-4"
-              style={{
-                width: "130px",
-                height: "130px",
-                objectFit: "contain",
-                backgroundColor: "white",
-                borderRadius: "50%",
-                padding: "10px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-              }}
             />
           )}
           <p
-            className="fw-bold text-uppercase mb-0"
-            style={{
-              fontSize: "1.5rem",
-              letterSpacing: "0.1em",
-              marginTop: "1.5rem",
-            }}
+            className="font-bold uppercase small"
+            style={{ letterSpacing: "0.1em" }}
           >
             {issuer_name}
           </p>
         </div>
-        <div
-          className="bg-white p-2 rounded"
-          style={{
-            padding: "8px",
-            borderRadius: "8px",
-          }}
-        >
+        <div className="bg-white p-1 rounded shadow">
           <QRCode
             value={`${window.location.origin}/verify/${verification_id}`}
-            size={100}
-            viewBox="0 0 100 100"
+            size={72}
+            viewBox="0 0 72 72"
           />
+          <p className="text-center text-dark small font-bold mt-1">
+            {verification_id}
+          </p>
         </div>
       </div>
-
-      {/* Main Content */}
-      <div
-        className="flex-grow-1 d-flex flex-column justify-content-center p-5"
-        style={{
-          padding: "3rem 4rem",
-          backgroundColor: "white",
-          color: body_font_color,
-        }}
-      >
+      <div className="flex-grow p-4 flex flex-column justify-content-center relative bg-white bg-opacity-90">
         <h1
-          className="text-uppercase fw-light mb-3 mb-0"
+          className="font-light uppercase mb-3"
           style={{
-            fontSize: "1.2rem",
-            letterSpacing: "0.3em",
-            color: "#9ca3af",
+            fontSize: "1.5rem",
+            letterSpacing: "0.15em",
+            color: primary_color,
           }}
         >
           {certificateTitle}
         </h1>
         <h2
-          className="fw-bold mb-2 mb-0"
+          className="font-bolder mb-2"
           style={{
-            fontSize: "4rem",
-            color: primary_color,
-            margin: "0.5rem 0",
+            fontSize: "2.8rem",
+            fontFamily: "'Georgia', serif",
+            ...textStyle,
           }}
         >
           {recipient_name}
         </h2>
         <p
-          className="mb-4 mb-0"
-          style={{
-            fontSize: "1.2rem",
-            color: "#4b5563",
-          }}
+          className="italic mb-2"
+          style={{ fontSize: "1.1rem", color: "#666" }}
         >
           {certificateBody}
         </p>
         <p
-          className="fw-bold mb-0"
+          className="font-bold uppercase mb-4"
           style={{
-            fontSize: "2.2rem",
+            fontSize: "1.4rem",
+            letterSpacing: "0.05em",
             color: secondary_color,
           }}
         >
           {course_title}
         </p>
+        <p style={{ ...textStyle, fontSize: "1rem" }}>
+          Awarded on {issueDateFormatted}
+        </p>
         <div
-          className="d-flex justify-content-between mt-auto pt-4"
-          style={{
-            marginTop: "auto",
-            paddingTop: "1.5rem",
-            borderTop: `2px solid ${primary_color}`,
-            fontSize: "0.9rem",
-            color: "#6b7280",
-          }}
+          className="d-flex justify-content-between mt-auto pt-3 border-top"
+          style={{ borderColor: primary_color, fontSize: "0.9rem" }}
         >
-          <div className="d-flex flex-column">
-            <span className="fw-bold mb-1">Date Issued</span>
-            <span>{issueDateFormatted}</span>
+          <div>
+            <p
+              className="font-semibold"
+              style={{ ...textStyle, fontSize: "1.2rem" }}
+            >
+              {signature || issuer_name}
+            </p>
+            <p className="text-gray-500">Authorized Signature</p>
           </div>
-          <div className="d-flex flex-column">
-            <span className="fw-bold mb-1">Signature</span>
-            <span>{signature || issuer_name}</span>
-          </div>
-          <div className="d-flex flex-column text-end">
-            <span className="fw-bold mb-1">Verification ID</span>
-            <span>{verification_id}</span>
+          <div>
+            <p
+              className="font-semibold"
+              style={{ ...textStyle, fontSize: "1.2rem" }}
+            >
+              {issuer_name}
+            </p>
+            <p className="text-gray-500">Issuer</p>
           </div>
         </div>
       </div>
     </div>
   );
 
-  const renderPreview = () => {
-    if (layout_style === "classic") return renderClassic();
-    return renderModern();
-  };
-
-  return <div className="h-100 w-100">{renderPreview()}</div>;
+  return (
+    <div
+      className="w-100 h-100 position-relative"
+      style={{ aspectRatio: "1.414 / 1" }}
+    >
+      {layout_style === "classic" ? renderClassic() : renderModern()}
+    </div>
+  );
 };
 
 const CreateCertificatePage = () => {
   const { certId } = useParams();
   const navigate = useNavigate();
-  const [templates, setTemplates] = useState([]);
+  const isEditMode = !!certId;
   const [formData, setFormData] = useState({
     template_id: "",
     recipient_name: "",
     recipient_email: "",
     course_title: "",
     issuer_name: "",
-    issue_date: new Date().toISOString().split("T")[0],
+    issue_date: new Date().toLocaleDateString("en-CA"),
     signature: "",
   });
+  const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showFullscreen, setShowFullscreen] = useState(false);
-  const isEditMode = !!certId;
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
       try {
-        const templatesRes = await getTemplates();
-        setTemplates(templatesRes.data.templates || []);
+        const templateResponse = await getTemplates();
+        setTemplates(templateResponse.data.templates);
         if (isEditMode) {
-          const certRes = await getCertificate(certId);
-          const cert = certRes.data;
+          const certResponse = await getCertificate(certId);
+          const cert = certResponse.data.certificate;
           setFormData({
-            template_id: cert.template_id,
+            template_id: certResponse.data.template.id,
             recipient_name: cert.recipient_name,
             recipient_email: cert.recipient_email,
             course_title: cert.course_title,
             issuer_name: cert.issuer_name,
-            issue_date: cert.issue_date.split("T")[0],
-            signature: cert.signature || "",
+            issue_date: new Date(cert.issue_date).toLocaleDateString("en-CA"),
+            signature: cert.signature,
           });
+          setSelectedTemplate(certResponse.data.template);
         }
       } catch (err) {
-        setError(err.response?.data?.msg || "Failed to load data");
+        setError(
+          err.response?.data?.msg || "Could not fetch data. Please try again."
+        );
       } finally {
         setLoading(false);
       }
@@ -457,20 +365,17 @@ const CreateCertificatePage = () => {
     fetchData();
   }, [certId, isEditMode]);
 
-  useEffect(() => {
-    const template = templates.find(
-      (t) => t.id === parseInt(formData.template_id)
-    );
-    setSelectedTemplate(template);
-  }, [formData.template_id, templates]);
-
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setError("");
+    setSuccess("");
   };
 
   const handleTemplateChange = (e) => {
-    setFormData({ ...formData, template_id: e.target.value });
+    const templateId = e.target.value;
+    setFormData({ ...formData, template_id: templateId });
+    const template = templates.find((t) => t.id === parseInt(templateId));
+    setSelectedTemplate(template || null);
   };
 
   const handleSubmit = async (e) => {
@@ -478,39 +383,31 @@ const CreateCertificatePage = () => {
     setSubmitting(true);
     setError("");
     setSuccess("");
-
-    const submitData = { ...formData };
-    submitData.issue_date = new Date(submitData.issue_date)
-      .toISOString()
-      .split("T")[0];
-
-    const promise = isEditMode
-      ? updateCertificate(certId, submitData)
-      : createCertificate(submitData);
-
-    toast
-      .promise(promise, {
-        loading: isEditMode
-          ? "Updating certificate..."
-          : "Creating certificate...",
-        success: (res) => {
-          setSuccess(res.data.msg);
-          if (!isEditMode) {
-            navigate(`/dashboard/view/${res.data.certificate_id}`);
-          }
-          return res.data.msg;
-        },
-        error: (err) => {
-          setError(err.response?.data?.msg || "Failed to save certificate");
-          return err.response?.data?.msg || "Failed to save certificate";
-        },
-      })
-      .finally(() => setSubmitting(false));
+    try {
+      let response;
+      if (isEditMode) {
+        response = await updateCertificate(certId, formData);
+      } else {
+        response = await createCertificate(formData);
+      }
+      setSuccess(
+        isEditMode
+          ? "Certificate updated successfully!"
+          : "Certificate created successfully!"
+      );
+      setTimeout(() => navigate("/dashboard"), 2000);
+    } catch (err) {
+      setError(
+        err.response?.data?.msg || "An error occurred. Please try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Spinner animation="border" />
       </div>
     );

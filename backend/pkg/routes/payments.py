@@ -1,3 +1,4 @@
+# payments.py
 import os
 import requests
 import hmac
@@ -13,8 +14,18 @@ payments_bp = Blueprint('payments', __name__)
 PAYSTACK_API_URL = "https://api.paystack.co"
 
 PLANS = {
-    "starter": {"amount_usd_cents": 1500, "role": "starter"},
-    "pro": {"amount_usd_cents": 9900, "role": "pro"}
+    "starter": {"amount_usd": 15.00, "certificates": 500, "role": "starter"},
+    "growth": {"amount_usd": 50.00, "certificates": 2000, "role": "growth"},
+    "pro": {"amount_usd": 100.00, "certificates": 5000, "role": "pro"},
+    "enterprise": {"amount_usd": 300.00, "certificates": 20000, "role": "enterprise"}
+}
+
+role_order = {
+    'free': 0,
+    'starter': 1,
+    'growth': 2,
+    'pro': 3,
+    'enterprise': 4
 }
 
 def get_usd_to_ngn_rate():
@@ -41,25 +52,28 @@ def initialize_payment():
     if plan not in PLANS: return jsonify({"msg": "Invalid plan"}), 400
     user = User.query.get(user_id)
     if not user: return jsonify({"msg": "User not found"}), 404
-    if user.role == 'pro': return jsonify({"msg": "Already on highest plan"}), 400
-    if user.role == 'starter' and plan == 'starter': return jsonify({"msg": "Already on this plan"}), 400
     
     plan_details = PLANS[plan]
-    amount_in_usd_cents = plan_details['amount_usd_cents']
+    plan_role_order = role_order[plan]
+    current_order = role_order[user.role]
+    if plan_role_order < current_order:
+        return jsonify({"msg": f"Cannot purchase lower tier than current {user.role}"}), 400
+    
+    amount_in_usd = plan_details['amount_usd']
     paystack_key = current_app.config.get('PAYSTACK_SECRET_KEY', '')
     is_ngn_account = paystack_key.startswith('sk_test_') or paystack_key.startswith('sk_live_')
 
     if is_ngn_account:
         current_app.logger.info("NGN account detected. Converting currency.")
         exchange_rate = get_usd_to_ngn_rate()
-        amount_to_charge = int((amount_in_usd_cents / 100.0) * exchange_rate * 100)
+        amount_to_charge = int(amount_in_usd * exchange_rate * 100)
         currency_to_charge = "NGN"
     else:
         current_app.logger.info("Non-NGN (USD) account detected. Using USD cents.")
-        amount_to_charge = amount_in_usd_cents
+        amount_to_charge = int(amount_in_usd * 100)
         currency_to_charge = "USD"
     
-    new_payment = Payment(user_id=user_id, provider='paystack', plan=plan, amount=amount_in_usd_cents / 100.0, currency='USD', status='pending')
+    new_payment = Payment(user_id=user_id, provider='paystack', plan=plan, amount=amount_in_usd, currency='USD', status='pending')
     db.session.add(new_payment)
     db.session.commit()
     
@@ -73,7 +87,7 @@ def initialize_payment():
         "reference": transaction_ref,
         "currency": currency_to_charge,
         "publicKey": current_app.config.get('PAYSTACK_PUBLIC_KEY'),
-        "metadata": { "user_id": user_id, "plan": plan, "amount_usd": amount_in_usd_cents / 100.0 }
+        "metadata": { "user_id": user_id, "plan": plan, "amount_usd": amount_in_usd }
     }), 200
 
 @payments_bp.route('/webhook', methods=['POST'])
@@ -98,15 +112,11 @@ def paystack_webhook():
         payment.status = 'paid'
         user = User.query.get(payment.user_id)
         if user:
-            new_role = PLANS.get(payment.plan, {}).get('role')
-            if new_role:
-                user.role = new_role
-                user.cert_quota = 999999
-                if new_role == 'starter':
-                    user.subscription_expiry = datetime.utcnow() + timedelta(days=30)
-                else: # Pro plan is lifetime
-                    user.subscription_expiry = None
-                current_app.logger.info(f"SUCCESS: User {user.id} upgraded to {new_role}, expiry: {user.subscription_expiry}")
+            plan_details = PLANS.get(payment.plan, {})
+            if plan_details:
+                user.cert_quota += plan_details['certificates']
+                user.role = plan_details['role']
+                current_app.logger.info(f"SUCCESS: User {user.id} purchased {payment.plan}, added {plan_details['certificates']} certs, new quota: {user.cert_quota}, role: {user.role}")
         db.session.commit()
         
     return jsonify({"status": "ok"}), 200
