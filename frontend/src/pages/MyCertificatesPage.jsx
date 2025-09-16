@@ -243,7 +243,11 @@ function MyCertificatesPage() {
     },
     {
       title: "Quota Remaining",
+      // --- THIS IS THE FIX ---
+      // It now directly uses the user's certificate quota number from the backend
+      // instead of showing "Unlimited".
       value: user ? user.cert_quota : "...",
+      // --- END OF FIX ---
       icon: <HelpCircle className="w-6 h-6" />,
       color: "text-purple-600",
     },
