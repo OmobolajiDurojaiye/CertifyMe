@@ -2,6 +2,7 @@
 import os
 import requests
 import hmac
+import uuid
 import hashlib
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -77,9 +78,10 @@ def initialize_payment():
     db.session.add(new_payment)
     db.session.commit()
     
-    transaction_ref = f"CM-{user_id}-{plan}-{new_payment.id}"
+    transaction_ref = f"CM-{user_id}-{plan}-{uuid.uuid4().hex}"
     new_payment.transaction_ref = transaction_ref
     db.session.commit()
+
 
     return jsonify({
         "email": user.email,
