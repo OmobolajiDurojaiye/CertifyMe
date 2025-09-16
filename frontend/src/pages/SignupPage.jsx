@@ -1,7 +1,7 @@
-// frontend/src/pages/SignupPage.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
+import { Eye, EyeSlash } from "react-bootstrap-icons";
 import { signupUser } from "../api";
 import "../styles/Auth.css";
 
@@ -13,10 +13,15 @@ function SignupPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleSubmit = async (e) => {
@@ -48,7 +53,7 @@ function SignupPage() {
             src="/images/certbadge.png"
             alt="CertifyMe Logo"
             className="auth-logo mx-auto d-block"
-            style={{ maxHeight: "35px" }} // Further reduced logo size
+            style={{ maxHeight: "35px" }}
           />
           <h3>Create an Account</h3>
           {error && <Alert variant="danger">{error}</Alert>}
@@ -75,16 +80,25 @@ function SignupPage() {
                 required
               />
             </Form.Group>
-            <Form.Group className="mb-4" controlId="password">
+            <Form.Group className="mb-4 position-relative" controlId="password">
               <Form.Label>Password</Form.Label>
               <Form.Control
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Create a strong password"
                 required
+                className="password-input"
               />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={togglePasswordVisibility}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+              </button>
             </Form.Group>
             <Button className="btn-auth w-100" type="submit" disabled={loading}>
               {loading ? (
@@ -104,6 +118,10 @@ function SignupPage() {
             Already have an account?{" "}
             <Link to="/login" className="auth-switch-link">
               Sign In
+            </Link>
+            {" | "}
+            <Link to="/" className="auth-switch-link">
+              Back to Home
             </Link>
           </p>
         </div>

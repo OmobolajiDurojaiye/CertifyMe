@@ -47,46 +47,110 @@ function LandingPage() {
           </Link>
         </div>
 
-        {/* ===== PRICING SECTION ===== */}
+        {/* ===== PRICING SECTION (UPDATED TO MATCH SETTINGS PAGE) ===== */}
         <section id="pricing" className="pricing-section">
           <div className="pricing-card">
-            <h3 className="plan-title">Pro Monthly</h3>
+            <h3 className="plan-title">Starter</h3>
             <div className="plan-price">
-              $15 <span className="plan-suffix">/ month</span>
+              $15 <span className="plan-suffix">for 500 certs</span>
             </div>
             <ul className="plan-features">
               <li>
-                <Check size={16} /> Unlimited Certificates
+                <Check size={16} /> 500 Certificate Credits
               </li>
               <li>
-                <Check size={16} /> Custom Branding
+                <Check size={16} /> Unlimited Templates
               </li>
               <li>
-                <Check size={16} /> Bulk Email Delivery
+                <Check size={16} /> Email Delivery
+              </li>
+              <li>
+                <Check size={16} /> PDF Downloads
               </li>
             </ul>
             <Link to="/signup" className="plan-button">
-              Choose Monthly
+              Choose Starter
             </Link>
           </div>
-          <div className="pricing-card highlighted">
-            <h3 className="plan-title">Pro Lifetime</h3>
+          <div className="pricing-card">
+            <h3 className="plan-title">Growth</h3>
             <div className="plan-price">
-              $99 <span className="plan-suffix">one-time</span>
+              $50 <span className="plan-suffix">for 2,000 certs</span>
             </div>
             <ul className="plan-features">
               <li>
-                <Check size={16} /> Everything in Pro, Forever
+                <Check size={16} /> 2,000 Certificate Credits
               </li>
               <li>
-                <Check size={16} /> Lifetime Access & Updates
+                <Check size={16} /> Unlimited Templates
               </li>
               <li>
-                <Check size={16} /> No Recurring Fees
+                <Check size={16} /> Email Delivery
+              </li>
+              <li>
+                <Check size={16} /> PDF Downloads
+              </li>
+              <li>
+                <Check size={16} /> Priority Support
               </li>
             </ul>
-            <Link to="/signup" className="plan-button-highlighted">
-              Get Lifetime Access
+            <Link to="/signup" className="plan-button">
+              Choose Growth
+            </Link>
+          </div>
+          <div className="pricing-card">
+            <h3 className="plan-title">Pro</h3>
+            <div className="plan-price">
+              $100 <span className="plan-suffix">for 5,000 certs</span>
+            </div>
+            <ul className="plan-features">
+              <li>
+                <Check size={16} /> 5,000 Certificate Credits
+              </li>
+              <li>
+                <Check size={16} /> Unlimited Templates
+              </li>
+              <li>
+                <Check size={16} /> Email Delivery
+              </li>
+              <li>
+                <Check size={16} /> PDF Downloads
+              </li>
+              <li>
+                <Check size={16} /> API Access
+              </li>
+            </ul>
+            <Link to="/signup" className="plan-button">
+              Choose Pro
+            </Link>
+          </div>
+          <div className="pricing-card">
+            <h3 className="plan-title">Enterprise</h3>
+            <div className="plan-price">
+              $300 <span className="plan-suffix">for 20,000 certs</span>
+            </div>
+            <ul className="plan-features">
+              <li>
+                <Check size={16} /> 20,000 Certificate Credits
+              </li>
+              <li>
+                <Check size={16} /> Unlimited Templates
+              </li>
+              <li>
+                <Check size={16} /> Email Delivery
+              </li>
+              <li>
+                <Check size={16} /> PDF Downloads
+              </li>
+              <li>
+                <Check size={16} /> Custom Support
+              </li>
+              <li>
+                <Check size={16} /> API Access
+              </li>
+            </ul>
+            <Link to="/signup" className="plan-button">
+              Choose Enterprise
             </Link>
           </div>
         </section>

@@ -4,7 +4,6 @@
   --accent-green: #22c55e;
   --text-slate: #1e293b;
   --text-slate-light: #64748b;
-  /* --- CORRECTED SIDEBAR COLORS --- */
   --sidebar-bg: #ffffff;
   --workspace-bg: #f8f9fc;
   --sidebar-text: #475569;
@@ -17,7 +16,7 @@ body {
   font-family: "Inter", sans-serif;
   background-color: var(--workspace-bg);
   color: var(--text-slate);
-  overflow-x: hidden; /* Prevents horizontal scroll on landing page */
+  overflow-x: hidden;
 }
 
 h1,
@@ -37,19 +36,20 @@ h6 {
   min-height: 100vh;
 }
 
-/* --- CORRECTED SIDEBAR STYLES --- */
+/* --- SIDEBAR STYLES --- */
 .sidebar {
   width: 260px;
   background-color: var(--sidebar-bg);
   padding: 1.5rem 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Pushes logout to the bottom */
+  justify-content: space-between;
   flex-shrink: 0;
   border-right: 1px solid var(--border-color);
   position: fixed;
   height: 100vh;
   z-index: 1020;
+  transition: transform 0.3s ease;
 }
 
 .sidebar-logo {
@@ -100,11 +100,33 @@ h6 {
   width: 22px;
   height: 22px;
 }
-/* --- END OF SIDEBAR CORRECTIONS --- */
 
+/* --- HAMBURGER BUTTON STYLES --- */
+.hamburger-btn {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1030;
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.hamburger-btn:hover {
+  background-color: #1e40af;
+}
+
+/* --- MAIN CONTENT --- */
 .main-content {
   flex-grow: 1;
-  margin-left: 260px; /* Offset for the fixed sidebar */
+  margin-left: 260px;
 }
 
 .workspace {
@@ -130,4 +152,92 @@ h6 {
 .custom-form-control:focus {
   border-color: var(--primary-blue) !important;
   box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* --- MOBILE RESPONSIVENESS FOR ENTIRE APP (DASHBOARD) --- */
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 280px;
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .workspace {
+    padding: 1rem;
+    padding-top: 3.5rem; /* Space for hamburger button */
+  }
+
+  .page-content-card {
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+
+  .custom-form-control {
+    padding: 0.75rem 0.875rem !important;
+    font-size: 0.95rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.9rem;
+  }
+
+  .modal-dialog {
+    margin: 0 !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+  }
+
+  .modal-content {
+    height: 100% !important;
+    border-radius: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace {
+    padding: 0.75rem;
+    padding-top: 3.5rem;
+  }
+
+  .page-content-card {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+  h3 {
+    font-size: 1.25rem;
+  }
+}
+
+/* --- MOBILE SIDEBAR OVERLAY --- */
+.mobile-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1019;
+  display: none;
+}
+
+.mobile-sidebar-overlay.active {
+  display: block;
 }

@@ -148,14 +148,15 @@
   box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.2);
 }
 
-/* ===== PRICING SECTION ===== */
+/* ===== PRICING SECTION (UPDATED FOR 4 CARDS, RESPONSIVE) ===== */
 .pricing-section {
   display: flex;
   gap: 2rem;
   margin-top: 6rem;
   width: 100%;
-  max-width: 800px;
+  max-width: 1200px;
   justify-content: center;
+  flex-wrap: wrap;
 }
 .pricing-card {
   background-color: var(--card-bg);
@@ -163,14 +164,12 @@
   border-radius: 12px;
   padding: 2rem;
   flex: 1;
+  min-width: 250px;
+  max-width: 300px;
   display: flex;
   flex-direction: column;
   text-align: left;
   transition: all 0.2s ease-in-out;
-}
-.pricing-card.highlighted {
-  border-color: var(--primary-blue);
-  transform: translateY(-8px);
 }
 .plan-title {
   font-size: 1.25rem;
@@ -204,8 +203,7 @@
 .plan-features svg {
   color: var(--primary-blue);
 }
-.plan-button,
-.plan-button-highlighted {
+.plan-button {
   width: 100%;
   text-align: center;
   padding: 0.75rem;
@@ -213,20 +211,13 @@
   text-decoration: none;
   font-weight: 600;
   transition: all 0.2s ease;
-}
-.plan-button {
   background-color: #374151;
   color: white;
+  border: none;
+  cursor: pointer;
 }
 .plan-button:hover {
   background-color: #4b5563;
-}
-.plan-button-highlighted {
-  background-color: var(--primary-blue);
-  color: white;
-}
-.plan-button-highlighted:hover {
-  background-color: #2563eb;
 }
 
 /* ===== FOOTER ===== */
@@ -238,4 +229,61 @@
   text-align: center;
   color: var(--text-light);
   font-size: 0.9rem;
+}
+
+/* ===== MOBILE RESPONSIVENESS FOR LANDING PAGE ===== */
+@media (max-width: 768px) {
+  .chrono-header {
+    padding: 16px 24px;
+    position: relative; /* Unfix on mobile for better scroll */
+  }
+  .nav-right {
+    gap: 16px;
+  }
+  .demo-button-secondary {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+  .chrono-main-content {
+    padding: 140px 16px 40px; /* Adjust for mobile header */
+    justify-content: flex-start;
+  }
+  .hero-headline {
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
+  .hero-subheadline {
+    font-size: 1rem;
+  }
+  .demo-button-primary {
+    padding: 12px 24px;
+    font-size: 0.95rem;
+  }
+  .pricing-section {
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-top: 4rem;
+    align-items: center;
+  }
+  .pricing-card {
+    min-width: 100%;
+    max-width: none;
+    padding: 1.5rem;
+  }
+  .plan-price {
+    font-size: 2rem;
+  }
+  .chrono-footer {
+    padding: 16px 24px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-headline {
+    font-size: 2rem;
+  }
+  .pricing-card {
+    padding: 1rem;
+  }
 }

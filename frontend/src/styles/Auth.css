@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f8f9fc; /* A clean, light gray background */
+  background-color: #f8f9fc;
 }
 
 .auth-wrapper {
@@ -62,7 +62,7 @@
 }
 
 .auth-logo {
-  max-height: 35px; /* Further reduced logo size */
+  max-height: 35px;
   margin-bottom: 2rem;
 }
 
@@ -111,6 +111,32 @@
   text-decoration: underline;
 }
 
+/* Password toggle button */
+.password-toggle-btn {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%; /* Match input height */
+}
+
+.password-toggle-btn:hover {
+  color: #2563eb;
+}
+
+/* Ensure the password input has padding to avoid overlap with the icon */
+.auth-form-container .form-control.password-input {
+  padding-right: 3rem !important; /* Space for the icon */
+}
+
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
   .auth-wrapper {
@@ -118,6 +144,51 @@
     max-width: 480px;
   }
   .auth-panel {
-    display: none; /* Hide the decorative panel on mobile */
+    display: none;
+  }
+  .auth-form-container {
+    padding: 2rem 1.5rem;
+  }
+  .auth-logo {
+    max-height: 30px;
+    margin-bottom: 1.5rem;
+  }
+  .auth-form-container h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .form-control {
+    padding: 0.75rem !important;
+    font-size: 0.95rem;
+  }
+  .form-control.password-input {
+    padding-right: 2.5rem !important; /* Adjusted for mobile */
+  }
+  .btn-auth {
+    padding: 0.75rem;
+    font-size: 0.95rem;
+  }
+  .password-toggle-btn {
+    right: 0.75rem;
+    padding: 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-form-container {
+    padding: 1.5rem 1rem;
+  }
+  .auth-logo {
+    max-height: 25px;
+  }
+  .auth-form-container h3 {
+    font-size: 1.25rem;
+  }
+  .form-control.password-input {
+    padding-right: 2.25rem !important;
+  }
+  .password-toggle-btn {
+    right: 0.5rem;
+    padding: 0.3rem;
   }
 }
