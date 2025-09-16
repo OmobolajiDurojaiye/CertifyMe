@@ -1,3 +1,4 @@
+# __init__.py
 import os
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
@@ -38,7 +39,7 @@ def create_app():
 
     register_blueprints(app)
 
-    @app.route('/Uploads/<path:filename>')
+    @app.route('/uploads/<path:filename>')
     def serve_upload(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
