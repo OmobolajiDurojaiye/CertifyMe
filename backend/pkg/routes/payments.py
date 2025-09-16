@@ -95,18 +95,27 @@ def paystack_webhook():
     secret_key = current_app.config.get('PAYSTACK_SECRET_KEY')
     payload = request.data
     signature = request.headers.get('x-paystack-signature')
+    current_app.logger.info(f"Received webhook with signature: {signature}")
+    current_app.logger.info(f"Payload: {payload.decode('utf-8')}")
+    
     try:
         hash_ = hmac.new(secret_key.encode('utf-8'), payload, hashlib.sha512).hexdigest()
+        current_app.logger.info(f"Computed HMAC: {hash_}")
         if not hmac.compare_digest(hash_, signature):
+            current_app.logger.error("Signature mismatch")
             return jsonify({"status": "error", "msg": "Invalid signature"}), 400
-    except Exception:
+    except Exception as e:
+        current_app.logger.error(f"Signature verification error: {str(e)}")
         return jsonify({"status": "error", "msg": "Signature verification failed"}), 400
     
     event = json.loads(payload)
+    current_app.logger.info(f"Webhook event: {event}")
+    
     if event.get('event') == 'charge.success':
         reference = event['data'].get('reference')
         payment = Payment.query.filter_by(transaction_ref=reference).first()
         if not payment or payment.status == 'paid':
+            current_app.logger.warning(f"Payment {reference} not found or already processed")
             return jsonify({"status": "ok"}), 200
         
         payment.status = 'paid'
@@ -116,7 +125,7 @@ def paystack_webhook():
             if plan_details:
                 user.cert_quota += plan_details['certificates']
                 user.role = plan_details['role']
-                current_app.logger.info(f"SUCCESS: User {user.id} purchased {payment.plan}, added {plan_details['certificates']} certs, new quota: {user.cert_quota}, role: {user.role}")
+                current_app.logger.info(f"User {user.id} upgraded to {payment.plan}, new quota: {user.cert_quota}, role: {user.role}")
         db.session.commit()
-        
+    
     return jsonify({"status": "ok"}), 200
