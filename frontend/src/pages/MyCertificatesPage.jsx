@@ -229,7 +229,7 @@ function MyCertificatesPage() {
           className="w-6 h-6"
           fill="none"
           stroke="currentColor"
-          viewBox="0 0 24 24"
+          viewBox="0 0 24"
         >
           <path
             strokeLinecap="round"
@@ -244,8 +244,7 @@ function MyCertificatesPage() {
     {
       title: "Quota Remaining",
       // --- THIS IS THE FIX ---
-      // It now directly uses the user's certificate quota number from the backend
-      // instead of showing "Unlimited".
+      // This now directly displays the user's certificate quota number.
       value: user ? user.cert_quota : "...",
       // --- END OF FIX ---
       icon: <HelpCircle className="w-6 h-6" />,
