@@ -243,11 +243,7 @@ function MyCertificatesPage() {
     },
     {
       title: "Quota Remaining",
-      value: user
-        ? user.role === "free"
-          ? user.cert_quota
-          : "Unlimited"
-        : "...",
+      value: user ? user.cert_quota : "...",
       icon: <HelpCircle className="w-6 h-6" />,
       color: "text-purple-600",
     },
