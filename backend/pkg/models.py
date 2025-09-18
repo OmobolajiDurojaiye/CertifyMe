@@ -1,12 +1,42 @@
 # models.py
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 import uuid
+import random
 from .extensions import db
 from sqlalchemy import func
 
+class AdminActionLog(db.Model):
+    __tablename__ = 'admin_action_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=False)
+    action = db.Column(db.String(255), nullable=False)
+    target_type = db.Column(db.String(50), nullable=True) # e.g., 'user', 'certificate'
+    target_id = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    admin = db.relationship('Admin', backref='action_logs')
+# --- END OF NEW MODEL ---
+
+# --- ADMIN MODEL ---
+class Admin(db.Model):
+    __tablename__ = 'admins'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.Text, nullable=False)
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    verification_code = db.Column(db.String(6), nullable=True)
+    verification_expiry = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def set_verification_code(self):
+        """Generates a 6-digit code and sets an expiry time."""
+        self.verification_code = str(random.randint(100000, 999999))
+        self.verification_expiry = datetime.utcnow() + timedelta(minutes=15)
+
+# --- USER MODEL (Remove 'admin' from ENUM) ---
 class User(db.Model):
-    # ... (no changes in this model)
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -21,6 +51,8 @@ class User(db.Model):
     templates = db.relationship('Template', backref='user', lazy=True)
     certificates = db.relationship('Certificate', backref='issuer', lazy=True)
     payments = db.relationship('Payment', backref='user', lazy=True)
+    last_login = db.Column(db.DateTime, nullable=True)
+
 
 class Template(db.Model):
     # ... (no changes in this model)

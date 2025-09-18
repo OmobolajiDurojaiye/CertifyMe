@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token
 from bcrypt import hashpw, gensalt, checkpw
+from datetime import datetime
 from ..models import User
 from ..extensions import db
 
@@ -35,6 +36,11 @@ def login():
     user = User.query.filter_by(email=data['email']).first()
 
     if user and checkpw(data['password'].encode('utf-8'), user.password_hash.encode('utf-8')):
+        # --- THIS IS THE UPDATE ---
+        # Update the last_login timestamp upon successful login
+        user.last_login = datetime.utcnow()
+        db.session.commit()
+        # --- END OF UPDATE ---
         access_token = create_access_token(identity=str(user.id))
         return jsonify(access_token=access_token), 200
 

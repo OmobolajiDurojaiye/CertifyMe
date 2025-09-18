@@ -12,12 +12,18 @@ import {
   Alert,
 } from "react-bootstrap";
 import { usePaystackPayment } from "react-paystack";
-import { getCurrentUser, initializePayment, uploadUserSignature } from "../api";
+// --- FIX 1: Alias the imported function to avoid name collision ---
+import {
+  getCurrentUser,
+  initializePayment as apiInitializePayment, // Renamed here
+  uploadUserSignature,
+} from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
-import { SERVER_BASE_URL } from "../config"; // --- IMPORT SERVER URL ---
+import { SERVER_BASE_URL } from "../config";
 import { UploadCloud } from "lucide-react";
 
+// --- PlanCard and BillingContent components are unchanged ---
 const PlanCard = ({
   title,
   price,
@@ -69,7 +75,6 @@ const PlanCard = ({
     </Card.Body>
   </Card>
 );
-
 const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
   <Card className="page-content-card mb-4">
     <Card.Body>
@@ -164,6 +169,30 @@ function SettingsPage() {
   const [signatureFile, setSignatureFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [paystackConfig, setPaystackConfig] = useState(null);
+
+  // The Paystack hook's function is now correctly named `initializePayment`
+  const initializePayment = usePaystackPayment(paystackConfig);
+
+  useEffect(() => {
+    if (paystackConfig) {
+      initializePayment({
+        onSuccess: (response) => {
+          toast.success("Payment successful! Refreshing your plan...");
+          setProcessingPlan(null);
+          setPaystackConfig(null);
+          navigate(`/dashboard/settings?reference=${response.reference}`, {
+            replace: true,
+          });
+        },
+        onClose: () => {
+          toast.error("Payment modal closed.");
+          setProcessingPlan(null);
+          setPaystackConfig(null);
+        },
+      });
+    }
+  }, [paystackConfig, initializePayment, navigate]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -182,60 +211,32 @@ function SettingsPage() {
     };
     fetchUser();
 
-    // Handle Paystack callback
     const params = new URLSearchParams(location.search);
     const paymentStatus = params.get("trxref") || params.get("reference");
     if (paymentStatus) {
       toast.success("Payment processed! Refreshing your plan...");
       setTimeout(() => {
-        fetchUser(); // Refresh user data
-        navigate("/dashboard/settings", { replace: true }); // Redirect to settings
+        fetchUser();
+        navigate("/dashboard/settings", { replace: true });
       }, 2000);
     }
-  }, [navigate, location]);
+  }, [navigate, location.search]);
 
   const handleUpgrade = async (plan) => {
     setProcessingPlan(plan);
     try {
-      // Call backend to get payment details
-      const res = await initializePayment(plan);
+      // --- FIX 2: Use the aliased name to call the API function ---
+      const res = await apiInitializePayment(plan);
       const paymentData = res.data;
 
-      // Validate payment data
-      if (
-        !paymentData ||
-        !paymentData.publicKey ||
-        !paymentData.email ||
-        !paymentData.amount ||
-        !paymentData.reference
-      ) {
-        throw new Error("Incomplete payment data received from server");
-      }
-
-      // Paystack configuration
-      const config = {
+      setPaystackConfig({
         publicKey: paymentData.publicKey,
         email: paymentData.email,
         amount: paymentData.amount,
         currency: paymentData.currency || "NGN",
         reference: paymentData.reference,
         metadata: paymentData.metadata || {},
-        channels: ["card", "bank", "ussd", "mobile_money"], // Add supported channels
-      };
-
-      // Initialize Paystack payment
-      const initialize = usePaystackPayment(config);
-      initialize({
-        onSuccess: (response) => {
-          toast.success("Payment successful! Redirecting...");
-          setProcessingPlan(null);
-          // Redirect to settings with reference to trigger useEffect
-          navigate(`/dashboard/settings?reference=${response.reference}`);
-        },
-        onClose: () => {
-          toast.error("Payment modal closed.");
-          setProcessingPlan(null);
-        },
+        channels: ["card", "bank", "ussd", "mobile_money"],
       });
     } catch (error) {
       console.error("Payment initialization error:", error);
@@ -265,11 +266,9 @@ function SettingsPage() {
   const handleSubmitSignature = async (e) => {
     e.preventDefault();
     if (!signatureFile) return;
-
     setIsUploading(true);
     const formData = new FormData();
     formData.append("signature", signatureFile);
-
     try {
       const res = await uploadUserSignature(formData);
       toast.success(res.data.msg);
@@ -292,6 +291,7 @@ function SettingsPage() {
       <Toaster position="top-center" />
       <h2 className="fw-bold mb-4">Settings</h2>
       <Tab.Container id="settings-tabs" defaultActiveKey="billing">
+        {/* The rest of the JSX is unchanged */}
         <Nav variant="tabs" className="mb-4 settings-tabs">
           <Nav.Item>
             <Nav.Link eventKey="profile">Profile</Nav.Link>
@@ -305,7 +305,6 @@ function SettingsPage() {
         </Nav>
         <Tab.Content>
           <Tab.Pane eventKey="profile">
-            {/* --- PROFILE INFO CARD --- */}
             <Card className="page-content-card mb-4">
               <Card.Title as="h5" className="fw-bold mb-4">
                 Public Profile
@@ -337,8 +336,6 @@ function SettingsPage() {
                 </Row>
               </Form>
             </Card>
-
-            {/* --- SIGNATURE MANAGEMENT CARD (NEW) --- */}
             <Card className="page-content-card">
               <Card.Title as="h5" className="fw-bold mb-4">
                 Signature Management
@@ -387,9 +384,7 @@ function SettingsPage() {
                 </Button>
               </Form>
             </Card>
-            {/* --- END OF SIGNATURE CARD --- */}
           </Tab.Pane>
-
           <Tab.Pane eventKey="billing">
             <BillingContent
               user={user}
@@ -397,7 +392,6 @@ function SettingsPage() {
               handleUpgrade={handleUpgrade}
             />
           </Tab.Pane>
-
           <Tab.Pane eventKey="security">
             <Card className="page-content-card">
               <Card.Title as="h5" className="fw-bold mb-4">

@@ -1,20 +1,32 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 
-// Import Layouts and Pages
+// User-facing imports
 import DashboardLayout from "./layouts/DashboardLayout";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import MyCertificatesPage from "./pages/MyCertificatesPage";
 import CreateCertificatePage from "./pages/CreateCertificatePage";
-import SettingsPage from "./pages/SettingsPage"; // <-- IMPORT NEW PAGE
+import SettingsPage from "./pages/SettingsPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import ViewCertificatePage from "./pages/ViewCertificatePage";
 import VerifyCertificatePage from "./pages/VerifyCertificatePage";
 import BulkCreateCertificatesPage from "./pages/BulkCreateCertificatesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GroupsPage from "./pages/GroupsPage";
+
+// Admin imports
+import AdminPortalPage from "./pages/AdminPortalPage";
+import AdminVerifyPage from "./pages/AdminVerifyPage";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminUserManagementPage from "./pages/AdminUserManagementPage";
+import AdminPaymentsPage from "./pages/AdminPaymentsPage";
+import AdminCertificatesPage from "./pages/AdminCertificatesPage";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
+import AdminUserDetailsPage from "./pages/AdminUserDetailsPage";
 
 const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 
@@ -31,7 +43,23 @@ function App() {
         element={<VerifyCertificatePage />}
       />
 
-      {/* Protected Routes */}
+      {/* --- THIS IS THE FIX: A SINGLE, CLEAN ADMIN ROUTING BLOCK --- */}
+      <Route path="/admin/login" element={<AdminPortalPage />} />
+      <Route path="/admin/verify" element={<AdminVerifyPage />} />
+      <Route element={<AdminProtectedRoute />}>
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<AdminDashboardPage />} />
+          <Route path="users" element={<AdminUserManagementPage />} />
+          {/* --- NEW ROUTE for user details --- */}
+          <Route path="users/:userId" element={<AdminUserDetailsPage />} />
+          <Route path="payments" element={<AdminPaymentsPage />} />
+          <Route path="certificates" element={<AdminCertificatesPage />} />
+          <Route path="analytics" element={<AdminAnalyticsPage />} />
+        </Route>
+      </Route>
+      {/* --- END OF FIX --- */}
+
+      {/* Protected User Routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<MyCertificatesPage />} />
@@ -41,7 +69,6 @@ function App() {
           <Route path="edit/:certId" element={<CreateCertificatePage />} />
           <Route path="view/:certId" element={<ViewCertificatePage />} />
           <Route path="bulk-create" element={<BulkCreateCertificatesPage />} />
-          {/* --- ADD NEW ROUTE FOR SETTINGS --- */}
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Route>

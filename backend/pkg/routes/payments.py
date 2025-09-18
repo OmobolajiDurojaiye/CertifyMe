@@ -56,7 +56,7 @@ def initialize_payment():
     
     plan_details = PLANS[plan]
     plan_role_order = role_order[plan]
-    current_order = role_order[user.role]
+    current_order = role_order.get(user.role, 0)
     if plan_role_order < current_order:
         return jsonify({"msg": f"Cannot purchase lower tier than current {user.role}"}), 400
     
@@ -81,7 +81,6 @@ def initialize_payment():
     transaction_ref = f"CM-{user_id}-{plan}-{uuid.uuid4().hex}"
     new_payment.transaction_ref = transaction_ref
     db.session.commit()
-
 
     return jsonify({
         "email": user.email,

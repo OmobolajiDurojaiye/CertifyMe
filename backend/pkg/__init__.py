@@ -1,18 +1,21 @@
 # __init__.py
 import os
-from flask import Flask, send_from_directory, jsonify
+# --- THIS IS THE FIX ---
+# Import the `request` object to inspect incoming requests
+from flask import Flask, send_from_directory, jsonify, request
+# --- END OF FIX ---
 from flask_cors import CORS
 from .extensions import db, migrate, mail, jwt
 from .routes import register_blueprints
-from .models import Template
+from .models import Template, Admin, User
 
 def create_app():
     app = Flask(__name__)
 
-    # Config Section
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_default_secret_key_for_development')
+    # ... (Config section is unchanged) ...
+    app.config['SECRET_key'] = os.environ.get('SECRET_KEY', 'a_default_secret_key_for_development')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'a_default_jwt_key_for_development')
-    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400  # 24 hours in seconds
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql+mysqlconnector://root@127.0.0.1/certifyme_db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['FRONTEND_URL'] = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
@@ -24,7 +27,7 @@ def create_app():
     app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')
-
+    app.config['ADMIN_EMAIL'] = os.environ.get('ADMIN_EMAIL')
     upload_path = os.path.abspath(os.path.join(app.root_path, '..', '..', 'Uploads'))
     os.makedirs(upload_path, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = upload_path
@@ -35,7 +38,27 @@ def create_app():
     mail.init_app(app)
     jwt.init_app(app)
     
-    CORS(app, resources={r"/api/*": {"origins": "*"}}, allow_headers=["Authorization", "Content-Type"], supports_credentials=True)
+    # Configure CORS properly to handle all /api/* routes
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+    # --- THIS IS THE FIX FOR CORS PREFLIGHT ERRORS ---
+    @app.before_request
+    def handle_preflight():
+        if request.method.upper() == 'OPTIONS':
+            # This empty response with a 200 status code and CORS headers
+            # satisfies the browser's preflight check.
+            response = app.make_response(('', 204))
+            # The CORS extension will add the necessary headers
+            return response
+    # --- END OF FIX ---
+
+    @jwt.user_lookup_loader
+    def user_lookup_callback(_jwt_header, jwt_data):
+        identity = jwt_data["sub"]
+        if jwt_data.get("is_admin"):
+            return Admin.query.get(int(identity))
+        else:
+            return User.query.get(int(identity))
 
     register_blueprints(app)
 
@@ -43,7 +66,7 @@ def create_app():
     def serve_upload(filename):
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-    # Custom 404 handler
+    # ... (rest of file is unchanged) ...
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({"msg": "Resources Not Found"}), 404

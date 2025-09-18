@@ -5,18 +5,35 @@ from .payments import payments_bp
 from .users import users_bp
 from .groups import groups_bp
 
+# Admin blueprints
+from .admin_auth import admin_auth_bp
+from .admin_users import admin_users_bp
+from .admin_payments import admin_payments_bp
+from .admin_certificates import admin_certificates_bp
+from .admin_analytics import admin_analytics_bp
+
 def register_blueprints(app):
     """
     Registers all imported blueprints with the Flask application.
-    This function connects all the individual route files to the main app.
     """
+    # Public/User-facing blueprints
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(template_bp, url_prefix='/api/templates')
     app.register_blueprint(certificate_bp, url_prefix='/api/certificates')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     app.register_blueprint(users_bp, url_prefix='/api/users')
     app.register_blueprint(groups_bp, url_prefix='/api/groups') 
-
+    
+    # --- THIS IS THE FIX ---
+    # All admin blueprints are grouped under a single, consistent prefix.
+    # The routes inside each file (e.g., /users, /payments) will now correctly
+    # create the final URLs like /api/admin/users and /api/admin/payments.
+    app.register_blueprint(admin_auth_bp, url_prefix='/api/admin/auth')
+    app.register_blueprint(admin_users_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_payments_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_certificates_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_analytics_bp, url_prefix='/api/admin')
+    # --- END OF FIX ---
 
     @app.route('/api/health')
     def health_check():
