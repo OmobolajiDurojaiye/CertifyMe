@@ -35,7 +35,6 @@ export const getAdminProfile = () => apiClient.get("/admin/users/me");
 
 // Admin User Management
 export const getAdminUsers = (params = {}) => {
-  // --- MODIFIED: Now handles date objects ---
   if (params.start_date instanceof Date) {
     params.start_date = params.start_date.toISOString().split("T")[0];
   }
@@ -45,15 +44,10 @@ export const getAdminUsers = (params = {}) => {
   const query = new URLSearchParams(params).toString();
   return apiClient.get(`/admin/users?${query}`);
 };
-
-// --- NEW: Function to get all details for one user ---
 export const getAdminUserDetails = (userId) =>
   apiClient.get(`/admin/users/${userId}`);
-
-// --- NEW: Function to adjust user quota ---
 export const adjustUserQuota = (userId, adjustment, reason) =>
   apiClient.post(`/admin/users/${userId}/adjust-quota`, { adjustment, reason });
-
 export const getAdminUserPayments = (userId) =>
   apiClient.get(`/admin/users/${userId}/payments`);
 export const suspendAdminUser = (userId) =>
@@ -68,21 +62,83 @@ export const getAdminTransactions = (params = {}) => {
   const query = new URLSearchParams(params).toString();
   return apiClient.get(`/admin/payments/transactions?${query}`);
 };
+export const getAdminTransactionDetails = (paymentId) =>
+  apiClient.get(`/admin/payments/transactions/${paymentId}`);
 
 // Admin Certificates
 export const getAdminCertificatesOverview = () =>
   apiClient.get("/admin/certificates/overview");
+export const getAdminCertificates = (params = {}) => {
+  if (params.start_date instanceof Date) {
+    params.start_date = params.start_date.toISOString().split("T")[0];
+  }
+  if (params.end_date instanceof Date) {
+    params.end_date = params.end_date.toISOString().split("T")[0];
+  }
+  const query = new URLSearchParams(params).toString();
+  return apiClient.get(`/admin/certificates?${query}`);
+};
 export const revokeAdminCertificate = (certId) =>
   apiClient.post(`/admin/certificates/${certId}/revoke`);
 
 // Admin Analytics
-export const getAdminAnalytics = () =>
-  apiClient.get("/admin/analytics/insights");
-
-// Admin Dashboard Stats
+export const getAdminAnalytics = (period = "1y") =>
+  apiClient.get(`/admin/analytics/insights?period=${period}`);
 export const getAdminDashboardStats = async () => {
   const response = await apiClient.get("/admin/dashboard-stats");
-  return response.data; // Ensure we return the data object from the response
+  return response.data;
+};
+
+// --- THIS IS THE NEW FEATURE ---
+// New function to get the count of open tickets
+export const getOpenTicketsCount = () =>
+  apiClient.get("/admin/support/tickets/open-count");
+// --- END OF NEW FEATURE ---
+
+// For Admins
+export const getAdminSupportTickets = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return apiClient.get(`/admin/support/tickets?${query}`);
+};
+export const getAdminTicketDetails = (ticketId) =>
+  apiClient.get(`/admin/support/tickets/${ticketId}`);
+export const adminReplyToTicket = (ticketId, message, file) => {
+  const formData = new FormData();
+  formData.append("message", message);
+  if (file) {
+    formData.append("file", file);
+  }
+  return apiClient.post(`/admin/support/tickets/${ticketId}/reply`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+export const updateTicketStatus = (ticketId, status) =>
+  apiClient.put(`/admin/support/tickets/${ticketId}/status`, { status });
+
+// For Users
+export const createUserTicket = (subject, message, file) => {
+  const formData = new FormData();
+  formData.append("subject", subject);
+  formData.append("message", message);
+  if (file) {
+    formData.append("file", file);
+  }
+  return apiClient.post("/support/tickets", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+export const getUserTickets = () => apiClient.get("/support/tickets");
+export const getUserTicketDetails = (ticketId) =>
+  apiClient.get(`/support/tickets/${ticketId}`);
+export const replyToTicket = (ticketId, message, file) => {
+  const formData = new FormData();
+  formData.append("message", message);
+  if (file) {
+    formData.append("file", file);
+  }
+  return apiClient.post(`/support/tickets/${ticketId}/reply`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 };
 
 // --- USER-FACING API Calls ---

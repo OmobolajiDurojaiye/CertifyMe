@@ -9,6 +9,7 @@ import "./styles/App.css"; // Main stylesheet for dashboard
 import "./styles/Auth.css"; // Styles for Login/Signup
 import "./styles/LandingPage.css"; // Styles for the new minimal landing page
 import "./styles/VerifyPage.css"; // Styles for the new verification page
+import "./styles/SupportPage.css"; // Styles for the support page
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(

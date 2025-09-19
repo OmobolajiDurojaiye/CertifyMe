@@ -10,6 +10,7 @@ import {
   PlusCircle,
   Folder,
   List,
+  QuestionCircle, // --- NEW ICON ---
 } from "react-bootstrap-icons";
 
 function Sidebar() {
@@ -84,6 +85,14 @@ function Sidebar() {
                 <span>Settings</span>
               </NavLink>
             </Nav.Item>
+            {/* --- THIS IS THE NEW FEATURE --- */}
+            <Nav.Item as="li">
+              <NavLink to="/dashboard/support" className="nav-link">
+                <QuestionCircle />
+                <span>Contact Support</span>
+              </NavLink>
+            </Nav.Item>
+            {/* --- END OF NEW FEATURE --- */}
           </Nav>
         </div>
         <Nav className="flex-column" as="ul">

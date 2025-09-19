@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate
 import {
   Card,
   Table,
@@ -9,7 +10,7 @@ import {
   Row,
   Spinner,
   Alert,
-} from "react-bootstrap"; // Added Spinner
+} from "react-bootstrap";
 import { getAdminTransactions } from "../api";
 
 function AdminPaymentsPage() {
@@ -20,6 +21,7 @@ function AdminPaymentsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [stats, setStats] = useState({ total_revenue: 0, revenue_by_plan: {} });
+  const navigate = useNavigate(); // Initialize navigate
 
   useEffect(() => {
     fetchTransactions();
@@ -93,6 +95,9 @@ function AdminPaymentsPage() {
                 <th>Status</th>
                 <th>Date</th>
                 <th>Provider</th>
+                {/* --- THIS IS THE FIX --- */}
+                <th>Actions</th>
+                {/* --- END OF FIX --- */}
               </tr>
             </thead>
             <tbody>
@@ -121,6 +126,17 @@ function AdminPaymentsPage() {
                   </td>
                   <td>{new Date(t.date).toLocaleDateString()}</td>
                   <td>{t.provider}</td>
+                  {/* --- THIS IS THE FIX --- */}
+                  <td>
+                    <Button
+                      variant="info"
+                      size="sm"
+                      onClick={() => navigate(`/admin/payments/${t.id}`)}
+                    >
+                      View
+                    </Button>
+                  </td>
+                  {/* --- END OF FIX --- */}
                 </tr>
               ))}
             </tbody>

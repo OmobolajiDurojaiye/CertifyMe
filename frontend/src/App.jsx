@@ -15,6 +15,7 @@ import VerifyCertificatePage from "./pages/VerifyCertificatePage";
 import BulkCreateCertificatesPage from "./pages/BulkCreateCertificatesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GroupsPage from "./pages/GroupsPage";
+import ContactSupportPage from "./pages/ContactSupportPage";
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -27,6 +28,9 @@ import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminCertificatesPage from "./pages/AdminCertificatesPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminUserDetailsPage from "./pages/AdminUserDetailsPage";
+import AdminPaymentDetailsPage from "./pages/AdminPaymentDetailsPage";
+import AdminSupportPage from "./pages/AdminSupportPage"; // NEW
+import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage"; // NEW
 
 const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 
@@ -43,21 +47,30 @@ function App() {
         element={<VerifyCertificatePage />}
       />
 
-      {/* --- THIS IS THE FIX: A SINGLE, CLEAN ADMIN ROUTING BLOCK --- */}
+      {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminPortalPage />} />
       <Route path="/admin/verify" element={<AdminVerifyPage />} />
       <Route element={<AdminProtectedRoute />}>
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboardPage />} />
           <Route path="users" element={<AdminUserManagementPage />} />
-          {/* --- NEW ROUTE for user details --- */}
           <Route path="users/:userId" element={<AdminUserDetailsPage />} />
           <Route path="payments" element={<AdminPaymentsPage />} />
+          <Route
+            path="payments/:paymentId"
+            element={<AdminPaymentDetailsPage />}
+          />
           <Route path="certificates" element={<AdminCertificatesPage />} />
           <Route path="analytics" element={<AdminAnalyticsPage />} />
+          {/* --- THIS IS THE NEW FEATURE --- */}
+          <Route path="support" element={<AdminSupportPage />} />
+          <Route
+            path="support/:ticketId"
+            element={<AdminSupportTicketDetailsPage />}
+          />
+          {/* --- END OF NEW FEATURE --- */}
         </Route>
       </Route>
-      {/* --- END OF FIX --- */}
 
       {/* Protected User Routes */}
       <Route element={<ProtectedRoute />}>
@@ -70,6 +83,8 @@ function App() {
           <Route path="view/:certId" element={<ViewCertificatePage />} />
           <Route path="bulk-create" element={<BulkCreateCertificatesPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="support" element={<ContactSupportPage />} />
+          <Route path="support/:ticketId" element={<ContactSupportPage />} />
         </Route>
       </Route>
 

@@ -5,10 +5,7 @@ from sqlalchemy import func
 
 admin_payments_bp = Blueprint('admin_payments', __name__)
 
-# --- THIS IS THE FIX ---
-# The route now correctly includes '/payments' to match the frontend request.
 @admin_payments_bp.route('/payments/transactions', methods=['GET'])
-# --- END OF FIX ---
 @jwt_required()
 def get_transactions():
     if not isinstance(current_user, Admin):
@@ -47,3 +44,29 @@ def get_transactions():
             'revenue_by_plan': {plan: float(amount) for plan, amount in revenue_by_plan}
         }
     }), 200
+
+
+#  route to get the details of a single transaction
+@admin_payments_bp.route('/payments/transactions/<int:payment_id>', methods=['GET'])
+@jwt_required()
+def get_transaction_details(payment_id):
+    if not isinstance(current_user, Admin):
+        return jsonify({"msg": "Admin access required"}), 403
+
+    payment = Payment.query.get_or_404(payment_id)
+
+    payment_details = {
+        'id': payment.id,
+        'user_id': payment.user_id,
+        'user_name': payment.user.name,
+        'user_email': payment.user.email,
+        'amount': float(payment.amount),
+        'currency': payment.currency,
+        'plan': payment.plan,
+        'status': payment.status,
+        'date': payment.created_at.isoformat(),
+        'provider': payment.provider,
+        'transaction_ref': payment.transaction_ref
+    }
+
+    return jsonify(payment_details), 200

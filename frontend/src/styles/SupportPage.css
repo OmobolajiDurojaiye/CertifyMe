@@ -1,0 +1,10 @@
+.support-thumbnail {
+  max-width: 200px;
+  max-height: 200px;
+  cursor: pointer;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.support-thumbnail:hover {
+  opacity: 0.8;
+}

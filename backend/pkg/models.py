@@ -16,9 +16,7 @@ class AdminActionLog(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     admin = db.relationship('Admin', backref='action_logs')
-# --- END OF NEW MODEL ---
 
-# --- ADMIN MODEL ---
 class Admin(db.Model):
     __tablename__ = 'admins'
     id = db.Column(db.Integer, primary_key=True)
@@ -35,14 +33,16 @@ class Admin(db.Model):
         self.verification_code = str(random.randint(100000, 999999))
         self.verification_expiry = datetime.utcnow() + timedelta(minutes=15)
 
-# --- USER MODEL (Remove 'admin' from ENUM) ---
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
-    role = db.Column(db.Enum('free', 'starter', 'growth', 'pro', 'enterprise', name='user_roles'), default='free', nullable=False)
+    # --- THIS IS THE FIX ---
+    # Added 'suspended' to the Enum to correctly handle suspended users.
+    role = db.Column(db.Enum('free', 'starter', 'growth', 'pro', 'enterprise', 'suspended', name='user_roles'), default='free', nullable=False)
+    # --- END OF FIX ---
     cert_quota = db.Column(db.Integer, default=10, nullable=False)
     subscription_expiry = db.Column(db.DateTime, nullable=True)
     signature_image_url = db.Column(db.Text, nullable=True)
@@ -52,10 +52,34 @@ class User(db.Model):
     certificates = db.relationship('Certificate', backref='issuer', lazy=True)
     payments = db.relationship('Payment', backref='user', lazy=True)
     last_login = db.Column(db.DateTime, nullable=True)
+    support_tickets = db.relationship('SupportTicket', backref='user', lazy=True)
 
+
+class SupportTicket(db.Model):
+    __tablename__ = 'support_tickets'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    subject = db.Column(db.String(255), nullable=False)
+    status = db.Column(db.Enum('open', 'in_progress', 'closed', name='ticket_statuses'), default='open', nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    messages = db.relationship('SupportMessage', backref='ticket', lazy='dynamic', cascade="all, delete-orphan")
+
+class SupportMessage(db.Model):
+    __tablename__ = 'support_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('support_tickets.id'), nullable=False)
+    # A message can be from a user OR an admin, so both are nullable
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    image_url = db.Column(db.Text, nullable=True)
+    
+    sender_user = db.relationship('User')
+    sender_admin = db.relationship('Admin')
 
 class Template(db.Model):
-    # ... (no changes in this model)
     __tablename__ = 'templates'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) 
@@ -76,7 +100,6 @@ class Template(db.Model):
     certificates = db.relationship('Certificate', backref='template', lazy=True)
 
 class Group(db.Model):
-    # ... (no changes in this model)
     __tablename__ = 'groups'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -96,18 +119,13 @@ class Certificate(db.Model):
     issuer_name = db.Column(db.String(150), nullable=True) 
     issue_date = db.Column(db.Date, nullable=False)
     signature = db.Column(db.String(150), nullable=True)
-    
-    # --- THIS IS THE NEW FIELD ---
     extra_fields = db.Column(db.JSON, nullable=True)
-    # --- END OF NEW FIELD ---
-
     verification_id = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
     status = db.Column(db.Enum('valid', 'revoked', name='certificate_statuses'), default='valid', nullable=False)
     sent_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Payment(db.Model):
-    # ... (no changes in this model)
     __tablename__ = 'payments'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)

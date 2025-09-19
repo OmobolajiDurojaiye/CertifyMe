@@ -7,8 +7,9 @@ import {
   BoxArrowRight,
   PaletteFill,
   CashStack,
-  FileEarmarkText, // NEW for Certificates
-  BarChartFill, // NEW for Analytics (use BarChart from icons)
+  FileEarmarkText,
+  BarChartFill,
+  ChatDotsFill, // --- NEW ICON ---
 } from "react-bootstrap-icons";
 
 function AdminSidebar() {
@@ -28,7 +29,6 @@ function AdminSidebar() {
           <span>
             <span className="green">Certify</span>
             <span className="blue">Me</span>
-            {/* <span className="text-danger fw-bold ms-2">ADMIN</span> */}
           </span>
         </Link>
         <Nav className="flex-column" as="ul">
@@ -46,28 +46,30 @@ function AdminSidebar() {
           </Nav.Item>
           <Nav.Item as="li">
             <NavLink to="/admin/payments" className="nav-link">
-              {" "}
-              {/* Enabled */}
               <CashStack />
               <span>Payments</span>
             </NavLink>
           </Nav.Item>
           <Nav.Item as="li">
             <NavLink to="/admin/certificates" className="nav-link">
-              {" "}
-              {/* NEW & Enabled */}
               <FileEarmarkText />
               <span>Certificates</span>
             </NavLink>
           </Nav.Item>
           <Nav.Item as="li">
             <NavLink to="/admin/analytics" className="nav-link">
-              {" "}
-              {/* NEW & Enabled */}
               <BarChartFill />
               <span>Analytics</span>
             </NavLink>
           </Nav.Item>
+          {/* --- THIS IS THE NEW FEATURE --- */}
+          <Nav.Item as="li">
+            <NavLink to="/admin/support" className="nav-link">
+              <ChatDotsFill />
+              <span>Support Tickets</span>
+            </NavLink>
+          </Nav.Item>
+          {/* --- END OF NEW FEATURE --- */}
         </Nav>
       </div>
       <Nav className="flex-column" as="ul">
