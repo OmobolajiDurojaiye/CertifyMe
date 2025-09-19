@@ -16,6 +16,13 @@ def create_app():
     app.config['SECRET_key'] = os.environ.get('SECRET_KEY', 'a_default_secret_key_for_development')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'a_default_jwt_key_for_development')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400
+
+    db_url = os.environ.get('DATABASE_URL', 'mysql+mysqlconnector://root@127.0.0.1/certifyme_db')
+    if '?' in db_url:
+        app.config['SQLALCHEMY_DATABASE_URI'] = f"{db_url}&pool_recycle=280"
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = f"{db_url}?pool_recycle=280"
+
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql+mysqlconnector://root@127.0.0.1/certifyme_db')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['FRONTEND_URL'] = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
