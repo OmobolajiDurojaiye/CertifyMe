@@ -104,6 +104,10 @@ function LoginPage() {
               Sign Up
             </Link>
             {" | "}
+            <Link to="/forgot-password" className="auth-switch-link">
+              Forgot Password?
+            </Link>
+            {" | "}
             <Link to="/" className="auth-switch-link">
               Back to Home
             </Link>

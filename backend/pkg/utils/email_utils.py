@@ -59,3 +59,50 @@ def send_admin_verification_email(admin_user):
     except Exception as e:
         current_app.logger.error(f"Failed to send admin verification email: {e}")
         raise
+
+def send_password_reset_email(user, reset_url):
+    """
+    Sends a password reset link to a user.
+    """
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f4; }}
+            .container {{ max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }}
+            .header {{ font-size: 24px; color: #333; text-align: center; padding: 10px; }}
+            .button {{ display: inline-block; padding: 12px 25px; margin: 20px 0; font-size: 16px; color: #fff; background-color: #0d6efd; text-decoration: none; border-radius: 5px; }}
+            .footer {{ font-size: 12px; text-align: center; color: #888; margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">CertifyMe Password Reset Request</div>
+            <p>Hello {user.name},</p>
+            <p>We received a request to reset the password for your account. If you did not make this request, you can safely ignore this email.</p>
+            <p>To reset your password, please click the button below. This link is valid for 15 minutes.</p>
+            <div style="text-align: center;">
+                <a href="{reset_url}" class="button">Reset Your Password</a>
+            </div>
+            <p>If you're having trouble with the button, you can also copy and paste this link into your browser:</p>
+            <p><a href="{reset_url}">{reset_url}</a></p>
+            <div class="footer">
+                This is an automated message from CertifyMe.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    msg = Message(
+        subject="Your CertifyMe Password Reset Link",
+        sender=('CertifyMe Support', current_app.config.get('MAIL_USERNAME')),
+        recipients=[user.email],
+        html=html_body
+    )
+    try:
+        mail.send(msg)
+        current_app.logger.info(f"Password reset email sent to: {user.email}")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send password reset email: {e}")
+        raise

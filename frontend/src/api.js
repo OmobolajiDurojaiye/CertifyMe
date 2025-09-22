@@ -1,3 +1,4 @@
+// api.js
 import axios from "axios";
 import { API_BASE_URL } from "./config";
 
@@ -22,6 +23,14 @@ export const loginUser = (credentials) =>
   apiClient.post("/auth/login", credentials);
 export const signupUser = (userData) =>
   apiClient.post("/auth/register", userData);
+
+// --- NEW PASSWORD RESET API Calls ---
+export const requestPasswordReset = (email) =>
+  apiClient.post("/auth/forgot-password", { email });
+
+export const resetPassword = (token, password) =>
+  apiClient.post("/auth/reset-password", { token, password });
+// --- END OF NEW FEATURE ---
 
 // --- ADMIN API Calls ---
 export const adminLogin = (credentials) =>
@@ -154,6 +163,14 @@ export const updateTemplate = (templateId, formData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 
+// API calls for the visual template editor
+export const createVisualTemplate = (templateData) =>
+  apiClient.post("/templates/visual/", templateData);
+export const getVisualTemplate = (templateId) =>
+  apiClient.get(`/templates/visual/${templateId}`);
+export const updateVisualTemplate = (templateId, templateData) =>
+  apiClient.put(`/templates/visual/${templateId}`, templateData);
+
 export const getCertificates = () => apiClient.get("/certificates/");
 export const createCertificate = (certData) =>
   apiClient.post("/certificates/", certData);
@@ -205,4 +222,10 @@ export const downloadBulkTemplate = () =>
 export const downloadGroupBulkPDF = (groupId) =>
   apiClient.get(`/groups/${groupId}/download-bulk-pdf`, {
     responseType: "blob",
+  });
+
+// New upload for editor images
+export const uploadEditorImage = (formData) =>
+  apiClient.post("/uploads/editor-images", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
   });

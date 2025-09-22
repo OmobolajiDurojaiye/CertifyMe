@@ -16,6 +16,8 @@ import BulkCreateCertificatesPage from "./pages/BulkCreateCertificatesPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GroupsPage from "./pages/GroupsPage";
 import ContactSupportPage from "./pages/ContactSupportPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -29,8 +31,12 @@ import AdminCertificatesPage from "./pages/AdminCertificatesPage";
 import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
 import AdminUserDetailsPage from "./pages/AdminUserDetailsPage";
 import AdminPaymentDetailsPage from "./pages/AdminPaymentDetailsPage";
-import AdminSupportPage from "./pages/AdminSupportPage"; // NEW
-import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage"; // NEW
+import AdminSupportPage from "./pages/AdminSupportPage";
+import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage";
+
+// --- THIS IS THE NEW FEATURE ---
+// import VisualEditorPage from "./pages/VisualEditorPage";
+// --- END OF NEW FEATURE ---
 
 const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 
@@ -41,6 +47,8 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/verify" element={<VerifyCertificatePage />} />
       <Route
         path="/verify/:verificationId"
@@ -62,15 +70,24 @@ function App() {
           />
           <Route path="certificates" element={<AdminCertificatesPage />} />
           <Route path="analytics" element={<AdminAnalyticsPage />} />
-          {/* --- THIS IS THE NEW FEATURE --- */}
           <Route path="support" element={<AdminSupportPage />} />
           <Route
             path="support/:ticketId"
             element={<AdminSupportTicketDetailsPage />}
           />
-          {/* --- END OF NEW FEATURE --- */}
         </Route>
       </Route>
+
+      {/* --- THIS IS THE NEW FEATURE --- */}
+      {/* Visual Editor Route (Protected, but without the standard sidebar layout) */}
+      <Route element={<ProtectedRoute />}>
+        {/* <Route path="/dashboard/editor" element={<VisualEditorPage />} /> */}
+        {/* <Route
+          path="/dashboard/editor/:templateId"
+          element={<VisualEditorPage />}
+        /> */}
+      </Route>
+      {/* --- END OF NEW FEATURE --- */}
 
       {/* Protected User Routes */}
       <Route element={<ProtectedRoute />}>
