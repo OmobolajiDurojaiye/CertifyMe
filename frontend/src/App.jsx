@@ -35,7 +35,8 @@ import AdminSupportPage from "./pages/AdminSupportPage";
 import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage";
 
 // --- THIS IS THE NEW FEATURE ---
-// import VisualEditorPage from "./pages/VisualEditorPage";
+import VisualEditorPage from "./pages/VisualEditorPage";
+import DocsPage from "./pages/DocsPage";
 // --- END OF NEW FEATURE ---
 
 const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
@@ -54,6 +55,8 @@ function App() {
         path="/verify/:verificationId"
         element={<VerifyCertificatePage />}
       />
+
+      <Route path="/docs" element={<DocsPage />} />
 
       {/* Admin Routes */}
       <Route path="/admin/login" element={<AdminPortalPage />} />
@@ -81,11 +84,11 @@ function App() {
       {/* --- THIS IS THE NEW FEATURE --- */}
       {/* Visual Editor Route (Protected, but without the standard sidebar layout) */}
       <Route element={<ProtectedRoute />}>
-        {/* <Route path="/dashboard/editor" element={<VisualEditorPage />} /> */}
-        {/* <Route
+        <Route path="/dashboard/editor" element={<VisualEditorPage />} />
+        <Route
           path="/dashboard/editor/:templateId"
           element={<VisualEditorPage />}
-        /> */}
+        />
       </Route>
       {/* --- END OF NEW FEATURE --- */}
 

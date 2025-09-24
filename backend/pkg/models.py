@@ -1,4 +1,3 @@
-# models.py
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import uuid
@@ -39,13 +38,13 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.Text, nullable=False)
-    # --- THIS IS THE FIX ---
-    # Added 'suspended' to the Enum to correctly handle suspended users.
     role = db.Column(db.Enum('free', 'starter', 'growth', 'pro', 'enterprise', 'suspended', name='user_roles'), default='free', nullable=False)
-    # --- END OF FIX ---
     cert_quota = db.Column(db.Integer, default=10, nullable=False)
     subscription_expiry = db.Column(db.DateTime, nullable=True)
     signature_image_url = db.Column(db.Text, nullable=True)
+    # --- THIS IS THE NEW FEATURE ---
+    api_key = db.Column(db.String(64), unique=True, nullable=True, index=True)
+    # --- END OF NEW FEATURE ---
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     templates = db.relationship('Template', backref='user', lazy=True)
@@ -90,7 +89,8 @@ class Template(db.Model):
     secondary_color = db.Column(db.String(7), default='#64748B') 
     body_font_color = db.Column(db.String(7), default='#333333') 
     font_family = db.Column(db.String(50), default='Georgia')
-    layout_style = db.Column(db.Enum('classic', 'modern', name='template_layouts'), default='modern', nullable=False) 
+    layout_style = db.Column(db.Enum('classic', 'modern', 'visual', name='template_layouts'), default='modern', nullable=False)
+    layout_data = db.Column(db.JSON, nullable=True)
     is_public = db.Column(db.Boolean, default=False, nullable=False)
     custom_text = db.Column(db.JSON, nullable=False, default=lambda: {
         "title": "Certificate of Completion",

@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from "react";
+// FIX #1: Import 'Link' from react-router-dom
+import { Link } from "react-router-dom";
 import { getTemplates, createTemplate, updateTemplate } from "../api";
-import { CheckCircle, Info, Edit2, Expand, X } from "lucide-react";
+// FIX #2: Import 'Brush' icon for the new button
+// --- NEW: Import 'Copy' and 'Check' icons for the new feature ---
+import {
+  CheckCircle,
+  Info,
+  Edit2,
+  Expand,
+  X,
+  Brush,
+  Copy,
+  Check,
+} from "lucide-react";
 import { SERVER_BASE_URL } from "../config";
 import { Spinner, Modal, Button } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
@@ -153,7 +166,7 @@ const TemplatePreview = ({ previewData, isFullscreen = false }) => {
     return (
       <div style={containerStyle}>
         <div
-          className="flex h-full w-full bg-gray-800 text-white border-4 shadow-2xl"
+          className="flex h-full w-full bg-white text-black border-4 shadow-2xl"
           style={{ borderColor: primary_color, ...backgroundStyle }}
         >
           <div
@@ -190,20 +203,22 @@ const TemplatePreview = ({ previewData, isFullscreen = false }) => {
               </div>
             </div>
           </div>
-          <div className="w-[65%] p-10 flex flex-col justify-center">
+          <div className="w-[65%] p-10 flex flex-col justify-center bg-white bg-opacity-80">
             <h1
               className="text-2xl font-light uppercase tracking-[0.15em]"
               style={{ color: primary_color }}
             >
               {certificateTitle}
             </h1>
-            <h2 className="text-5xl font-extrabold my-3 text-white">
+            <h2 className="text-5xl font-extrabold my-3" style={textStyle}>
               Recipient Name
             </h2>
-            <p className="text-gray-200 text-lg italic">{certificateBody}</p>
+            <p className="text-lg italic" style={{ color: body_font_color }}>
+              {certificateBody}
+            </p>
             <p
               className="text-2xl font-semibold mt-2 uppercase tracking-wider"
-              style={{ color: primary_color }}
+              style={{ color: secondary_color }}
             >
               Course Title
             </p>
@@ -211,11 +226,11 @@ const TemplatePreview = ({ previewData, isFullscreen = false }) => {
               className="flex justify-between mt-auto pt-4 text-base"
               style={{ borderTop: `2px solid ${primary_color}` }}
             >
-              <div className="text-gray-200">
+              <div style={textStyle}>
                 <p>Date: MM/DD/YYYY</p>
                 <p>Signature: Signature</p>
               </div>
-              <p className="text-gray-200">ID: pending</p>
+              <p style={textStyle}>ID: pending</p>
             </div>
           </div>
         </div>
@@ -286,6 +301,115 @@ const FormFileInput = ({ label, ...props }) => (
   </div>
 );
 
+// --- NEW: Template Card Component with ID display ---
+const TemplateCard = ({ template, onEditClick }) => {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyId = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    navigator.clipboard.writeText(template.id);
+    setIsCopied(true);
+    toast.success(`Template ID ${template.id} copied!`);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
+  return (
+    <div
+      key={template.id}
+      className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all relative"
+    >
+      <div className="absolute top-2 right-2 flex gap-2 z-10">
+        {template.layout_style === "visual" && (
+          <span className="bg-blue-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            VISUAL
+          </span>
+        )}
+        {template.is_public && (
+          <span className="bg-indigo-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            SYSTEM
+          </span>
+        )}
+      </div>
+      <div
+        className="w-full h-32"
+        style={{
+          backgroundColor: template.primary_color,
+          backgroundImage: template.background_url
+            ? `url(${SERVER_BASE_URL}${template.background_url})`
+            : "none",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      ></div>
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center overflow-hidden">
+            {template.logo_url && (
+              <img
+                src={`${SERVER_BASE_URL}${template.logo_url}`}
+                alt="Logo"
+                className="w-10 h-10 rounded-full mr-3 object-cover bg-gray-100 flex-shrink-0"
+              />
+            )}
+            <div className="flex-grow overflow-hidden">
+              <h5 className="font-bold text-gray-900 truncate">
+                {template.title}
+              </h5>
+              <p className="text-sm text-gray-500 capitalize">
+                {template.layout_style}
+              </p>
+            </div>
+          </div>
+          {!template.is_public && (
+            <Link
+              to={
+                template.layout_style === "visual"
+                  ? `/dashboard/editor/${template.id}`
+                  : "#"
+              }
+              onClick={
+                template.layout_style !== "visual"
+                  ? (e) => {
+                      e.preventDefault();
+                      onEditClick(template);
+                    }
+                  : undefined
+              }
+              className="text-indigo-600 hover:text-indigo-800 flex-shrink-0 ml-2"
+            >
+              <Edit2 size={20} />
+            </Link>
+          )}
+        </div>
+        {/* --- START OF NEW FEATURE --- */}
+        <div className="mt-4 bg-gray-50 p-2 rounded-md flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-600">
+            Template ID:
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-gray-800 bg-gray-200 px-2 py-1 rounded">
+              {template.id}
+            </span>
+            <button
+              onClick={handleCopyId}
+              className="p-1.5 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-md transition-colors"
+              title="Copy ID"
+            >
+              {isCopied ? (
+                <Check size={16} className="text-green-600" />
+              ) : (
+                <Copy size={16} />
+              )}
+            </button>
+          </div>
+        </div>
+        {/* --- END OF NEW FEATURE --- */}
+      </div>
+    </div>
+  );
+};
+
 function TemplatesPage() {
   const [templates, setTemplates] = useState([]);
   const [formData, setFormData] = useState({
@@ -336,12 +460,10 @@ function TemplatesPage() {
     setLoading(true);
     try {
       const response = await getTemplates();
-      // --- THIS IS THE FIX ---
-      // Access the .templates array inside the response object
+      // FIX #3: Access the .templates array inside the response object
       setTemplates(response.data.templates);
-      // --- END OF FIX ---
     } catch (err) {
-      toast.error("Could not fetch templates.");
+      toast.error("Could not fetch templates. You may need to log in again.");
     } finally {
       setLoading(false);
     }
@@ -351,16 +473,21 @@ function TemplatesPage() {
     const { name, value } = e.target;
     const stateSetter = showEditModal ? setEditFormData : setFormData;
     stateSetter((prev) => ({ ...prev, [name]: value }));
+
+    const targetPreview = showEditModal ? editFormData : formData;
+
     if (name === "custom_title" || name === "custom_body") {
       setPreviewData((prev) => ({
         ...prev,
+        ...targetPreview,
+        [name]: value,
         custom_text: {
           ...prev.custom_text,
           [name === "custom_title" ? "title" : "body"]: value,
         },
       }));
     } else {
-      setPreviewData((prev) => ({ ...prev, [name]: value }));
+      setPreviewData((prev) => ({ ...prev, ...targetPreview, [name]: value }));
     }
   };
 
@@ -438,7 +565,14 @@ function TemplatesPage() {
     const promise = new Promise(async (resolve, reject) => {
       const data = new FormData();
       Object.keys(editFormData).forEach((key) => {
-        if (editFormData[key]) data.append(key, editFormData[key]);
+        // Don't append unchanged file URLs
+        if (
+          key !== "logo_url" &&
+          key !== "background_url" &&
+          editFormData[key]
+        ) {
+          data.append(key, editFormData[key]);
+        }
       });
       try {
         const response = await updateTemplate(editFormData.id, data);
@@ -461,14 +595,20 @@ function TemplatesPage() {
   return (
     <div className="max-w-screen-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <Toaster position="top-center" />
-      <h2 className="text-3xl font-bold text-gray-900 mb-8">
-        Manage Templates
-      </h2>
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold text-gray-900">Manage Templates</h2>
+        <Link to="/dashboard/editor">
+          <Button variant="primary" className="flex items-center">
+            <Brush size={18} className="me-2" />
+            Create with Visual Editor
+          </Button>
+        </Link>
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-4">
           <div className="bg-white p-6 rounded-xl shadow-md">
             <h4 className="text-xl font-bold text-gray-900 mb-6">
-              Create New Template
+              Create Form-Based Template
             </h4>
             <form onSubmit={handleSubmit} className="space-y-4">
               <FormInput
@@ -570,52 +710,13 @@ function TemplatesPage() {
           </div>
         ) : templates.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* --- NEW: Use the TemplateCard component here --- */}
             {templates.map((t) => (
-              <div
+              <TemplateCard
                 key={t.id}
-                className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all relative"
-              >
-                {t.is_public && (
-                  <span className="absolute top-2 right-2 bg-indigo-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
-                    SYSTEM
-                  </span>
-                )}
-                <div
-                  className="w-full h-32"
-                  style={{
-                    backgroundColor: t.primary_color,
-                    backgroundImage: t.background_url
-                      ? `url(${SERVER_BASE_URL}${t.background_url})`
-                      : "none",
-                    backgroundSize: "cover",
-                  }}
-                ></div>
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center">
-                    {t.logo_url && (
-                      <img
-                        src={`${SERVER_BASE_URL}${t.logo_url}`}
-                        alt="Logo"
-                        className="w-10 h-10 rounded-full mr-3 object-cover bg-gray-100"
-                      />
-                    )}
-                    <div>
-                      <h5 className="font-bold text-gray-900">{t.title}</h5>
-                      <p className="text-sm text-gray-500 capitalize">
-                        {t.layout_style}
-                      </p>
-                    </div>
-                  </div>
-                  {!t.is_public && (
-                    <button
-                      onClick={() => handleEditClick(t)}
-                      className="text-indigo-600 hover:text-indigo-800"
-                    >
-                      <Edit2 size={20} />
-                    </button>
-                  )}
-                </div>
-              </div>
+                template={t}
+                onEditClick={handleEditClick}
+              />
             ))}
           </div>
         ) : (
@@ -630,7 +731,7 @@ function TemplatesPage() {
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Edit Template</Modal.Title>
+          <Modal.Title>Edit Form-Based Template</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <form
@@ -641,33 +742,33 @@ function TemplatesPage() {
             <FormInput
               label="Template Name"
               name="title"
-              value={currentFormState?.title}
+              value={currentFormState?.title || ""}
               onChange={handleInputChange}
               required
             />
             <FormInput
               label="Certificate Title Text"
               name="custom_title"
-              value={currentFormState?.custom_title}
+              value={currentFormState?.custom_title || ""}
               onChange={handleInputChange}
             />
             <FormInput
               label="Certificate Body Text"
               name="custom_body"
-              value={currentFormState?.custom_body}
+              value={currentFormState?.custom_body || ""}
               onChange={handleInputChange}
             />
             <FormSelect
               label="Layout Style"
               name="layout_style"
-              value={currentFormState?.layout_style}
+              value={currentFormState?.layout_style || "classic"}
               onChange={handleInputChange}
               options={layoutOptions}
             />
             <FormSelect
               label="Font Family"
               name="font_family"
-              value={currentFormState?.font_family}
+              value={currentFormState?.font_family || "Georgia"}
               onChange={handleInputChange}
               options={fontOptions}
             />
@@ -675,29 +776,29 @@ function TemplatesPage() {
               <FormColorInput
                 label="Primary"
                 name="primary_color"
-                value={currentFormState?.primary_color}
+                value={currentFormState?.primary_color || "#2563EB"}
                 onChange={handleInputChange}
               />
               <FormColorInput
                 label="Secondary"
                 name="secondary_color"
-                value={currentFormState?.secondary_color}
+                value={currentFormState?.secondary_color || "#D1D5DB"}
                 onChange={handleInputChange}
               />
               <FormColorInput
                 label="Font"
                 name="body_font_color"
-                value={currentFormState?.body_font_color}
+                value={currentFormState?.body_font_color || "#111827"}
                 onChange={handleInputChange}
               />
             </div>
             <FormFileInput
-              label="Logo"
+              label="Logo (upload to change)"
               name="logo"
               onChange={handleFileChange}
             />
             <FormFileInput
-              label="Background"
+              label="Background (upload to change)"
               name="background"
               onChange={handleFileChange}
             />

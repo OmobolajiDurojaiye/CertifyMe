@@ -2,30 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "../styles/LandingPage.css";
 import { Check } from "lucide-react";
+import PublicHeader from "../components/PublicHeader"; // --- NEW: Import the reusable header ---
 
 function LandingPage() {
   return (
     <div className="chrono-body">
-      {/* ===== HEADER / NAVIGATION ===== */}
-      <header className="chrono-header">
-        <div className="nav-left">
-          <img
-            src="/images/certbadge.png"
-            alt="CertifyMe Logo"
-            height="28"
-            className="logo-icon"
-          />
-          <span className="logo-text">CertifyMe</span>
-        </div>
-        <div className="nav-right">
-          <Link to="/login" className="signin-link">
-            Log In
-          </Link>
-          <Link to="/signup" className="demo-button-secondary">
-            Sign Up Free
-          </Link>
-        </div>
-      </header>
+      {/* --- NEW: Use the reusable PublicHeader component --- */}
+      <PublicHeader />
 
       {/* ===== MAIN CONTENT AREA ===== */}
       <main className="chrono-main-content">

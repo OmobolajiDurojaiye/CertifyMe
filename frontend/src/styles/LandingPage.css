@@ -49,12 +49,10 @@
   font-size: 1.25rem;
 }
 
-/* --- THIS IS THE FIX --- */
 .logo-icon {
-  height: 28px; /* Constrains the height of the navbar logo */
-  width: auto; /* Ensures the width scales proportionally */
+  height: 28px;
+  width: auto;
 }
-/* --- END OF FIX --- */
 
 .nav-right {
   display: flex;
@@ -110,7 +108,7 @@
 .hero-logo {
   margin-bottom: 24px;
 }
-/* Added this rule for consistency */
+
 .hero-logo img {
   height: 64px;
 }
@@ -148,7 +146,7 @@
   box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.2);
 }
 
-/* ===== PRICING SECTION (UPDATED FOR 4 CARDS, RESPONSIVE) ===== */
+/* ===== PRICING SECTION ===== */
 .pricing-section {
   display: flex;
   gap: 2rem;
@@ -231,11 +229,67 @@
   font-size: 0.9rem;
 }
 
-/* ===== MOBILE RESPONSIVENESS FOR LANDING PAGE ===== */
+/* ===== LIGHT THEME FOR REUSABLE HEADER ===== */
+.chrono-header.light-theme {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.chrono-header.light-theme .logo-text {
+  color: #1e293b;
+}
+
+.chrono-header.light-theme .signin-link {
+  color: #475569;
+}
+
+.chrono-header.light-theme .signin-link:hover {
+  color: #1e293b;
+}
+
+.chrono-header.light-theme .demo-button-secondary {
+  background-color: #ffffff;
+  color: #1e293b;
+  border: 1px solid #e2e8f0;
+}
+
+.chrono-header.light-theme .demo-button-secondary:hover {
+  background-color: #f8fafc;
+  border-color: #d1d5db;
+}
+
+/* ===== MOBILE HEADER BUTTON STYLING ===== */
+.mobile-menu-button {
+  display: none;
+  background: none;
+  border: none;
+  padding: 0.5rem;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  color: inherit;
+  border-radius: 999px;
+}
+.mobile-menu-button:hover {
+  background-color: rgba(128, 128, 128, 0.1);
+}
+
+/* ===== RESPONSIVENESS ===== */
+@media (max-width: 992px) {
+  /* --- FIX: Only hide text links if the header has a mobile menu --- */
+  .chrono-header.has-mobile-menu .nav-right .signin-link {
+    display: none;
+  }
+
+  /* --- FIX: Show the hamburger button only when it's supposed to be there --- */
+  .chrono-header.has-mobile-menu .mobile-menu-button {
+    display: block;
+  }
+}
+
 @media (max-width: 768px) {
   .chrono-header {
     padding: 16px 24px;
-    position: relative; /* Unfix on mobile for better scroll */
+    position: relative;
   }
   .nav-right {
     gap: 16px;
@@ -245,7 +299,7 @@
     font-size: 0.9rem;
   }
   .chrono-main-content {
-    padding: 140px 16px 40px; /* Adjust for mobile header */
+    padding: 40px 16px 40px; /* Reduced top padding as header is no longer fixed */
     justify-content: flex-start;
   }
   .hero-headline {
@@ -280,6 +334,10 @@
 }
 
 @media (max-width: 480px) {
+  /* --- FIX: Also make this rule specific to headers with a menu --- */
+  .chrono-header.has-mobile-menu .nav-right .demo-button-secondary {
+    display: none;
+  }
   .hero-headline {
     font-size: 2rem;
   }

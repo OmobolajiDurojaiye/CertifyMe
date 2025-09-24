@@ -5,6 +5,8 @@ from .payments import payments_bp
 from .users import users_bp
 from .groups import groups_bp
 from .support import support_bp 
+from .visual_templates import visual_template_bp
+from .api_v1 import api_v1_bp
 
 # Admin blueprints
 from .admin_auth import admin_auth_bp
@@ -26,6 +28,8 @@ def register_blueprints(app):
     app.register_blueprint(users_bp, url_prefix='/api/users')
     app.register_blueprint(groups_bp, url_prefix='/api/groups')
     app.register_blueprint(support_bp, url_prefix='/api/support')
+    app.register_blueprint(visual_template_bp, url_prefix='/api/templates/visual')
+    app.register_blueprint(api_v1_bp, url_prefix='/api/v1')
     
     # All admin blueprints are grouped under a single, consistent prefix.
     app.register_blueprint(admin_auth_bp, url_prefix='/api/admin/auth')

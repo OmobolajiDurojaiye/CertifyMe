@@ -10,20 +10,21 @@ import {
   Button,
   Spinner,
   Alert,
+  Modal,
+  InputGroup,
 } from "react-bootstrap";
 import { usePaystackPayment } from "react-paystack";
-// --- FIX 1: Alias the imported function to avoid name collision ---
 import {
   getCurrentUser,
-  initializePayment as apiInitializePayment, // Renamed here
+  initializePayment as apiInitializePayment,
   uploadUserSignature,
+  generateApiKey, // --- NEW: Import the new API function ---
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SERVER_BASE_URL } from "../config";
-import { UploadCloud } from "lucide-react";
+import { UploadCloud, Key, Copy, Check, Info } from "lucide-react"; // --- NEW: Import icons ---
 
-// --- PlanCard and BillingContent components are unchanged ---
 const PlanCard = ({
   title,
   price,
@@ -171,8 +172,27 @@ function SettingsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [paystackConfig, setPaystackConfig] = useState(null);
 
-  // The Paystack hook's function is now correctly named `initializePayment`
+  // --- NEW: State for API Key Management ---
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [newApiKey, setNewApiKey] = useState("");
+  const [isCopied, setIsCopied] = useState(false);
+
   const initializePayment = usePaystackPayment(paystackConfig);
+
+  const fetchUser = async () => {
+    try {
+      const res = await getCurrentUser();
+      setUser(res.data);
+      if (res.data.signature_image_url) {
+        setPreview(SERVER_BASE_URL + res.data.signature_image_url);
+      }
+    } catch (error) {
+      toast.error("Your session may have expired. Please log in again.");
+      navigate("/login");
+    } finally {
+      setLoadingUser(false);
+    }
+  };
 
   useEffect(() => {
     if (paystackConfig) {
@@ -184,6 +204,7 @@ function SettingsPage() {
           navigate(`/dashboard/settings?reference=${response.reference}`, {
             replace: true,
           });
+          setTimeout(fetchUser, 1000);
         },
         onClose: () => {
           toast.error("Payment modal closed.");
@@ -195,37 +216,20 @@ function SettingsPage() {
   }, [paystackConfig, initializePayment, navigate]);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await getCurrentUser();
-        setUser(res.data);
-        if (res.data.signature_image_url) {
-          setPreview(SERVER_BASE_URL + res.data.signature_image_url);
-        }
-      } catch (error) {
-        toast.error("Your session may have expired. Please log in again.");
-        navigate("/login");
-      } finally {
-        setLoadingUser(false);
-      }
-    };
-    fetchUser();
-
     const params = new URLSearchParams(location.search);
     const paymentStatus = params.get("trxref") || params.get("reference");
     if (paymentStatus) {
-      toast.success("Payment processed! Refreshing your plan...");
-      setTimeout(() => {
-        fetchUser();
-        navigate("/dashboard/settings", { replace: true });
-      }, 2000);
+      toast.success(
+        "Payment processed! Your plan details will update shortly."
+      );
+      navigate("/dashboard/settings", { replace: true });
     }
+    fetchUser();
   }, [navigate, location.search]);
 
   const handleUpgrade = async (plan) => {
     setProcessingPlan(plan);
     try {
-      // --- FIX 2: Use the aliased name to call the API function ---
       const res = await apiInitializePayment(plan);
       const paymentData = res.data;
 
@@ -254,9 +258,7 @@ function SettingsPage() {
     if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
       setSignatureFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result);
-      };
+      reader.onloadend = () => setPreview(reader.result);
       reader.readAsDataURL(file);
     } else {
       toast.error("Please select a valid PNG or JPEG image.");
@@ -282,6 +284,27 @@ function SettingsPage() {
     }
   };
 
+  // --- NEW: Handler for API Key Generation ---
+  const handleGenerateApiKey = async () => {
+    const promise = generateApiKey();
+    toast.promise(promise, {
+      loading: "Generating new API key...",
+      success: (res) => {
+        setNewApiKey(res.data.api_key);
+        setShowKeyModal(true);
+        fetchUser(); // Refresh user data to show API key exists
+        return "API Key generated successfully!";
+      },
+      error: (err) => err.response?.data?.msg || "Failed to generate API key.",
+    });
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(newApiKey);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
   if (loadingUser) {
     return <Spinner animation="border" className="d-block mx-auto mt-5" />;
   }
@@ -291,7 +314,6 @@ function SettingsPage() {
       <Toaster position="top-center" />
       <h2 className="fw-bold mb-4">Settings</h2>
       <Tab.Container id="settings-tabs" defaultActiveKey="billing">
-        {/* The rest of the JSX is unchanged */}
         <Nav variant="tabs" className="mb-4 settings-tabs">
           <Nav.Item>
             <Nav.Link eventKey="profile">Profile</Nav.Link>
@@ -301,6 +323,10 @@ function SettingsPage() {
           </Nav.Item>
           <Nav.Item>
             <Nav.Link eventKey="security">Security</Nav.Link>
+          </Nav.Item>
+          {/* --- NEW: Add Developer Tab --- */}
+          <Nav.Item>
+            <Nav.Link eventKey="developer">Developer</Nav.Link>
           </Nav.Item>
         </Nav>
         <Tab.Content>
@@ -318,7 +344,6 @@ function SettingsPage() {
                         type="text"
                         defaultValue={user?.name}
                         disabled
-                        className="custom-form-control"
                       />
                     </Form.Group>
                   </Col>
@@ -329,7 +354,6 @@ function SettingsPage() {
                         type="email"
                         defaultValue={user?.email}
                         disabled
-                        className="custom-form-control"
                       />
                     </Form.Group>
                   </Col>
@@ -340,10 +364,7 @@ function SettingsPage() {
               <Card.Title as="h5" className="fw-bold mb-4">
                 Signature Management
               </Card.Title>
-              <Card.Text>
-                Upload a transparent PNG of your signature. This will be used on
-                all certificates you issue.
-              </Card.Text>
+              <Card.Text>Upload a transparent PNG of your signature.</Card.Text>
               <Form onSubmit={handleSubmitSignature}>
                 <Form.Group className="mb-3">
                   <Form.Label>Upload Signature Image (PNG or JPG)</Form.Label>
@@ -362,11 +383,7 @@ function SettingsPage() {
                     <img
                       src={preview}
                       alt="Signature Preview"
-                      style={{
-                        maxHeight: "80px",
-                        maxWidth: "100%",
-                        filter: "invert(0%)",
-                      }}
+                      style={{ maxHeight: "80px", maxWidth: "100%" }}
                     />
                   </div>
                 )}
@@ -402,17 +419,11 @@ function SettingsPage() {
                   <Col md={6}>
                     <Form.Group className="mb-3">
                       <Form.Label>Current Password</Form.Label>
-                      <Form.Control
-                        type="password"
-                        className="custom-form-control"
-                      />
+                      <Form.Control type="password" />
                     </Form.Group>
                     <Form.Group className="mb-3">
                       <Form.Label>New Password</Form.Label>
-                      <Form.Control
-                        type="password"
-                        className="custom-form-control"
-                      />
+                      <Form.Control type="password" />
                     </Form.Group>
                   </Col>
                 </Row>
@@ -422,8 +433,67 @@ function SettingsPage() {
               </Form>
             </Card>
           </Tab.Pane>
+
+          {/* --- NEW: Add Developer Tab Pane --- */}
+          <Tab.Pane eventKey="developer">
+            <Card className="page-content-card">
+              <Card.Title as="h5" className="fw-bold mb-4">
+                API Access
+              </Card.Title>
+              <Card.Text>
+                Integrate CertifyMe with your applications using your personal
+                API key. This allows you to programmatically generate
+                certificates without using the dashboard.
+              </Card.Text>
+              {user?.api_key ? (
+                <Alert variant="info" className="d-flex align-items-center">
+                  <Info size={20} className="me-2 flex-shrink-0" />
+                  <div>
+                    An API key exists for your account. For security, it is not
+                    shown here. If you've lost it, you must regenerate a new
+                    one.
+                  </div>
+                </Alert>
+              ) : (
+                <Alert variant="warning">
+                  You have not generated an API key yet.
+                </Alert>
+              )}
+              <Button variant="danger" onClick={handleGenerateApiKey}>
+                <Key size={18} className="me-2" />
+                {user?.api_key ? "Regenerate API Key" : "Generate API Key"}
+              </Button>
+              <Card.Text className="mt-2 text-muted small">
+                Warning: Regenerating will invalidate your old key immediately.
+              </Card.Text>
+            </Card>
+          </Tab.Pane>
         </Tab.Content>
       </Tab.Container>
+
+      {/* --- NEW: Modal for displaying the new API key --- */}
+      <Modal show={showKeyModal} onHide={() => setShowKeyModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Your New API Key</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Alert variant="warning">
+            Please copy your new API key and store it in a safe place.
+            <strong> This is the only time you will be able to see it.</strong>
+          </Alert>
+          <InputGroup>
+            <Form.Control value={newApiKey} readOnly />
+            <Button variant="outline-secondary" onClick={copyToClipboard}>
+              {isCopied ? <Check size={18} /> : <Copy size={18} />}
+            </Button>
+          </InputGroup>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowKeyModal(false)}>
+            I have copied my key
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
   );
 }

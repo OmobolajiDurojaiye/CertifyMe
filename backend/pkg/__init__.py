@@ -1,4 +1,3 @@
-# __init__.py
 import os
 # --- THIS IS THE FIX ---
 # Import the `request` object to inspect incoming requests
