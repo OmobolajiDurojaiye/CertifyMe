@@ -11,6 +11,7 @@ import { SERVER_BASE_URL } from "../config";
 import { Calendar, CheckCircle, Info, Maximize2, X } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
+import KonvaPreview from "../components/KonvaPreview";
 
 const FormInput = ({
   name,
@@ -45,6 +46,12 @@ const CertificatePreview = ({ template, formData }) => {
           Select a template to see a preview.
         </p>
       </div>
+    );
+  }
+
+  if (template.layout_style === "visual") {
+    return (
+      <KonvaPreview layoutData={template.layout_data} dynamicData={formData} />
     );
   }
 

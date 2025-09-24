@@ -598,10 +598,10 @@ function TemplatesPage() {
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900">Manage Templates</h2>
         <Link to="/dashboard/editor">
-          <Button variant="primary" className="flex items-center">
+          {/* <Button variant="primary" className="flex items-center">
             <Brush size={18} className="me-2" />
             Create with Visual Editor
-          </Button>
+          </Button> */}
         </Link>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

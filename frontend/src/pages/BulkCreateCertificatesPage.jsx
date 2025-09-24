@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Container,
-  Card,
-  Form,
-  Button,
-  Alert,
-  Spinner,
-  Table,
-  Modal,
-} from "react-bootstrap";
+import { Form, Button, Alert, Spinner, Table, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
 import QRCode from "react-qr-code";
@@ -29,6 +20,9 @@ import {
   downloadBulkTemplate,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
+// --- THIS IS THE NEW FEATURE ---
+import KonvaPreview from "../components/KonvaPreview";
+// --- END OF NEW FEATURE ---
 
 const CertificatePreview = ({ template, formData }) => {
   if (!template) {
@@ -45,6 +39,15 @@ const CertificatePreview = ({ template, formData }) => {
       </div>
     );
   }
+
+  // --- THIS IS THE NEW FEATURE ---
+  // If the template is from the visual editor, render the Konva preview.
+  if (template.layout_style === "visual") {
+    return (
+      <KonvaPreview layoutData={template.layout_data} dynamicData={formData} />
+    );
+  }
+  // --- END OF NEW FEATURE ---
 
   const {
     layout_style,
@@ -84,7 +87,7 @@ const CertificatePreview = ({ template, formData }) => {
 
   const renderModern = () => (
     <div
-      className="flex h-100 w-100 shadow-lg rounded-xl overflow-hidden text-white"
+      className="flex h-100 w-100 shadow-lg rounded-xl overflow-hidden text-black"
       style={{
         border: `6px solid ${primary_color}`,
         ...backgroundStyle,
@@ -92,7 +95,7 @@ const CertificatePreview = ({ template, formData }) => {
       }}
     >
       <div
-        className="flex flex-col justify-between items-center p-4"
+        className="flex flex-col justify-between items-center p-4 text-white"
         style={{
           width: "35%",
           background: `linear-gradient(135deg, ${primary_color}, ${secondary_color})`,
@@ -122,7 +125,7 @@ const CertificatePreview = ({ template, formData }) => {
           />
         </div>
       </div>
-      <div className="flex-grow p-4 flex flex-col justify-center relative">
+      <div className="flex-grow p-4 flex flex-col justify-center relative bg-white bg-opacity-90">
         <h1
           className="font-light uppercase mb-3"
           style={{
@@ -454,7 +457,12 @@ const BulkCreateCertificatesPage = () => {
                 <option value="">Choose a template...</option>
                 {templates.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {t.title} {t.is_public && "(System)"}
+                    {t.title}{" "}
+                    {t.is_public
+                      ? "(System)"
+                      : t.layout_style === "visual"
+                      ? "(Visual)"
+                      : ""}
                   </option>
                 ))}
               </Form.Select>

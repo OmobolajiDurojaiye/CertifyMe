@@ -25,15 +25,150 @@ def parse_flexible_date(date_string):
 def get_image_as_base64(image_path):
     if not image_path: return None
     try:
-        full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(image_path))
+        # Image paths from the visual editor might already be full paths
+        if image_path.startswith('/uploads/'):
+             full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(image_path))
+        else: # Fallback for old system
+             full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(image_path))
+
         if os.path.exists(full_path):
             with open(full_path, "rb") as image_file: return base64.b64encode(image_file.read()).decode('utf-8')
     except Exception as e: current_app.logger.error(f"Error encoding image {image_path}: {e}")
     return None
 
+# --- THIS IS THE NEW FEATURE (ENHANCED) ---
+def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
+    """Generates a PDF for a template created with the visual editor."""
+    layout_data = template.layout_data or {}
+    elements = layout_data.get('elements', [])
+    background = layout_data.get('background', {})
+    # Read canvas dimensions, defaulting to A4 Landscape for backward compatibility
+    canvas_config = layout_data.get('canvas', {'width': 842, 'height': 595})
+    page_width = canvas_config.get('width', 842)
+    page_height = canvas_config.get('height', 595)
+
+    # Data to replace placeholders
+    dynamic_data = {
+        "{{recipient_name}}": certificate.recipient_name,
+        "{{course_title}}": certificate.course_title,
+        "{{issue_date}}": certificate.issue_date.strftime('%B %d, %Y'),
+        "{{issuer_name}}": certificate.issuer_name,
+        "{{verification_id}}": certificate.verification_id,
+        "{{signature}}": certificate.signature or certificate.issuer_name
+    }
+    
+    # Generate QR code
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
+    qr.add_data(verification_url)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    qr_buffer = BytesIO(); qr_img.save(qr_buffer, format="PNG")
+    qr_base64 = base64.b64encode(qr_buffer.getvalue()).decode('utf-8')
+    dynamic_data["{{qr_code}}"] = f'<img src="data:image/png;base64,{qr_base64}" style="width: 100%; height: 100%;" />'
+
+    html_elements = []
+    for el in elements:
+        style = (
+            f'position: absolute; '
+            f'box-sizing: border-box; '
+            f'left: {el["x"]}px; '
+            f'top: {el["y"]}px; '
+            f'width: {el["width"]}px; '
+            f'height: {el["height"]}px; '
+            f'transform-origin: 0 0; '
+            f'transform: rotate({el.get("rotation", 0)}deg); '
+        )
+        content = ''
+        el_type = el.get('type')
+
+        if el_type == 'text' or el_type == 'placeholder':
+            text = el.get('text', '')
+            # Replace placeholders
+            for placeholder, value in dynamic_data.items():
+                 if placeholder in text:
+                    text = text.replace(placeholder, str(value))
+            
+            style += (
+                f'font-family: {el.get("fontFamily", "sans-serif")}; '
+                f'font-size: {el.get("fontSize", 16)}px; '
+                f'color: {el.get("fill", "#000")}; '
+                f'text-align: {el.get("align", "left")}; '
+                f'font-style: {"italic" if "italic" in el.get("fontStyle", "") else "normal"}; '
+                f'font-weight: {"bold" if "bold" in el.get("fontStyle", "") else "normal"}; '
+                'line-height: 1.2; '
+                'word-wrap: break-word; ' # Enable text wrapping
+            )
+            content = text.replace('\\n', '<br>').replace('\n', '<br>')
+        
+        elif el_type == 'image':
+            src = el.get('src')
+            if src:
+                base64_img = get_image_as_base64(src)
+                if base64_img:
+                    content = f'<img src="data:image/png;base64,{base64_img}" style="width: 100%; height: 100%; object-fit: contain;">'
+
+        elif el_type == 'shape':
+             style += (
+                f'background-color: {el.get("fill", "transparent")}; '
+                f'border: {el.get("strokeWidth", 0)}px solid {el.get("stroke", "transparent")}; '
+                f'border-radius: {el.get("cornerRadius", 0)}px; '
+             )
+        
+        html_elements.append(f'<div style="{style}">{content}</div>')
+
+    background_style = ''
+    if background.get('fill'):
+        background_style += f'background-color: {background["fill"]};'
+    if background.get('image'):
+         base64_bg = get_image_as_base64(background["image"])
+         if base64_bg:
+            background_style += f"background-image: url('data:image/png;base64,{base64_bg}'); background-size: cover; background-position: center;"
+
+
+    html_template = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            @page {{ size: {page_width}px {page_height}px; margin: 0; }}
+            body {{ margin: 0; padding: 0; font-family: sans-serif; }}
+            .certificate-container {{
+                width: {page_width}px;
+                height: {page_height}px;
+                position: relative;
+                overflow: hidden;
+                {background_style}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="certificate-container">
+            {''.join(html_elements)}
+        </div>
+    </body>
+    </html>
+    """
+    
+    pdf_buffer = BytesIO()
+    try:
+        HTML(string=html_template, base_url=os.path.dirname(__file__)).write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        return pdf_buffer
+    except Exception as e:
+        current_app.logger.error(f"Visual PDF generation error for cert {certificate.id}: {e}")
+        raise
+# --- END OF NEW FEATURE ---
+
 def _generate_certificate_pdf_in_memory(certificate):
     template = Template.query.get_or_404(certificate.template_id)
     issuer = User.query.get_or_404(certificate.user_id)
+    
+    # --- THIS IS THE FIX ---
+    # Route to the correct PDF generator based on the template's layout style.
+    if template.layout_style == 'visual':
+        return _generate_visual_certificate_pdf_in_memory(certificate, template, issuer)
+    # --- END OF FIX ---
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
