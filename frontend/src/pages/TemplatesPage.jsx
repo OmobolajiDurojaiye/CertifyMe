@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react";
-// FIX #1: Import 'Link' from react-router-dom
 import { Link } from "react-router-dom";
 import { getTemplates, createTemplate, updateTemplate } from "../api";
-// FIX #2: Import 'Brush' icon for the new button
-// --- NEW: Import 'Copy' and 'Check' icons for the new feature ---
 import {
   CheckCircle,
   Info,
@@ -301,7 +298,6 @@ const FormFileInput = ({ label, ...props }) => (
   </div>
 );
 
-// --- NEW: Template Card Component with ID display ---
 const TemplateCard = ({ template, onEditClick }) => {
   const [isCopied, setIsCopied] = useState(false);
 
@@ -382,7 +378,6 @@ const TemplateCard = ({ template, onEditClick }) => {
             </Link>
           )}
         </div>
-        {/* --- START OF NEW FEATURE --- */}
         <div className="mt-4 bg-gray-50 p-2 rounded-md flex items-center justify-between">
           <span className="text-sm font-semibold text-gray-600">
             Template ID:
@@ -404,7 +399,6 @@ const TemplateCard = ({ template, onEditClick }) => {
             </button>
           </div>
         </div>
-        {/* --- END OF NEW FEATURE --- */}
       </div>
     </div>
   );
@@ -460,7 +454,6 @@ function TemplatesPage() {
     setLoading(true);
     try {
       const response = await getTemplates();
-      // FIX #3: Access the .templates array inside the response object
       setTemplates(response.data.templates);
     } catch (err) {
       toast.error("Could not fetch templates. You may need to log in again.");
@@ -565,7 +558,6 @@ function TemplatesPage() {
     const promise = new Promise(async (resolve, reject) => {
       const data = new FormData();
       Object.keys(editFormData).forEach((key) => {
-        // Don't append unchanged file URLs
         if (
           key !== "logo_url" &&
           key !== "background_url" &&
@@ -593,12 +585,15 @@ function TemplatesPage() {
   const currentFormState = showEditModal ? editFormData : formData;
 
   return (
-    <div className="max-w-screen-2xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <div className="max-w-screen-2xl mx-auto">
       <Toaster position="top-center" />
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <h2 className="text-3xl font-bold text-gray-900">Manage Templates</h2>
         <Link to="/dashboard/editor">
-          {/* <Button variant="primary" className="flex items-center">
+          {/* <Button
+            variant="primary"
+            className="flex items-center w-full sm:w-auto justify-center"
+          >
             <Brush size={18} className="me-2" />
             Create with Visual Editor
           </Button> */}
@@ -709,8 +704,7 @@ function TemplatesPage() {
             <Spinner />
           </div>
         ) : templates.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* --- NEW: Use the TemplateCard component here --- */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {templates.map((t) => (
               <TemplateCard
                 key={t.id}
@@ -815,7 +809,7 @@ function TemplatesPage() {
       </Modal>
       {isFullscreen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-8"
+          className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 md:p-8"
           onClick={() => setIsFullscreen(false)}
         >
           <button

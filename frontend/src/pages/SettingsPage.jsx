@@ -12,18 +12,24 @@ import {
   Alert,
   Modal,
   InputGroup,
+  ListGroup,
 } from "react-bootstrap";
 import { usePaystackPayment } from "react-paystack";
 import {
   getCurrentUser,
   initializePayment as apiInitializePayment,
   uploadUserSignature,
-  generateApiKey, // --- NEW: Import the new API function ---
+  generateApiKey,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
 import { SERVER_BASE_URL } from "../config";
-import { UploadCloud, Key, Copy, Check, Info } from "lucide-react"; // --- NEW: Import icons ---
+import { UploadCloud, Key, Copy, Check, Info } from "lucide-react";
+import {
+  QuestionCircle,
+  BoxArrowRight,
+  ChevronRight,
+} from "react-bootstrap-icons";
 
 const PlanCard = ({
   title,
@@ -76,6 +82,7 @@ const PlanCard = ({
     </Card.Body>
   </Card>
 );
+
 const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
   <Card className="page-content-card mb-4">
     <Card.Body>
@@ -86,8 +93,8 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
         Current Plan: {user?.role?.toUpperCase() || "FREE"} -{" "}
         {user?.cert_quota || 10} certificates remaining
       </Alert>
-      <Row>
-        <Col md={3}>
+      <Row className="g-3">
+        <Col md={6} lg={3}>
           <PlanCard
             title="Starter"
             price="$15 for 500 certs"
@@ -103,7 +110,7 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             loading={processingPlan === "starter"}
           />
         </Col>
-        <Col md={3}>
+        <Col md={6} lg={3}>
           <PlanCard
             title="Growth"
             price="$50 for 2,000 certs"
@@ -120,7 +127,7 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             loading={processingPlan === "growth"}
           />
         </Col>
-        <Col md={3}>
+        <Col md={6} lg={3}>
           <PlanCard
             title="Pro"
             price="$100 for 5,000 certs"
@@ -137,7 +144,7 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             loading={processingPlan === "pro"}
           />
         </Col>
-        <Col md={3}>
+        <Col md={6} lg={3}>
           <PlanCard
             title="Enterprise"
             price="$300 for 20,000 certs"
@@ -172,7 +179,6 @@ function SettingsPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [paystackConfig, setPaystackConfig] = useState(null);
 
-  // --- NEW: State for API Key Management ---
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [newApiKey, setNewApiKey] = useState("");
   const [isCopied, setIsCopied] = useState(false);
@@ -284,7 +290,6 @@ function SettingsPage() {
     }
   };
 
-  // --- NEW: Handler for API Key Generation ---
   const handleGenerateApiKey = async () => {
     const promise = generateApiKey();
     toast.promise(promise, {
@@ -305,6 +310,13 @@ function SettingsPage() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
+  // --- NEW: Logout Handler ---
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    toast.success("Logged out successfully.");
+    navigate("/login");
+  };
+
   if (loadingUser) {
     return <Spinner animation="border" className="d-block mx-auto mt-5" />;
   }
@@ -321,10 +333,6 @@ function SettingsPage() {
           <Nav.Item>
             <Nav.Link eventKey="billing">Billing</Nav.Link>
           </Nav.Item>
-          <Nav.Item>
-            <Nav.Link eventKey="security">Security</Nav.Link>
-          </Nav.Item>
-          {/* --- NEW: Add Developer Tab --- */}
           <Nav.Item>
             <Nav.Link eventKey="developer">Developer</Nav.Link>
           </Nav.Item>
@@ -360,7 +368,7 @@ function SettingsPage() {
                 </Row>
               </Form>
             </Card>
-            <Card className="page-content-card">
+            <Card className="page-content-card mb-4">
               <Card.Title as="h5" className="fw-bold mb-4">
                 Signature Management
               </Card.Title>
@@ -401,7 +409,39 @@ function SettingsPage() {
                 </Button>
               </Form>
             </Card>
+
+            {/* --- NEW: Account Actions Card --- */}
+            <Card className="page-content-card">
+              <Card.Title as="h5" className="fw-bold mb-3">
+                Account Actions
+              </Card.Title>
+              <ListGroup variant="flush">
+                <ListGroup.Item
+                  action
+                  onClick={() => navigate("/dashboard/support")}
+                  className="d-flex justify-content-between align-items-center px-0"
+                >
+                  <div className="d-flex align-items-center">
+                    <QuestionCircle size={20} className="me-3 text-primary" />
+                    <span className="fw-medium">Contact Support</span>
+                  </div>
+                  <ChevronRight />
+                </ListGroup.Item>
+                <ListGroup.Item
+                  action
+                  onClick={handleLogout}
+                  className="d-flex justify-content-between align-items-center px-0 text-danger"
+                >
+                  <div className="d-flex align-items-center">
+                    <BoxArrowRight size={20} className="me-3" />
+                    <span className="fw-medium">Logout</span>
+                  </div>
+                  <ChevronRight />
+                </ListGroup.Item>
+              </ListGroup>
+            </Card>
           </Tab.Pane>
+
           <Tab.Pane eventKey="billing">
             <BillingContent
               user={user}
@@ -409,32 +449,7 @@ function SettingsPage() {
               handleUpgrade={handleUpgrade}
             />
           </Tab.Pane>
-          <Tab.Pane eventKey="security">
-            <Card className="page-content-card">
-              <Card.Title as="h5" className="fw-bold mb-4">
-                Change Password
-              </Card.Title>
-              <Form>
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Current Password</Form.Label>
-                      <Form.Control type="password" />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                      <Form.Label>New Password</Form.Label>
-                      <Form.Control type="password" />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                <Button variant="primary" disabled>
-                  Update Password
-                </Button>
-              </Form>
-            </Card>
-          </Tab.Pane>
 
-          {/* --- NEW: Add Developer Tab Pane --- */}
           <Tab.Pane eventKey="developer">
             <Card className="page-content-card">
               <Card.Title as="h5" className="fw-bold mb-4">
@@ -442,8 +457,7 @@ function SettingsPage() {
               </Card.Title>
               <Card.Text>
                 Integrate CertifyMe with your applications using your personal
-                API key. This allows you to programmatically generate
-                certificates without using the dashboard.
+                API key.
               </Card.Text>
               {user?.api_key ? (
                 <Alert variant="info" className="d-flex align-items-center">
@@ -471,7 +485,6 @@ function SettingsPage() {
         </Tab.Content>
       </Tab.Container>
 
-      {/* --- NEW: Modal for displaying the new API key --- */}
       <Modal show={showKeyModal} onHide={() => setShowKeyModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Your New API Key</Modal.Title>

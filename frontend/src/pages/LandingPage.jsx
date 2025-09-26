@@ -1,21 +1,54 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/LandingPage.css";
-import { Check } from "lucide-react";
-import PublicHeader from "../components/PublicHeader"; // --- NEW: Import the reusable header ---
+import { Check, X, BookOpen, LogIn, UserPlus } from "lucide-react";
+import PublicHeader from "../components/PublicHeader";
 
 function LandingPage() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <div className="chrono-body">
-      {/* --- NEW: Use the reusable PublicHeader component --- */}
-      <PublicHeader />
+      <PublicHeader showMenuButton={true} onMenuClick={toggleMenu} />
 
-      {/* ===== MAIN CONTENT AREA ===== */}
+      {isMenuOpen && (
+        <div className="mobile-menu-fullscreen">
+          <button onClick={toggleMenu} className="mobile-menu-close">
+            <X size={32} />
+          </button>
+          <nav className="mobile-menu-nav">
+            <Link to="/docs" className="mobile-menu-link" onClick={toggleMenu}>
+              <BookOpen />
+              <span>API Docs</span>
+            </Link>
+            <Link to="/login" className="mobile-menu-link" onClick={toggleMenu}>
+              <LogIn />
+              <span>Log In</span>
+            </Link>
+            <Link
+              to="/signup"
+              className="mobile-menu-link"
+              onClick={toggleMenu}
+            >
+              <UserPlus />
+              <span>Sign Up Free</span>
+            </Link>
+          </nav>
+        </div>
+      )}
+
       <main className="chrono-main-content">
-        {/* ===== CENTRAL HERO TEXT ===== */}
         <div className="hero-content">
-          <div className="hero-logo">
-            <img src="/images/certbadge.png" alt="CertifyMe Logo" height="64" />
+          {/* --- MODIFIED: Using a new class and image source for better control --- */}
+          <div className="hero-graphic">
+            <img
+              src="/images/hero-graphic.png"
+              alt="Certificate Seal and Shield"
+            />
           </div>
           <h1 className="hero-headline">
             Generate Certificates in Seconds — Fast, Easy & Professional.
@@ -30,7 +63,6 @@ function LandingPage() {
           </Link>
         </div>
 
-        {/* ===== PRICING SECTION (UPDATED TO MATCH SETTINGS PAGE) ===== */}
         <section id="pricing" className="pricing-section">
           <div className="pricing-card">
             <h3 className="plan-title">Starter</h3>
@@ -139,7 +171,6 @@ function LandingPage() {
         </section>
       </main>
 
-      {/* ===== FOOTER ===== */}
       <footer className="chrono-footer">
         <small>
           &copy; {new Date().getFullYear()} CertifyMe. All rights reserved.

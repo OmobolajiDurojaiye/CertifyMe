@@ -423,7 +423,7 @@ const CreateCertificatePage = () => {
   return (
     <>
       <Toaster position="top-right" />
-      <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="bg-gray-50">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg">
             <div className="flex justify-between items-center mb-6">
@@ -534,7 +534,7 @@ const CreateCertificatePage = () => {
                 </button>
               )}
             </div>
-            <div className="w-full h-[500px] flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden p-4">
+            <div className="w-full h-auto aspect-[1.414/1] flex items-center justify-center bg-gray-100 rounded-xl overflow-hidden p-4">
               <CertificatePreview
                 template={selectedTemplate}
                 formData={formData}

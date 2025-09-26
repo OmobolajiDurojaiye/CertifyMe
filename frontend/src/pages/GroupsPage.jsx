@@ -5,7 +5,7 @@ import {
   getGroupDetails,
   deleteGroup,
   sendGroupBulkEmail,
-  downloadGroupBulkPDF, // Import the new function
+  downloadGroupBulkPDF,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import {
@@ -15,9 +15,7 @@ import {
   Form,
   Spinner,
   Alert,
-  Table,
   Pagination,
-  Card,
 } from "react-bootstrap";
 import {
   Folder,
@@ -27,7 +25,7 @@ import {
   ChevronLeft,
   Mail,
   CheckCircle,
-  Download, // Import the download icon
+  Download,
 } from "lucide-react";
 
 function GroupsPage() {
@@ -40,7 +38,7 @@ function GroupsPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [isBulkDownloading, setIsBulkDownloading] = useState(false); // New state for download
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
 
   const fetchGroups = async (page = 1) => {
     setLoading(true);
@@ -124,7 +122,6 @@ function GroupsPage() {
     });
   };
 
-  // --- NEW HANDLER FOR BULK DOWNLOAD ---
   const handleBulkDownload = () => {
     setIsBulkDownloading(true);
     const promise = downloadGroupBulkPDF(viewingGroup.id);
@@ -169,14 +166,14 @@ function GroupsPage() {
           <ChevronLeft size={16} className="me-1" />
           Back to All Groups
         </Button>
-        <div className="d-flex justify-content-between align-items-center mb-4 p-4 bg-white rounded-3 shadow-sm flex-wrap gap-3">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 p-4 bg-white rounded-3 shadow-sm gap-3">
           <div>
             <h2 className="fw-bold mb-1">{viewingGroup.name}</h2>
             <p className="text-muted mb-0">
               {viewingGroup.certificate_count} certificates in this group
             </p>
           </div>
-          <div className="d-flex gap-2">
+          <div className="d-flex flex-wrap gap-2">
             <Button
               variant="outline-secondary"
               className="d-flex align-items-center"
@@ -188,7 +185,7 @@ function GroupsPage() {
               ) : (
                 <Download size={16} className="me-2" />
               )}
-              Download All PDFs
+              Download All
             </Button>
             <Button
               variant="primary"
@@ -196,7 +193,7 @@ function GroupsPage() {
               onClick={() => handleSendBulkEmail(viewingGroup.id)}
             >
               <Send size={16} className="me-2" />
-              Send Unsent Emails
+              Send Unsent
             </Button>
             <Button
               variant="outline-danger"
@@ -223,7 +220,7 @@ function GroupsPage() {
           <div className="row g-3">
             {groupDetails?.certificates.length > 0 ? (
               groupDetails.certificates.map((cert) => (
-                <div key={cert.id} className="col-md-6 col-lg-4">
+                <div key={cert.id} className="col-12 col-md-6 col-lg-4">
                   <div className="card h-100 shadow-sm border-0">
                     <div className="card-body">
                       <h5 className="card-title fw-bold">
@@ -270,11 +267,11 @@ function GroupsPage() {
   return (
     <Container>
       <Toaster position="top-center" />
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="fw-bold">Certificate Groups</h2>
+      <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-3">
+        <h2 className="fw-bold mb-0">Certificate Groups</h2>
         <Button
           onClick={() => setShowCreateModal(true)}
-          className="d-flex align-items-center"
+          className="d-flex align-items-center justify-content-center"
         >
           <Plus size={20} className="me-2" />
           Create New Group
@@ -284,7 +281,7 @@ function GroupsPage() {
       {groups.length > 0 ? (
         <div className="row g-3">
           {groups.map((group) => (
-            <div key={group.id} className="col-md-4 col-lg-3">
+            <div key={group.id} className="col-12 col-sm-6 col-md-4 col-lg-3">
               <div
                 className="card h-100 text-center shadow-sm border-0"
                 style={{

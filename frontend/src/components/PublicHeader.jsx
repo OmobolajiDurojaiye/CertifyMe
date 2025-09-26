@@ -8,7 +8,6 @@ const PublicHeader = ({
   showMenuButton = false,
   onMenuClick,
 }) => {
-  // --- FIX: Add a 'has-mobile-menu' class when the menu button is shown ---
   const headerClass = `chrono-header ${
     theme === "light" ? "light-theme" : ""
   } ${showMenuButton ? "has-mobile-menu" : ""}`;

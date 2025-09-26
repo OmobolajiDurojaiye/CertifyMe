@@ -1,14 +1,12 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
 
 :root {
-  --bg-color: #0b0f19; /* A deep, modern dark blue */
+  --bg-color: #0b0f19;
   --primary-blue: #3b82f6;
   --text-dark: #ffffff;
   --text-light: #9ca3af;
   --border-color: #374151;
   --card-bg: #1e293b;
-  --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* ===== BASE & LAYOUT ===== */
@@ -20,7 +18,7 @@
   flex-direction: column;
   min-height: 100vh;
   width: 100vw;
-  overflow-x: hidden; /* Allow vertical scroll but not horizontal */
+  overflow-x: hidden;
 }
 
 /* ===== HEADER / NAVIGATION ===== */
@@ -48,12 +46,10 @@
   font-weight: 600;
   font-size: 1.25rem;
 }
-
 .logo-icon {
   height: 28px;
   width: auto;
 }
-
 .nav-right {
   display: flex;
   align-items: center;
@@ -78,12 +74,7 @@
   padding: 8px 16px;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
-}
-.demo-button-secondary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(255, 255, 255, 0.1);
 }
 
 /* ===== MAIN CONTENT ===== */
@@ -96,29 +87,34 @@
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 120px 32px 60px; /* Padding top for fixed header */
+  padding: 120px 32px 60px;
 }
-
 .hero-content {
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.hero-logo {
-  margin-bottom: 24px;
-}
 
-.hero-logo img {
-  height: 64px;
+/* --- NEW/MODIFIED STYLES for Hero Graphic --- */
+.hero-graphic {
+  margin-bottom: 2rem;
 }
+.hero-graphic img {
+  max-width: 100px; /* Default desktop size */
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+/* --- END OF NEW STYLES --- */
+
 .hero-headline {
   font-size: 3.5rem;
   font-weight: 800;
   line-height: 1.2;
   margin: 0 0 16px 0;
-  color: var(--text-dark);
   max-width: 700px;
+  color: var(--text-dark); /* Ensure text is bright */
 }
 .hero-subheadline {
   font-size: 1.125rem;
@@ -130,23 +126,14 @@
 .demo-button-primary {
   background-color: var(--primary-blue);
   color: white;
-  border: none;
   border-radius: 8px;
   padding: 14px 28px;
   font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
   text-decoration: none;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.3);
-}
-.demo-button-primary:hover {
-  background-color: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.2);
 }
 
-/* ===== PRICING SECTION ===== */
 .pricing-section {
   display: flex;
   gap: 2rem;
@@ -167,17 +154,14 @@
   display: flex;
   flex-direction: column;
   text-align: left;
-  transition: all 0.2s ease-in-out;
 }
 .plan-title {
   font-size: 1.25rem;
   font-weight: 600;
-  color: white;
 }
 .plan-price {
   font-size: 2.5rem;
   font-weight: 700;
-  color: white;
   margin: 0.5rem 0;
 }
 .plan-suffix {
@@ -198,9 +182,6 @@
   gap: 0.75rem;
   margin-bottom: 0.75rem;
 }
-.plan-features svg {
-  color: var(--primary-blue);
-}
 .plan-button {
   width: 100%;
   text-align: center;
@@ -208,17 +189,11 @@
   border-radius: 8px;
   text-decoration: none;
   font-weight: 600;
-  transition: all 0.2s ease;
   background-color: #374151;
   color: white;
   border: none;
   cursor: pointer;
 }
-.plan-button:hover {
-  background-color: #4b5563;
-}
-
-/* ===== FOOTER ===== */
 .chrono-footer {
   width: 100%;
   max-width: 1200px;
@@ -228,59 +203,88 @@
   color: var(--text-light);
   font-size: 0.9rem;
 }
-
-/* ===== LIGHT THEME FOR REUSABLE HEADER ===== */
 .chrono-header.light-theme {
   background-color: #ffffff;
   border-bottom: 1px solid #e2e8f0;
 }
-
-.chrono-header.light-theme .logo-text {
+.chrono-header.light-theme .logo-text,
+.chrono-header.light-theme .mobile-menu-button {
   color: #1e293b;
 }
-
 .chrono-header.light-theme .signin-link {
   color: #475569;
 }
-
-.chrono-header.light-theme .signin-link:hover {
-  color: #1e293b;
-}
-
 .chrono-header.light-theme .demo-button-secondary {
   background-color: #ffffff;
   color: #1e293b;
   border: 1px solid #e2e8f0;
 }
 
-.chrono-header.light-theme .demo-button-secondary:hover {
-  background-color: #f8fafc;
-  border-color: #d1d5db;
-}
-
-/* ===== MOBILE HEADER BUTTON STYLING ===== */
 .mobile-menu-button {
   display: none;
   background: none;
   border: none;
   padding: 0.5rem;
-  margin-right: 0.5rem;
   cursor: pointer;
   color: inherit;
-  border-radius: 999px;
 }
-.mobile-menu-button:hover {
-  background-color: rgba(128, 128, 128, 0.1);
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.mobile-menu-fullscreen {
+  position: fixed;
+  inset: 0;
+  background-color: var(--bg-color);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  animation: fadeIn 0.3s ease-in-out;
+}
+.mobile-menu-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: var(--text-light);
+  cursor: pointer;
+}
+.mobile-menu-nav {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.mobile-menu-link {
+  color: var(--text-dark);
+  text-decoration: none;
+  font-size: 1.75rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.mobile-menu-link:hover {
+  background-color: var(--card-bg);
 }
 
 /* ===== RESPONSIVENESS ===== */
 @media (max-width: 992px) {
-  /* --- FIX: Only hide text links if the header has a mobile menu --- */
-  .chrono-header.has-mobile-menu .nav-right .signin-link {
+  .chrono-header.has-mobile-menu .nav-right {
     display: none;
   }
-
-  /* --- FIX: Show the hamburger button only when it's supposed to be there --- */
   .chrono-header.has-mobile-menu .mobile-menu-button {
     display: block;
   }
@@ -291,57 +295,37 @@
     padding: 16px 24px;
     position: relative;
   }
-  .nav-right {
-    gap: 16px;
-  }
-  .demo-button-secondary {
-    padding: 6px 12px;
-    font-size: 0.9rem;
-  }
   .chrono-main-content {
-    padding: 40px 16px 40px; /* Reduced top padding as header is no longer fixed */
+    padding: 40px 16px;
     justify-content: flex-start;
+  }
+  /* --- FIX: Reduce hero graphic size on tablets --- */
+  .hero-graphic img {
+    max-width: 220px;
   }
   .hero-headline {
     font-size: 2.5rem;
-    line-height: 1.1;
   }
   .hero-subheadline {
     font-size: 1rem;
   }
-  .demo-button-primary {
-    padding: 12px 24px;
-    font-size: 0.95rem;
-  }
   .pricing-section {
     flex-direction: column;
+    align-items: center;
     gap: 1.5rem;
     margin-top: 4rem;
-    align-items: center;
   }
   .pricing-card {
     min-width: 100%;
-    max-width: none;
-    padding: 1.5rem;
-  }
-  .plan-price {
-    font-size: 2rem;
-  }
-  .chrono-footer {
-    padding: 16px 24px;
-    font-size: 0.8rem;
   }
 }
 
 @media (max-width: 480px) {
-  /* --- FIX: Also make this rule specific to headers with a menu --- */
-  .chrono-header.has-mobile-menu .nav-right .demo-button-secondary {
-    display: none;
+  /* --- FIX: Further reduce hero graphic size on phones --- */
+  .hero-graphic img {
+    max-width: 90px;
   }
   .hero-headline {
     font-size: 2rem;
-  }
-  .pricing-card {
-    padding: 1rem;
   }
 }

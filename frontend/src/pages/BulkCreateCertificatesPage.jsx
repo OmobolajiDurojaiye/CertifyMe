@@ -20,9 +20,7 @@ import {
   downloadBulkTemplate,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
-// --- THIS IS THE NEW FEATURE ---
 import KonvaPreview from "../components/KonvaPreview";
-// --- END OF NEW FEATURE ---
 
 const CertificatePreview = ({ template, formData }) => {
   if (!template) {
@@ -40,14 +38,11 @@ const CertificatePreview = ({ template, formData }) => {
     );
   }
 
-  // --- THIS IS THE NEW FEATURE ---
-  // If the template is from the visual editor, render the Konva preview.
   if (template.layout_style === "visual") {
     return (
       <KonvaPreview layoutData={template.layout_data} dynamicData={formData} />
     );
   }
-  // --- END OF NEW FEATURE ---
 
   const {
     layout_style,
@@ -57,15 +52,12 @@ const CertificatePreview = ({ template, formData }) => {
     font_family,
     background_url,
     logo_url,
-    // --- THIS IS THE FIX ---
     custom_text,
   } = template;
 
-  // Use custom text with fallbacks
   const certificateTitle = custom_text?.title || "Certificate of Completion";
   const certificateBody =
     custom_text?.body || "has successfully completed the course";
-  // --- END OF FIX ---
 
   const {
     recipient_name = "Recipient Name",
@@ -427,7 +419,7 @@ const BulkCreateCertificatesPage = () => {
   return (
     <>
       <Toaster />
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-4 bg-white p-6 rounded-xl shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
             Bulk Create Certificates

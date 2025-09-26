@@ -32,8 +32,6 @@ function ErrorBoundary({ children }) {
       );
       setHasError(true);
     };
-    // This is a simplified way to catch rendering errors in children.
-    // For a more robust solution, a library like react-error-boundary is recommended.
     const originalError = console.error;
     console.error = (...args) => {
       if (/The above error occurred in the <.*> component/.test(args[0])) {
@@ -84,7 +82,6 @@ function MyCertificatesPage() {
         getTemplates(),
         getCurrentUser(),
       ]);
-      // Sort certificates by issue_date in descending order (newest to oldest)
       const sortedCertificates = certResponse.data.sort(
         (a, b) =>
           new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime()
@@ -147,7 +144,7 @@ function MyCertificatesPage() {
     toast.promise(promise, {
       loading: `Sending ${ids.length} emails... This may take a moment.`,
       success: (res) => {
-        fetchData(); // Refresh all data to get latest sent_at status
+        fetchData();
         setSelectedCertIds(new Set());
         const { sent, failed } = res.data;
         return `Process complete! Sent: ${sent.length}, Failed: ${failed.length}.`;
@@ -243,10 +240,7 @@ function MyCertificatesPage() {
     },
     {
       title: "Quota Remaining",
-      // --- THIS IS THE FIX ---
-      // This now directly displays the user's certificate quota number.
       value: user ? user.cert_quota : "...",
-      // --- END OF FIX ---
       icon: <HelpCircle className="w-6 h-6" />,
       color: "text-purple-600",
     },
@@ -254,7 +248,7 @@ function MyCertificatesPage() {
 
   return (
     <ErrorBoundary>
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         <Toaster position="top-center" reverseOrder={false} />
         {loading ? (
           <div className="text-center py-12">
@@ -311,29 +305,29 @@ function MyCertificatesPage() {
               ))}
             </div>
 
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <div className="flex justify-between items-center mb-6">
+            <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <h4 className="text-xl font-bold text-gray-900">
                   My Certificates
                 </h4>
-                <div className="space-x-3">
+                <div className="flex space-x-3 w-full sm:w-auto">
                   <Link
                     to="/dashboard/create"
-                    className="inline-flex items-center bg-indigo-600 text-white rounded-md py-2 px-4 hover:bg-indigo-700 transition-colors"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center bg-indigo-600 text-white rounded-md py-2 px-4 hover:bg-indigo-700 transition-colors"
                   >
-                    <PlusCircle className="w-5 h-5 mr-2" /> Create New
+                    <PlusCircle className="w-5 h-5 mr-2" /> New
                   </Link>
                   <Link
                     to="/dashboard/bulk-create"
-                    className="inline-flex items-center bg-gray-700 text-white rounded-md py-2 px-4 hover:bg-gray-800 transition-colors"
+                    className="flex-1 sm:flex-none inline-flex items-center justify-center bg-gray-700 text-white rounded-md py-2 px-4 hover:bg-gray-800 transition-colors"
                   >
-                    <PlusCircle className="w-5 h-5 mr-2" /> Bulk Create
+                    <PlusCircle className="w-5 h-5 mr-2" /> Bulk
                   </Link>
                 </div>
               </div>
 
               {certificates.length > 0 && (
-                <div className="bg-gray-50 p-3 rounded-md mb-4 flex items-center justify-between">
+                <div className="bg-gray-50 p-3 rounded-md mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -351,7 +345,7 @@ function MyCertificatesPage() {
                   <button
                     onClick={handleBulkSend}
                     disabled={selectedCertIds.size === 0 || isBulkSending}
-                    className="inline-flex items-center bg-blue-600 text-white rounded-md py-2 px-4 hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    className="w-full sm:w-auto inline-flex items-center justify-center bg-blue-600 text-white rounded-md py-2 px-4 hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
                     {isBulkSending ? (
                       <>
@@ -359,6 +353,7 @@ function MyCertificatesPage() {
                           className="animate-spin h-5 w-5 mr-2"
                           viewBox="0 0 24 24"
                         >
+                          {" "}
                           <circle
                             className="opacity-25"
                             cx="12"
@@ -367,19 +362,19 @@ function MyCertificatesPage() {
                             stroke="currentColor"
                             strokeWidth="4"
                             fill="none"
-                          />
+                          />{" "}
                           <path
                             className="opacity-75"
                             fill="currentColor"
                             d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
-                          />
+                          />{" "}
                         </svg>
                         Sending...
                       </>
                     ) : (
                       <>
-                        <Send className="w-5 h-5 mr-2" />
-                        Send Email to Selected
+                        {" "}
+                        <Send className="w-5 h-5 mr-2" /> Send Email{" "}
                       </>
                     )}
                   </button>
@@ -394,16 +389,19 @@ function MyCertificatesPage() {
                     className="w-24 mx-auto mb-4"
                   />
                   <h4 className="text-xl font-bold text-gray-900">
-                    Your certificate list is empty
+                    {" "}
+                    Your certificate list is empty{" "}
                   </h4>
                   <p className="text-gray-500 mb-4">
-                    Get started by creating your first digital certificate.
+                    {" "}
+                    Get started by creating your first digital certificate.{" "}
                   </p>
                   <Link
                     to="/dashboard/create"
                     className="inline-flex items-center bg-indigo-600 text-white rounded-md py-2 px-6 hover:bg-indigo-700 transition-colors"
                   >
-                    Create Your First Certificate
+                    {" "}
+                    Create Your First Certificate{" "}
                   </Link>
                 </div>
               ) : (
@@ -411,31 +409,37 @@ function MyCertificatesPage() {
                   {certificates.map((cert) => (
                     <div
                       key={cert.id}
-                      className="border-b border-gray-200 py-4 flex items-start"
+                      className="border-b border-gray-200 py-4 flex flex-col sm:flex-row items-start gap-4"
                     >
-                      <input
-                        type="checkbox"
-                        checked={selectedCertIds.has(cert.id)}
-                        onChange={() => handleSelectOne(cert.id)}
-                        className="h-4 w-4 mr-4 mt-2 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-                      />
-                      <div className="flex-grow">
-                        <h6 className="text-lg font-bold text-gray-900">
-                          {cert.recipient_name}
-                        </h6>
-                        <p className="text-gray-600">{cert.course_title}</p>
-                        <p className="text-gray-500 text-sm">
-                          Issued:{" "}
-                          {new Date(cert.issue_date).toLocaleDateString()}
-                          {cert.sent_at && (
-                            <span className="text-green-600 font-semibold ml-2">
-                              | Emailed:{" "}
-                              {new Date(cert.sent_at).toLocaleDateString()}
-                            </span>
-                          )}
-                        </p>
+                      <div className="flex items-start w-full">
+                        <input
+                          type="checkbox"
+                          checked={selectedCertIds.has(cert.id)}
+                          onChange={() => handleSelectOne(cert.id)}
+                          className="h-4 w-4 mr-4 mt-1.5 flex-shrink-0 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <div className="flex-grow">
+                          <h6 className="text-lg font-bold text-gray-900">
+                            {" "}
+                            {cert.recipient_name}{" "}
+                          </h6>
+                          <p className="text-gray-600">{cert.course_title}</p>
+                          <p className="text-gray-500 text-sm">
+                            Issued:{" "}
+                            {new Date(cert.issue_date).toLocaleDateString()}
+                            {cert.sent_at && (
+                              <span className="text-green-600 font-semibold ml-2">
+                                {" "}
+                                | Emailed:{" "}
+                                {new Date(
+                                  cert.sent_at
+                                ).toLocaleDateString()}{" "}
+                              </span>
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex space-x-2 items-center">
+                      <div className="flex space-x-2 items-center self-end sm:self-center flex-shrink-0">
                         <button
                           onClick={() => handleSendEmail(cert.id)}
                           className={
@@ -453,6 +457,7 @@ function MyCertificatesPage() {
                               className="animate-spin h-5 w-5"
                               viewBox="0 0 24 24"
                             >
+                              {" "}
                               <circle
                                 className="opacity-25"
                                 cx="12"
@@ -461,12 +466,12 @@ function MyCertificatesPage() {
                                 stroke="currentColor"
                                 strokeWidth="4"
                                 fill="none"
-                              />
+                              />{" "}
                               <path
                                 className="opacity-75"
                                 fill="currentColor"
                                 d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
-                              />
+                              />{" "}
                             </svg>
                           ) : (
                             <Mail className="w-5 h-5" />
@@ -483,6 +488,7 @@ function MyCertificatesPage() {
                               className="animate-spin h-5 w-5"
                               viewBox="0 0 24 24"
                             >
+                              {" "}
                               <circle
                                 className="opacity-25"
                                 cx="12"
@@ -491,12 +497,12 @@ function MyCertificatesPage() {
                                 stroke="currentColor"
                                 strokeWidth="4"
                                 fill="none"
-                              />
+                              />{" "}
                               <path
                                 className="opacity-75"
                                 fill="currentColor"
                                 d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
-                              />
+                              />{" "}
                             </svg>
                           ) : (
                             <Download className="w-5 h-5" />
@@ -507,14 +513,16 @@ function MyCertificatesPage() {
                           className="text-indigo-600 hover:text-indigo-800"
                           title="View Certificate"
                         >
-                          <Eye className="w-5 h-5" />
+                          {" "}
+                          <Eye className="w-5 h-5" />{" "}
                         </button>
                         <button
                           onClick={() => navigate(`/dashboard/edit/${cert.id}`)}
                           className="text-blue-600 hover:text-blue-800"
                           title="Edit Certificate"
                         >
-                          <Pencil className="w-5 h-5" />
+                          {" "}
+                          <Pencil className="w-5 h-5" />{" "}
                         </button>
                         <button
                           onClick={() => {
@@ -524,7 +532,8 @@ function MyCertificatesPage() {
                           className="text-red-600 hover:text-red-800"
                           title="Delete Certificate"
                         >
-                          <Trash className="w-5 h-5" />
+                          {" "}
+                          <Trash className="w-5 h-5" />{" "}
                         </button>
                       </div>
                     </div>
@@ -535,29 +544,34 @@ function MyCertificatesPage() {
 
             {showDeleteModal && (
               <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full m-4">
                   <h3 className="text-lg font-bold text-gray-900">
-                    Confirm Delete
+                    {" "}
+                    Confirm Delete{" "}
                   </h3>
                   <p className="text-gray-600 mt-2">
+                    {" "}
                     Are you sure you want to delete the certificate for{" "}
-                    <strong>{selectedCert?.recipient_name}</strong>?<br />
+                    <strong>{selectedCert?.recipient_name}</strong>?<br />{" "}
                     <small className="text-gray-500">
-                      This action cannot be undone.
-                    </small>
+                      {" "}
+                      This action cannot be undone.{" "}
+                    </small>{" "}
                   </p>
                   <div className="mt-4 flex justify-end space-x-3">
                     <button
                       onClick={() => setShowDeleteModal(false)}
                       className="bg-gray-300 text-gray-700 rounded-md py-2 px-4 hover:bg-gray-400 transition-colors"
                     >
-                      Cancel
+                      {" "}
+                      Cancel{" "}
                     </button>
                     <button
                       onClick={handleDelete}
                       className="bg-red-600 text-white rounded-md py-2 px-4 hover:bg-red-700 transition-colors"
                     >
-                      Delete
+                      {" "}
+                      Delete{" "}
                     </button>
                   </div>
                 </div>
