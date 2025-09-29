@@ -110,6 +110,13 @@ def get_classic_pdf_template():
                 width: 45%;
                 text-align: center;
             }
+            .signature-script-font {
+                font-family: 'Dancing Script', cursive;
+                font-size: 1.5rem;
+                font-weight: 700;
+                margin-bottom: 0.1rem;
+                color: {{ body_font_color }};
+            }
             .signature-value {
                 font-size: 1.1rem;
                 font-weight: 500;
@@ -170,13 +177,13 @@ def get_classic_pdf_template():
                         {% if signature_image_base64 %}
                         <img src="data:image/png;base64,{{ signature_image_base64 }}" class="signature-image">
                         {% else %}
-                        <p class="signature-value">{{ signature }}</p>
+                        <p class="signature-script-font">{{ signature }}</p>
                         {% endif %}
                         <hr class="signature-line" />
                         <p class="signature-label">Authorized Signature</p>
                     </div>
                     <div class="signature-block">
-                        <p class="signature-value">{{ issuer_name }}</p>
+                        <p class="signature-script-font">{{ issuer_name }}</p>
                         <hr class="signature-line" />
                         <p class="signature-label">Issuer</p>
                     </div>
