@@ -1,5 +1,7 @@
+// frontend/src/components/Sidebar.jsx
+
 import React from "react";
-import { Nav, Image } from "react-bootstrap";
+import { Nav, Image, OverlayTrigger, Tooltip } from "react-bootstrap";
 import { NavLink, Link, useNavigate } from "react-router-dom";
 import {
   HouseDoor,
@@ -10,16 +12,25 @@ import {
   PlusCircle,
   Folder,
   QuestionCircle,
+  BarChartLine,
 } from "react-bootstrap-icons";
+import { useUser } from "../context/UserContext";
 
 function Sidebar() {
   const navigate = useNavigate();
+  const { user } = useUser();
 
   const handleLogout = (e) => {
     e.preventDefault();
     localStorage.removeItem("token");
     navigate("/login");
   };
+
+  const renderTooltip = (props) => (
+    <Tooltip id="button-tooltip" {...props}>
+      Upgrade to a paid plan to unlock insights!
+    </Tooltip>
+  );
 
   return (
     <div className="sidebar">
@@ -38,6 +49,7 @@ function Sidebar() {
               <span>My Certificates</span>
             </NavLink>
           </Nav.Item>
+
           <Nav.Item as="li">
             <NavLink to="/dashboard/groups" className="nav-link">
               <Folder />
@@ -62,6 +74,30 @@ function Sidebar() {
               <span>Bulk Create</span>
             </NavLink>
           </Nav.Item>
+          {/* --- THIS IS THE REFINED CONDITIONAL LINK --- */}
+          {user &&
+            (user.role === "free" ? (
+              <OverlayTrigger
+                placement="right"
+                delay={{ show: 250, hide: 400 }}
+                overlay={renderTooltip}
+              >
+                {/* We use a div here because NavLink would try to navigate */}
+                <div className="nav-link nav-link-upgrade">
+                  <BarChartLine />
+                  <span>Analytics</span>
+                  <span className="badge bg-success ms-auto">Upgrade</span>
+                </div>
+              </OverlayTrigger>
+            ) : (
+              <Nav.Item as="li">
+                <NavLink to="/dashboard/analytics" className="nav-link">
+                  <BarChartLine />
+                  <span>Analytics</span>
+                </NavLink>
+              </Nav.Item>
+            ))}
+          {/* --- END OF REFINED LINK --- */}
           <Nav.Item as="li">
             <NavLink to="/dashboard/settings" className="nav-link">
               <Gear />

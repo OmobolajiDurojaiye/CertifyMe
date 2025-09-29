@@ -205,6 +205,8 @@ export const getCurrentUser = () => apiClient.get("/users/me");
 export const initializePayment = (plan) =>
   apiClient.post("/payments/initialize", { plan });
 
+export const getUserAnalytics = () => apiClient.get("/analytics/dashboard");
+
 export const uploadUserSignature = (formData) =>
   apiClient.post("/users/me/signature", formData, {
     headers: { "Content-Type": "multipart/form-data" },

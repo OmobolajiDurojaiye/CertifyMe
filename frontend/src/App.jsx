@@ -18,6 +18,7 @@ import GroupsPage from "./pages/GroupsPage";
 import ContactSupportPage from "./pages/ContactSupportPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import AnalyticsPage from "./pages/AnalyticsPage";
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -96,6 +97,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<MyCertificatesPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="templates" element={<TemplatesPage />} />
           <Route path="groups" element={<GroupsPage />} />
           <Route path="create" element={<CreateCertificatePage />} />

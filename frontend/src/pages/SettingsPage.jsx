@@ -1,4 +1,5 @@
-// SettingsPage.jsx
+// frontend/src/pages/SettingsPage.jsx
+
 import React, { useState, useEffect } from "react";
 import {
   Tab,
@@ -13,6 +14,8 @@ import {
   Modal,
   InputGroup,
   ListGroup,
+  OverlayTrigger,
+  Tooltip,
 } from "react-bootstrap";
 import { usePaystackPayment } from "react-paystack";
 import {
@@ -22,15 +25,17 @@ import {
   generateApiKey,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { SERVER_BASE_URL } from "../config";
-import { UploadCloud, Key, Copy, Check, Info } from "lucide-react";
+import { UploadCloud, Key, Copy, Check, Info, Lock } from "lucide-react";
 import {
   QuestionCircle,
   BoxArrowRight,
   ChevronRight,
 } from "react-bootstrap-icons";
+import { useUser } from "../context/UserContext";
 
+// ... (PlanCard and BillingContent components remain unchanged) ...
 const PlanCard = ({
   title,
   price,
@@ -44,12 +49,16 @@ const PlanCard = ({
   <Card
     className={`h-100 d-flex flex-column ${current ? "border-primary" : ""}`}
   >
+    {" "}
     <Card.Body className="d-flex flex-column">
-      <h5 className="fw-bold">{title}</h5>
-      <h2 className="fw-bolder my-3">{price}</h2>
+      {" "}
+      <h5 className="fw-bold">{title}</h5>{" "}
+      <h2 className="fw-bolder my-3">{price}</h2>{" "}
       <ul className="list-unstyled mb-4">
+        {" "}
         {features.map((feature, index) => (
           <li key={index} className="mb-2 d-flex align-items-center">
+            {" "}
             <svg
               className="me-2 flex-shrink-0"
               width="16"
@@ -57,16 +66,19 @@ const PlanCard = ({
               fill="green"
               viewBox="0 0 16 16"
             >
-              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
-            </svg>
-            {feature}
+              {" "}
+              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />{" "}
+            </svg>{" "}
+            {feature}{" "}
           </li>
-        ))}
-      </ul>
+        ))}{" "}
+      </ul>{" "}
       <div className="mt-auto">
+        {" "}
         {current ? (
           <Button variant="outline-success" className="w-100" disabled>
-            Current Plan
+            {" "}
+            Current Plan{" "}
           </Button>
         ) : (
           <Button
@@ -75,26 +87,32 @@ const PlanCard = ({
             onClick={onAction}
             disabled={disabled || loading}
           >
-            {loading ? <Spinner size="sm" /> : actionText}
+            {" "}
+            {loading ? <Spinner size="sm" /> : actionText}{" "}
           </Button>
-        )}
-      </div>
-    </Card.Body>
+        )}{" "}
+      </div>{" "}
+    </Card.Body>{" "}
   </Card>
 );
-
 const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
   <Card className="page-content-card mb-4">
+    {" "}
     <Card.Body>
+      {" "}
       <Card.Title as="h5" className="fw-bold mb-4">
-        Choose Your Plan
-      </Card.Title>
+        {" "}
+        Choose Your Plan{" "}
+      </Card.Title>{" "}
       <Alert variant="info" className="mb-4">
+        {" "}
         Current Plan: {user?.role?.toUpperCase() || "FREE"} -{" "}
-        {user?.cert_quota || 10} certificates remaining
-      </Alert>
+        {user?.cert_quota || 10} certificates remaining{" "}
+      </Alert>{" "}
       <Row className="g-3">
+        {" "}
         <Col md={6} lg={3}>
+          {" "}
           <PlanCard
             title="Starter"
             price="$15 for 500 certs"
@@ -108,9 +126,10 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             onAction={() => handleUpgrade("starter")}
             current={user?.role === "starter"}
             loading={processingPlan === "starter"}
-          />
-        </Col>
+          />{" "}
+        </Col>{" "}
         <Col md={6} lg={3}>
+          {" "}
           <PlanCard
             title="Growth"
             price="$50 for 2,000 certs"
@@ -125,9 +144,10 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             onAction={() => handleUpgrade("growth")}
             current={user?.role === "growth"}
             loading={processingPlan === "growth"}
-          />
-        </Col>
+          />{" "}
+        </Col>{" "}
         <Col md={6} lg={3}>
+          {" "}
           <PlanCard
             title="Pro"
             price="$100 for 5,000 certs"
@@ -142,9 +162,10 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             onAction={() => handleUpgrade("pro")}
             current={user?.role === "pro"}
             loading={processingPlan === "pro"}
-          />
-        </Col>
+          />{" "}
+        </Col>{" "}
         <Col md={6} lg={3}>
+          {" "}
           <PlanCard
             title="Enterprise"
             price="$300 for 20,000 certs"
@@ -160,16 +181,69 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             onAction={() => handleUpgrade("enterprise")}
             current={user?.role === "enterprise"}
             loading={processingPlan === "enterprise"}
-          />
-        </Col>
-      </Row>
-    </Card.Body>
+          />{" "}
+        </Col>{" "}
+      </Row>{" "}
+    </Card.Body>{" "}
+  </Card>
+);
+
+// Reusable Premium Lock Overlays
+const SignatureLock = () => (
+  <div
+    className="d-flex flex-column justify-content-center align-items-center position-absolute"
+    style={{
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      zIndex: 10,
+      borderRadius: "inherit",
+    }}
+  >
+    <Lock size={48} className="text-warning mb-3" />
+    <h5 className="fw-bold">This is a Premium Feature</h5>
+    <p className="text-muted mb-3">
+      Upgrade your plan to upload a custom signature.
+    </p>
+    <Button
+      as={Link}
+      to="/dashboard/settings"
+      state={{ defaultTab: "billing" }}
+      variant="success"
+    >
+      Upgrade Now
+    </Button>
+  </div>
+);
+
+const ApiAccessLock = () => (
+  <Card className="page-content-card text-center p-5">
+    <Key size={64} className="text-primary mx-auto mb-4" />
+    <h3 className="fw-bold">Unlock API Access</h3>
+    <p className="text-muted mb-4 mx-auto" style={{ maxWidth: "500px" }}>
+      Integrate CertifyMe with your own applications and automate your workflow.
+      API access is available on Pro and Enterprise plans.
+    </p>
+    <div className="d-grid gap-2 col-6 mx-auto">
+      <Button
+        as={Link}
+        to="/dashboard/settings"
+        state={{ defaultTab: "billing" }}
+        variant="primary"
+        size="lg"
+      >
+        Upgrade to Pro
+      </Button>
+    </div>
   </Card>
 );
 
 function SettingsPage() {
-  const [user, setUser] = useState(null);
-  const [loadingUser, setLoadingUser] = useState(true);
+  const { user, loading: loadingUserContext } = useUser();
+  const [localUser, setLocalUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [processingPlan, setProcessingPlan] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
@@ -178,17 +252,19 @@ function SettingsPage() {
   const [preview, setPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [paystackConfig, setPaystackConfig] = useState(null);
-
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [newApiKey, setNewApiKey] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+
+  const isFreeUser = user && user.role === "free";
+  const hasApiAccess = user && ["pro", "enterprise"].includes(user.role);
 
   const initializePayment = usePaystackPayment(paystackConfig);
 
   const fetchUser = async () => {
     try {
       const res = await getCurrentUser();
-      setUser(res.data);
+      setLocalUser(res.data);
       if (res.data.signature_image_url) {
         setPreview(SERVER_BASE_URL + res.data.signature_image_url);
       }
@@ -196,65 +272,35 @@ function SettingsPage() {
       toast.error("Your session may have expired. Please log in again.");
       navigate("/login");
     } finally {
-      setLoadingUser(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
+    /* ... existing useEffects ... */ fetchUser();
+  }, [navigate, location.search]);
+  useEffect(() => {
     if (paystackConfig) {
       initializePayment({
-        onSuccess: (response) => {
-          toast.success("Payment successful! Refreshing your plan...");
-          setProcessingPlan(null);
-          setPaystackConfig(null);
-          navigate(`/dashboard/settings?reference=${response.reference}`, {
-            replace: true,
-          });
-          setTimeout(fetchUser, 1000);
+        onSuccess: () => {
+          toast.success("Payment successful!");
+          setTimeout(() => window.location.reload(), 1500);
         },
         onClose: () => {
           toast.error("Payment modal closed.");
           setProcessingPlan(null);
-          setPaystackConfig(null);
         },
       });
     }
-  }, [paystackConfig, initializePayment, navigate]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const paymentStatus = params.get("trxref") || params.get("reference");
-    if (paymentStatus) {
-      toast.success(
-        "Payment processed! Your plan details will update shortly."
-      );
-      navigate("/dashboard/settings", { replace: true });
-    }
-    fetchUser();
-  }, [navigate, location.search]);
+  }, [paystackConfig, initializePayment]);
 
   const handleUpgrade = async (plan) => {
     setProcessingPlan(plan);
     try {
       const res = await apiInitializePayment(plan);
-      const paymentData = res.data;
-
-      setPaystackConfig({
-        publicKey: paymentData.publicKey,
-        email: paymentData.email,
-        amount: paymentData.amount,
-        currency: paymentData.currency || "NGN",
-        reference: paymentData.reference,
-        metadata: paymentData.metadata || {},
-        channels: ["card", "bank", "ussd", "mobile_money"],
-      });
+      setPaystackConfig({ ...res.data, currency: res.data.currency || "NGN" });
     } catch (error) {
-      console.error("Payment initialization error:", error);
-      toast.error(
-        error.response?.data?.msg ||
-          error.message ||
-          "Failed to initialize payment."
-      );
+      toast.error(error.response?.data?.msg || "Failed to initialize payment.");
       setProcessingPlan(null);
     }
   };
@@ -263,9 +309,7 @@ function SettingsPage() {
     const file = e.target.files[0];
     if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
       setSignatureFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setPreview(reader.result);
-      reader.readAsDataURL(file);
+      setPreview(URL.createObjectURL(file));
     } else {
       toast.error("Please select a valid PNG or JPEG image.");
     }
@@ -280,24 +324,26 @@ function SettingsPage() {
     try {
       const res = await uploadUserSignature(formData);
       toast.success(res.data.msg);
-      setUser({ ...user, signature_image_url: res.data.signature_image_url });
+      setLocalUser({
+        ...localUser,
+        signature_image_url: res.data.signature_image_url,
+      });
       setPreview(SERVER_BASE_URL + res.data.signature_image_url);
       setSignatureFile(null);
     } catch (error) {
-      toast.error("Failed to upload signature.");
+      toast.error(error.response?.data?.msg || "Failed to upload signature.");
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleGenerateApiKey = async () => {
-    const promise = generateApiKey();
-    toast.promise(promise, {
+    toast.promise(generateApiKey(), {
       loading: "Generating new API key...",
       success: (res) => {
         setNewApiKey(res.data.api_key);
         setShowKeyModal(true);
-        fetchUser(); // Refresh user data to show API key exists
+        fetchUser();
         return "API Key generated successfully!";
       },
       error: (err) => err.response?.data?.msg || "Failed to generate API key.",
@@ -309,23 +355,29 @@ function SettingsPage() {
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
-
-  // --- NEW: Logout Handler ---
   const handleLogout = () => {
     localStorage.removeItem("token");
     toast.success("Logged out successfully.");
     navigate("/login");
   };
 
-  if (loadingUser) {
+  const defaultTabKey = location.state?.defaultTab || "profile";
+
+  if (loading || loadingUserContext) {
     return <Spinner animation="border" className="d-block mx-auto mt-5" />;
   }
+
+  const renderDevTooltip = (props) => (
+    <Tooltip id="dev-tooltip" {...props}>
+      <Lock size={12} className="me-1" /> Available on Pro and Enterprise plans
+    </Tooltip>
+  );
 
   return (
     <div>
       <Toaster position="top-center" />
       <h2 className="fw-bold mb-4">Settings</h2>
-      <Tab.Container id="settings-tabs" defaultActiveKey="billing">
+      <Tab.Container id="settings-tabs" defaultActiveKey={defaultTabKey}>
         <Nav variant="tabs" className="mb-4 settings-tabs">
           <Nav.Item>
             <Nav.Link eventKey="profile">Profile</Nav.Link>
@@ -333,10 +385,23 @@ function SettingsPage() {
           <Nav.Item>
             <Nav.Link eventKey="billing">Billing</Nav.Link>
           </Nav.Item>
+
+          {/* --- CONDITIONAL DEVELOPER TAB --- */}
           <Nav.Item>
-            <Nav.Link eventKey="developer">Developer</Nav.Link>
+            {hasApiAccess ? (
+              <Nav.Link eventKey="developer">Developer</Nav.Link>
+            ) : (
+              <OverlayTrigger placement="top" overlay={renderDevTooltip}>
+                <span className="d-inline-block">
+                  <Nav.Link eventKey="developer" disabled>
+                    Developer
+                  </Nav.Link>
+                </span>
+              </OverlayTrigger>
+            )}
           </Nav.Item>
         </Nav>
+
         <Tab.Content>
           <Tab.Pane eventKey="profile">
             <Card className="page-content-card mb-4">
@@ -350,7 +415,7 @@ function SettingsPage() {
                       <Form.Label>Full Name</Form.Label>
                       <Form.Control
                         type="text"
-                        defaultValue={user?.name}
+                        defaultValue={localUser?.name}
                         disabled
                       />
                     </Form.Group>
@@ -360,7 +425,7 @@ function SettingsPage() {
                       <Form.Label>Email Address</Form.Label>
                       <Form.Control
                         type="email"
-                        defaultValue={user?.email}
+                        defaultValue={localUser?.email}
                         disabled
                       />
                     </Form.Group>
@@ -368,18 +433,26 @@ function SettingsPage() {
                 </Row>
               </Form>
             </Card>
-            <Card className="page-content-card mb-4">
+            <Card
+              className="page-content-card mb-4"
+              style={{ position: "relative" }}
+            >
+              {isFreeUser && <SignatureLock />}
               <Card.Title as="h5" className="fw-bold mb-4">
                 Signature Management
               </Card.Title>
               <Card.Text>Upload a transparent PNG of your signature.</Card.Text>
-              <Form onSubmit={handleSubmitSignature}>
+              <Form
+                onSubmit={handleSubmitSignature}
+                style={{ filter: isFreeUser ? "blur(4px)" : "none" }}
+              >
                 <Form.Group className="mb-3">
                   <Form.Label>Upload Signature Image (PNG or JPG)</Form.Label>
                   <Form.Control
                     type="file"
                     accept="image/png, image/jpeg"
                     onChange={handleFileChange}
+                    disabled={isFreeUser}
                   />
                 </Form.Group>
                 {preview && (
@@ -398,7 +471,7 @@ function SettingsPage() {
                 <Button
                   variant="primary"
                   type="submit"
-                  disabled={isUploading || !signatureFile}
+                  disabled={isUploading || !signatureFile || isFreeUser}
                 >
                   {isUploading ? (
                     <Spinner as="span" size="sm" />
@@ -409,8 +482,6 @@ function SettingsPage() {
                 </Button>
               </Form>
             </Card>
-
-            {/* --- NEW: Account Actions Card --- */}
             <Card className="page-content-card">
               <Card.Title as="h5" className="fw-bold mb-3">
                 Account Actions
@@ -451,36 +522,44 @@ function SettingsPage() {
           </Tab.Pane>
 
           <Tab.Pane eventKey="developer">
-            <Card className="page-content-card">
-              <Card.Title as="h5" className="fw-bold mb-4">
-                API Access
-              </Card.Title>
-              <Card.Text>
-                Integrate CertifyMe with your applications using your personal
-                API key.
-              </Card.Text>
-              {user?.api_key ? (
-                <Alert variant="info" className="d-flex align-items-center">
-                  <Info size={20} className="me-2 flex-shrink-0" />
-                  <div>
-                    An API key exists for your account. For security, it is not
-                    shown here. If you've lost it, you must regenerate a new
-                    one.
-                  </div>
-                </Alert>
-              ) : (
-                <Alert variant="warning">
-                  You have not generated an API key yet.
-                </Alert>
-              )}
-              <Button variant="danger" onClick={handleGenerateApiKey}>
-                <Key size={18} className="me-2" />
-                {user?.api_key ? "Regenerate API Key" : "Generate API Key"}
-              </Button>
-              <Card.Text className="mt-2 text-muted small">
-                Warning: Regenerating will invalidate your old key immediately.
-              </Card.Text>
-            </Card>
+            {/* --- CONDITIONAL DEVELOPER CONTENT --- */}
+            {hasApiAccess ? (
+              <Card className="page-content-card">
+                <Card.Title as="h5" className="fw-bold mb-4">
+                  API Access
+                </Card.Title>
+                <Card.Text>
+                  Integrate CertifyMe with your applications using your personal
+                  API key.
+                </Card.Text>
+                {localUser?.api_key ? (
+                  <Alert variant="info" className="d-flex align-items-center">
+                    <Info size={20} className="me-2 flex-shrink-0" />
+                    <div>
+                      An API key exists for your account. For security, it is
+                      not shown here. If you've lost it, you must regenerate a
+                      new one.
+                    </div>
+                  </Alert>
+                ) : (
+                  <Alert variant="warning">
+                    You have not generated an API key yet.
+                  </Alert>
+                )}
+                <Button variant="danger" onClick={handleGenerateApiKey}>
+                  <Key size={18} className="me-2" />
+                  {localUser?.api_key
+                    ? "Regenerate API Key"
+                    : "Generate API Key"}
+                </Button>
+                <Card.Text className="mt-2 text-muted small">
+                  Warning: Regenerating will invalidate your old key
+                  immediately.
+                </Card.Text>
+              </Card>
+            ) : (
+              <ApiAccessLock />
+            )}
           </Tab.Pane>
         </Tab.Content>
       </Tab.Container>

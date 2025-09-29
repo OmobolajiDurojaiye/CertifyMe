@@ -16,6 +16,8 @@ import {
   Spinner,
   Alert,
   Pagination,
+  OverlayTrigger,
+  Tooltip,
 } from "react-bootstrap";
 import {
   Folder,
@@ -26,9 +28,12 @@ import {
   Mail,
   CheckCircle,
   Download,
+  Lock,
 } from "lucide-react";
+import { useUser } from "../context/UserContext"; // Import useUser hook
 
 function GroupsPage() {
+  const { user } = useUser(); // Get user from context
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -39,6 +44,8 @@ function GroupsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
+
+  const isFreeUser = user && user.role === "free";
 
   const fetchGroups = async (page = 1) => {
     setLoading(true);
@@ -64,8 +71,7 @@ function GroupsPage() {
     if (!newGroupName.trim()) {
       return toast.error("Group name cannot be empty.");
     }
-    const promise = createGroup(newGroupName);
-    toast.promise(promise, {
+    toast.promise(createGroup(newGroupName), {
       loading: "Creating group...",
       success: (res) => {
         setShowCreateModal(false);
@@ -93,11 +99,10 @@ function GroupsPage() {
   const handleDeleteGroup = async (groupId, groupName, certCount) => {
     if (
       window.confirm(
-        `Are you sure you want to delete the group "${groupName}"? This will delete all ${certCount} certificates inside it. This action cannot be undone.`
+        `Are you sure you want to delete "${groupName}"? This will delete all ${certCount} certificates inside it.`
       )
     ) {
-      const promise = deleteGroup(groupId);
-      toast.promise(promise, {
+      toast.promise(deleteGroup(groupId), {
         loading: "Deleting group...",
         success: (res) => {
           setViewingGroup(null);
@@ -111,9 +116,8 @@ function GroupsPage() {
   };
 
   const handleSendBulkEmail = async (groupId) => {
-    const promise = sendGroupBulkEmail(groupId);
-    toast.promise(promise, {
-      loading: "Sending emails to all unsent recipients in the group...",
+    toast.promise(sendGroupBulkEmail(groupId), {
+      loading: "Sending emails to all unsent recipients...",
       success: (res) => {
         handleViewGroup(viewingGroup);
         return res.data.msg;
@@ -146,6 +150,41 @@ function GroupsPage() {
     promise.finally(() => setIsBulkDownloading(false));
   };
 
+  const renderDownloadTooltip = (props) => (
+    <Tooltip id="download-tooltip" {...props}>
+      <Lock size={12} className="me-1" />
+      Upgrade to a paid plan to enable bulk PDF downloads.
+    </Tooltip>
+  );
+
+  const DownloadButton = () => {
+    const button = (
+      <Button
+        variant="outline-secondary"
+        className="d-flex align-items-center"
+        onClick={handleBulkDownload}
+        disabled={isBulkDownloading || isFreeUser}
+      >
+        {isBulkDownloading ? (
+          <Spinner size="sm" className="me-2" />
+        ) : (
+          <Download size={16} className="me-2" />
+        )}
+        Download All
+      </Button>
+    );
+
+    if (isFreeUser) {
+      return (
+        <OverlayTrigger placement="top" overlay={renderDownloadTooltip}>
+          <span className="d-inline-block">{button}</span>
+        </OverlayTrigger>
+      );
+    }
+
+    return button;
+  };
+
   if (loading) {
     return (
       <div className="text-center p-5">
@@ -163,8 +202,7 @@ function GroupsPage() {
           onClick={() => setViewingGroup(null)}
           className="mb-4 d-flex align-items-center fw-medium"
         >
-          <ChevronLeft size={16} className="me-1" />
-          Back to All Groups
+          <ChevronLeft size={16} className="me-1" /> Back to All Groups
         </Button>
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 p-4 bg-white rounded-3 shadow-sm gap-3">
           <div>
@@ -174,26 +212,13 @@ function GroupsPage() {
             </p>
           </div>
           <div className="d-flex flex-wrap gap-2">
-            <Button
-              variant="outline-secondary"
-              className="d-flex align-items-center"
-              onClick={handleBulkDownload}
-              disabled={isBulkDownloading}
-            >
-              {isBulkDownloading ? (
-                <Spinner size="sm" className="me-2" />
-              ) : (
-                <Download size={16} className="me-2" />
-              )}
-              Download All
-            </Button>
+            <DownloadButton /> {/* --- USE THE NEW CONDITIONAL BUTTON --- */}
             <Button
               variant="primary"
               className="d-flex align-items-center"
               onClick={() => handleSendBulkEmail(viewingGroup.id)}
             >
-              <Send size={16} className="me-2" />
-              Send Unsent
+              <Send size={16} className="me-2" /> Send Unsent
             </Button>
             <Button
               variant="outline-danger"
@@ -206,8 +231,7 @@ function GroupsPage() {
                 )
               }
             >
-              <Trash2 size={16} className="me-2" />
-              Delete Group
+              <Trash2 size={16} className="me-2" /> Delete Group
             </Button>
           </div>
         </div>
@@ -237,13 +261,11 @@ function GroupsPage() {
                       </small>
                       {cert.sent_at ? (
                         <div className="d-flex align-items-center text-success fw-medium">
-                          <CheckCircle size={14} className="me-1" />
-                          Sent
+                          <CheckCircle size={14} className="me-1" /> Sent
                         </div>
                       ) : (
                         <div className="d-flex align-items-center text-secondary fw-medium">
-                          <Mail size={14} className="me-1" />
-                          Not Sent
+                          <Mail size={14} className="me-1" /> Not Sent
                         </div>
                       )}
                     </div>
@@ -252,10 +274,7 @@ function GroupsPage() {
               ))
             ) : (
               <div className="col-12">
-                <Alert variant="info">
-                  This group has no certificates. You can add certificates to
-                  this group using the "Bulk Create" page.
-                </Alert>
+                <Alert variant="info">This group has no certificates.</Alert>
               </div>
             )}
           </div>
@@ -264,24 +283,28 @@ function GroupsPage() {
     );
   }
 
+  // ... (rest of the component remains unchanged) ...
   return (
     <Container>
-      <Toaster position="top-center" />
+      {" "}
+      <Toaster position="top-center" />{" "}
       <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-3">
-        <h2 className="fw-bold mb-0">Certificate Groups</h2>
+        {" "}
+        <h2 className="fw-bold mb-0">Certificate Groups</h2>{" "}
         <Button
           onClick={() => setShowCreateModal(true)}
           className="d-flex align-items-center justify-content-center"
         >
-          <Plus size={20} className="me-2" />
-          Create New Group
-        </Button>
-      </div>
-
+          {" "}
+          <Plus size={20} className="me-2" /> Create New Group{" "}
+        </Button>{" "}
+      </div>{" "}
       {groups.length > 0 ? (
         <div className="row g-3">
+          {" "}
           {groups.map((group) => (
             <div key={group.id} className="col-12 col-sm-6 col-md-4 col-lg-3">
+              {" "}
               <div
                 className="card h-100 text-center shadow-sm border-0"
                 style={{
@@ -294,46 +317,49 @@ function GroupsPage() {
                 onMouseOut={(e) => (e.currentTarget.style.transform = "none")}
                 onClick={() => handleViewGroup(group)}
               >
+                {" "}
                 <div className="card-body d-flex flex-column justify-content-center p-4">
-                  <Folder size={48} className="text-primary mx-auto mb-3" />
-                  <h5 className="card-title fw-bold">{group.name}</h5>
+                  {" "}
+                  <Folder
+                    size={48}
+                    className="text-primary mx-auto mb-3"
+                  />{" "}
+                  <h5 className="card-title fw-bold">{group.name}</h5>{" "}
                   <p className="card-text text-muted">
                     {group.certificate_count} certificates
-                  </p>
-                </div>
-              </div>
+                  </p>{" "}
+                </div>{" "}
+              </div>{" "}
             </div>
-          ))}
+          ))}{" "}
         </div>
       ) : (
-        <Alert variant="info">
-          You haven't created any groups yet. Create a group to organize your
-          bulk-created certificates.
-        </Alert>
-      )}
-
+        <Alert variant="info">You haven't created any groups yet.</Alert>
+      )}{" "}
       {totalPages > 1 && (
         <Pagination className="mt-4 justify-content-center">
+          {" "}
           {[...Array(totalPages).keys()].map((num) => (
             <Pagination.Item
               key={num + 1}
               active={num + 1 === currentPage}
               onClick={() => setCurrentPage(num + 1)}
             >
-              {num + 1}
+              {" "}
+              {num + 1}{" "}
             </Pagination.Item>
-          ))}
+          ))}{" "}
         </Pagination>
-      )}
-
+      )}{" "}
       <Modal
         show={showCreateModal}
         onHide={() => setShowCreateModal(false)}
         centered
       >
+        {" "}
         <Modal.Header closeButton>
           <Modal.Title>Create a New Group</Modal.Title>
-        </Modal.Header>
+        </Modal.Header>{" "}
         <Modal.Body>
           <Form.Group>
             <Form.Label>Group Name</Form.Label>
@@ -344,7 +370,7 @@ function GroupsPage() {
               onChange={(e) => setNewGroupName(e.target.value)}
             />
           </Form.Group>
-        </Modal.Body>
+        </Modal.Body>{" "}
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
             Cancel
@@ -352,8 +378,8 @@ function GroupsPage() {
           <Button variant="primary" onClick={handleCreateGroup}>
             Create
           </Button>
-        </Modal.Footer>
-      </Modal>
+        </Modal.Footer>{" "}
+      </Modal>{" "}
     </Container>
   );
 }
