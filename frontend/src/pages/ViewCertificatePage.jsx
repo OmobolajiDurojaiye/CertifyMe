@@ -28,23 +28,17 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
-// Error Boundary Component
 class ErrorBoundary extends Component {
   state = { hasError: false, error: null };
-
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
-
   render() {
     if (this.state.hasError) {
       return (
         <Alert variant="danger">
           <Alert.Heading>Something went wrong</Alert.Heading>
-          <p>
-            {this.state.error?.message ||
-              "An error occurred while rendering the certificate."}
-          </p>
+          <p>{this.state.error?.message || "An error occurred."}</p>
         </Alert>
       );
     }
@@ -53,10 +47,7 @@ class ErrorBoundary extends Component {
 }
 
 const CertificateDisplay = ({ certificate, template }) => {
-  if (!certificate || !template)
-    return (
-      <div className="text-center p-4 text-muted">Loading certificate...</div>
-    );
+  if (!certificate || !template) return null;
 
   const {
     layout_style,
@@ -66,13 +57,8 @@ const CertificateDisplay = ({ certificate, template }) => {
     font_family = "Georgia",
     background_url,
     logo_url,
-    custom_text = {
-      title: "Certificate of Completion",
-      body: "has successfully completed the course",
-    },
+    custom_text = {},
   } = template;
-
-  console.log(`Rendering certificate with layout_style: ${layout_style}`);
 
   const {
     recipient_name,
@@ -81,21 +67,17 @@ const CertificateDisplay = ({ certificate, template }) => {
     signature,
     issuer_name,
     verification_id,
-    extra_fields = {},
-    status,
   } = certificate;
 
+  const certificateTitle = custom_text.title || "Certificate of Completion";
+  const certificateBody =
+    custom_text.body || "has successfully completed the course";
   const issueDateFormatted = new Date(issue_date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-
-  const textStyle = {
-    color: body_font_color,
-    fontFamily: font_family,
-  };
-
+  const textStyle = { color: body_font_color, fontFamily: font_family };
   const backgroundStyle = background_url
     ? {
         backgroundImage: `url(${SERVER_BASE_URL}${background_url})`,
@@ -104,6 +86,8 @@ const CertificateDisplay = ({ certificate, template }) => {
       }
     : {};
 
+  // --- THIS IS THE FIX ---
+  // The new, corrected render function for the 'classic' template
   const renderClassic = () => (
     <div
       className="h-100 w-100 bg-white relative flex flex-column shadow-2xl rounded-xl overflow-hidden"
@@ -133,7 +117,7 @@ const CertificateDisplay = ({ certificate, template }) => {
           className="font-bold uppercase tracking-wider"
           style={{ fontSize: "2.5rem", color: primary_color }}
         >
-          {custom_text.title}
+          {certificateTitle}
         </h1>
         <p
           className="italic my-1"
@@ -155,7 +139,7 @@ const CertificateDisplay = ({ certificate, template }) => {
           className="italic my-2"
           style={{ fontSize: "1.2rem", color: "#4B5EAA" }}
         >
-          {custom_text.body}
+          {certificateBody}
         </p>
         <p
           className="font-bold uppercase my-3"
@@ -169,27 +153,6 @@ const CertificateDisplay = ({ certificate, template }) => {
         >
           Awarded on {issueDateFormatted}
         </p>
-        {Object.keys(extra_fields).length > 0 && (
-          <div
-            className="mx-auto my-3 text-start"
-            style={{
-              width: "80%",
-              borderLeft: `3px solid ${primary_color}`,
-              paddingLeft: "1rem",
-              fontSize: "1rem",
-              color: "#4B5563",
-            }}
-          >
-            {Object.entries(extra_fields).map(([key, value]) => (
-              <div key={key} className="mb-2">
-                <span className="font-bold uppercase">
-                  {key.replace(/_/g, " ")}:
-                </span>
-                <span> {value}</span>
-              </div>
-            ))}
-          </div>
-        )}
         <div className="flex justify-content-around w-full mt-auto pt-4">
           <div className="text-center" style={{ width: "45%" }}>
             <p
@@ -220,7 +183,7 @@ const CertificateDisplay = ({ certificate, template }) => {
         </div>
         <div className="absolute bottom-4 end-4 bg-white p-1 rounded-md shadow-md">
           <QRCode
-            value={`https://certifyme.com.ng/verify/${verification_id}`}
+            value={`${window.location.origin}/verify/${verification_id}`}
             size={80}
             style={{ height: "auto", maxWidth: "80px" }}
           />
@@ -231,6 +194,7 @@ const CertificateDisplay = ({ certificate, template }) => {
       </div>
     </div>
   );
+  // --- END OF FIX ---
 
   const renderModern = () => (
     <div
@@ -266,7 +230,7 @@ const CertificateDisplay = ({ certificate, template }) => {
         </div>
         <div className="bg-white p-1 rounded shadow">
           <QRCode
-            value={`https://certifyme.com.ng/verify/${verification_id}`}
+            value={`${window.location.origin}/verify/${verification_id}`}
             size={72}
             viewBox="0 0 72 72"
           />
@@ -284,7 +248,7 @@ const CertificateDisplay = ({ certificate, template }) => {
             color: primary_color,
           }}
         >
-          {custom_text.title}
+          {certificateTitle}
         </h1>
         <h2
           className="font-bolder mb-2"
@@ -300,7 +264,7 @@ const CertificateDisplay = ({ certificate, template }) => {
           className="italic mb-2"
           style={{ fontSize: "1.1rem", color: "#666" }}
         >
-          {custom_text.body}
+          {certificateBody}
         </p>
         <p
           className="font-bold uppercase mb-4"
@@ -315,26 +279,6 @@ const CertificateDisplay = ({ certificate, template }) => {
         <p style={{ ...textStyle, fontSize: "1rem" }}>
           Awarded on {issueDateFormatted}
         </p>
-        {Object.keys(extra_fields).length > 0 && (
-          <div
-            className="my-3 text-start"
-            style={{
-              borderLeft: `3px solid ${primary_color}`,
-              paddingLeft: "1rem",
-              fontSize: "1rem",
-              color: "#4B5563",
-            }}
-          >
-            {Object.entries(extra_fields).map(([key, value]) => (
-              <div key={key} className="mb-2">
-                <span className="font-bold uppercase">
-                  {key.replace(/_/g, " ")}:
-                </span>
-                <span> {value}</span>
-              </div>
-            ))}
-          </div>
-        )}
         <div
           className="d-flex justify-content-between mt-auto pt-3 border-top"
           style={{ borderColor: primary_color, fontSize: "0.9rem" }}
@@ -397,8 +341,7 @@ function ViewCertificatePage() {
         setTemplate(response.data.template);
       } catch (err) {
         setError(
-          err.response?.data?.msg ||
-            "Could not fetch certificate details. Please try again."
+          err.response?.data?.msg || "Could not fetch certificate details."
         );
       } finally {
         setLoading(false);
@@ -434,38 +377,27 @@ function ViewCertificatePage() {
   const handleStatusChange = (status) => {
     const promise = updateCertificateStatus(certId, status);
     toast.promise(promise, {
-      loading: `Updating status to ${status}...`,
+      loading: `Updating status...`,
       success: () => {
         setCertificate((prev) => ({ ...prev, status }));
-        return `Certificate ${status} successfully!`;
+        return `Certificate status updated!`;
       },
       error: (err) => err.response?.data?.msg || "Failed to update status.",
     });
   };
 
-  if (loading) {
+  if (loading)
     return (
       <Container className="py-5 text-center">
         <Spinner animation="border" />
       </Container>
     );
-  }
-
-  if (error) {
+  if (error)
     return (
       <Container className="py-5">
         <Alert variant="danger">{error}</Alert>
       </Container>
     );
-  }
-
-  const issueDateFormatted = new Date(
-    certificate.issue_date
-  ).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
 
   return (
     <ErrorBoundary>
@@ -503,7 +435,6 @@ function ViewCertificatePage() {
                 </Button>
               </div>
             </div>
-
             <Card className="shadow-sm mb-4">
               <Card.Body className="d-flex justify-content-between align-items-center p-3">
                 <div>
@@ -521,7 +452,6 @@ function ViewCertificatePage() {
                       onClick={() => handleStatusChange("revoked")}
                     >
                       <RefreshCw size={14} className="me-1" /> Revoke
-                      Certificate
                     </Button>
                   ) : (
                     <Button
@@ -530,13 +460,11 @@ function ViewCertificatePage() {
                       onClick={() => handleStatusChange("valid")}
                     >
                       <RefreshCw size={14} className="me-1" /> Re-validate
-                      Certificate
                     </Button>
                   )}
                 </div>
               </Card.Body>
             </Card>
-
             <div
               className="shadow-lg rounded-3 overflow-hidden mb-4"
               style={{ aspectRatio: "1.414 / 1" }}
@@ -546,7 +474,6 @@ function ViewCertificatePage() {
                 template={template}
               />
             </div>
-
             <Modal
               show={showFullscreen}
               onHide={() => setShowFullscreen(false)}
@@ -568,7 +495,6 @@ function ViewCertificatePage() {
                 <X size={24} />
               </Button>
             </Modal>
-
             <Card className="shadow-sm">
               <Card.Body>
                 <Row>
@@ -584,7 +510,12 @@ function ViewCertificatePage() {
                       <dt className="col-sm-4">Course:</dt>
                       <dd className="col-sm-8">{certificate.course_title}</dd>
                       <dt className="col-sm-4">Issue Date:</dt>
-                      <dd className="col-sm-8">{issueDateFormatted}</dd>
+                      <dd className="col-sm-8">
+                        {new Date(certificate.issue_date).toLocaleDateString(
+                          "en-US",
+                          { year: "numeric", month: "long", day: "numeric" }
+                        )}
+                      </dd>
                       <dt className="col-sm-4">Issuer:</dt>
                       <dd className="col-sm-8">{certificate.issuer_name}</dd>
                       <dt className="col-sm-4">Status:</dt>
@@ -599,13 +530,13 @@ function ViewCertificatePage() {
                     <h5 className="fw-bold mb-3">Verification</h5>
                     <div className="text-center">
                       <QRCode
-                        value={`https://certifyme.com.ng/verify/${certificate.verification_id}`}
+                        value={`${window.location.origin}/verify/${certificate.verification_id}`}
                         size={128}
                         className="mb-2"
                       />
                       <p className="mb-2">
                         <a
-                          href={`https://certifyme.com.ng/verify/${certificate.verification_id}`}
+                          href={`${window.location.origin}/verify/${certificate.verification_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="btn btn-outline-primary btn-sm"

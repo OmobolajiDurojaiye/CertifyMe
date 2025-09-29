@@ -6,14 +6,14 @@ def get_classic_pdf_template():
         <meta charset="UTF-8">
         <title>Certificate</title>
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@400;500&family=Dancing+Script:wght@700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Roboto:wght@400;500;700&display=swap');
             @page { size: A4 landscape; margin: 0; }
             body { 
                 margin: 0; 
                 padding: 0; 
                 width: 297mm; 
                 height: 210mm; 
-                font-family: '{{ font_family }}', 'Playfair Display', serif; 
+                font-family: '{{ font_family }}', 'Roboto', sans-serif; 
                 background: white;
                 {% if background_base64 %}
                 background-image: url('data:image/png;base64,{{ background_base64 }}');
@@ -27,49 +27,31 @@ def get_classic_pdf_template():
             .certificate-wrapper { 
                 width: 95%; 
                 height: 90%; 
-                border: 8px double {{ primary_color }}; 
-                border-radius: 12px; 
-                background: white; 
-                box-shadow: 0 12px 24px rgba(0,0,0,0.25); 
+                border: 8px double {{ primary_color }};
+                background: rgba(255, 255, 255, 0.95); 
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
                 position: relative; 
-                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+            }
+            .top-border {
+                height: 12px;
+                border-bottom: 4px solid {{ primary_color }};
+                background: linear-gradient(to right, {{ primary_color }}, {{ secondary_color }});
+                flex-shrink: 0;
             }
             .certificate-content { 
-                width: 100%; 
-                height: 100%; 
-                padding: 1.5rem; 
+                flex-grow: 1;
+                padding: 1rem 2.5rem; 
                 text-align: center; 
                 display: flex; 
                 flex-direction: column; 
-                background: linear-gradient(to bottom, rgba(255,255,255,0.97), rgba(240,240,240,0.9));
-                border: 3px solid {{ primary_color }}; 
-                border-radius: 8px; 
-                position: relative;
-            }
-            .top-border {
-                height: 10px; 
-                border-bottom: 3px solid {{ primary_color }}; 
-                background: linear-gradient(to right, {{ primary_color }}, {{ secondary_color }}); 
-                margin-bottom: 0.8rem;
-            }
-            .corner-decor {
-                position: absolute; 
-                width: 40px; 
-                height: 40px; 
-                background: linear-gradient(45deg, {{ primary_color }}, {{ secondary_color }}); 
-                opacity: 0.3;
-            }
-            .corner-decor.top-left { top: -4px; left: -4px; clip-path: polygon(0 0, 100% 0, 0 100%); }
-            .corner-decor.top-right { top: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 0); }
-            .corner-decor.bottom-left { bottom: -4px; left: -4px; clip-path: polygon(0 0, 100% 100%, 0 100%); }
-            .corner-decor.bottom-right { bottom: -4px; right: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
-            header { 
-                flex-shrink: 0; 
-                margin-bottom: 0.3rem; 
+                justify-content: center;
+                align-items: center;
             }
             .logo { 
                 max-height: 100px; 
-                max-width: 100px; 
+                max-width: 120px; 
                 margin-bottom: 0.5rem; 
                 object-fit: contain; 
             }
@@ -78,154 +60,131 @@ def get_classic_pdf_template():
                 font-weight: 700; 
                 color: {{ primary_color }}; 
                 text-transform: uppercase; 
-                letter-spacing: 0.12em; 
+                letter-spacing: 0.1em;
                 font-family: 'Playfair Display', serif;
                 margin: 0;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
             }
             .cert-subtitle { 
-                font-size: 1.2rem; 
+                font-size: 1.1rem; 
                 color: #4B5EAA; 
                 font-style: italic; 
-                font-family: 'Roboto', sans-serif; 
-                margin: 0.4rem 0;
-            }
-            main { 
-                flex-grow: 1; 
-                display: flex; 
-                flex-direction: column; 
-                justify-content: center; 
+                margin: 0.2rem 0;
             }
             .cert-recipient { 
-                font-size: 3.2rem; 
-                font-weight: 700; 
+                font-size: 3rem; 
+                font-weight: 900; 
                 color: {{ body_font_color }}; 
-                margin: 0.6rem 0; 
+                margin: 0.5rem 0; 
                 font-family: 'Georgia', serif;
-                line-height: 1.1;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
             }
             .cert-body { 
                 font-size: 1.2rem; 
-                color: {{ body_font_color }}; 
-                font-family: 'Roboto', sans-serif; 
+                color: #4B5EAA; 
                 font-style: italic; 
-                margin: 0.4rem 0;
+                margin: 0.2rem 0;
             }
             .cert-course { 
                 font-size: 1.8rem; 
                 font-weight: 700; 
                 color: {{ secondary_color }}; 
                 text-transform: uppercase; 
-                margin: 0.6rem 0; 
+                margin: 0.5rem 0;
                 font-family: 'Roboto', sans-serif;
+            }
+            .cert-date-text {
+                font-size: 1.2rem;
+                color: {{ body_font_color }};
+                margin-top: 0.5rem;
             }
             .footer { 
                 margin-top: auto; 
-                padding-top: 0.8rem; 
+                padding-top: 1rem; 
                 display: flex; 
-                justify-content: space-between; 
+                justify-content: space-around; 
                 align-items: flex-start;
+                width: 100%;
                 font-size: 1rem; 
-                color: #4B5563; 
-                width: 90%;
-                margin-left: auto;
-                margin-right: auto;
-                background: rgba(255, 255, 255, 0.9);
-                border-top: 1px solid {{ primary_color }};
-                padding: 0.8rem 1rem;
-                flex-wrap: wrap;
+                color: {{ body_font_color }};
             }
-            .signature-text { 
-                font-family: 'Dancing Script', cursive; 
-                font-size: 1.4rem; 
-                font-weight: bold;
-                color: {{ body_font_color }}; 
+            .signature-block {
+                width: 45%;
+                text-align: center;
+            }
+            .signature-value {
+                font-size: 1.1rem;
+                font-weight: 500;
                 margin-bottom: 0.2rem;
             }
             .signature-image { 
-                max-height: 50px; 
-                max-width: 160px; 
+                max-height: 45px; 
+                max-width: 180px; 
                 object-fit: contain; 
                 margin-bottom: 0.2rem;
             }
-            .footer div p:last-child {
-                font-size: 0.9rem;
-                font-weight: 500;
-                color: #4B5563;
+            .signature-line {
+                width: 60%;
+                margin: 0.1rem auto;
+                border: none;
+                border-top: 1px solid {{ primary_color }};
             }
-            .verification-id { 
-                font-size: 0.9rem; 
-                font-weight: bold; 
-                color: #4B5563; 
-                margin-top: 0.5rem; 
-                width: 100%; 
+            .signature-label {
+                font-size: 0.8rem;
+                color: #6B7280;
+            }
+            .qr-block {
+                position: absolute;
+                bottom: 1rem;
+                right: 1rem;
                 text-align: center;
+                background: white;
+                padding: 0.25rem;
+                border-radius: 4px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             }
-            .extra-fields-container { 
-                margin: 0.4rem 0; 
-                font-size: 0.9rem; 
-                color: #4B5563; 
-                border-left: 3px solid {{ primary_color }}; 
-                padding-left: 0.8rem; 
-                max-width: 80%;
-                margin-left: auto;
-                margin-right: auto;
-            }
-            .extra-field { 
-                margin-bottom: 0.2rem; 
-            }
-            .extra-field-label { 
-                font-weight: bold; 
-                text-transform: uppercase; 
+            .qr-block p {
+                font-size: 0.6rem;
+                margin: 0;
+                color: #333;
+                font-family: monospace;
             }
         </style>
     </head>
     <body>
         <div class="certificate-wrapper">
+            <div class="top-border"></div>
             <div class="certificate-content">
-                <div class="top-border"></div>
-                <div class="corner-decor top-left"></div>
-                <div class="corner-decor top-right"></div>
-                <div class="corner-decor bottom-left"></div>
-                <div class="corner-decor bottom-right"></div>
-                <header>
-                    {% if logo_base64 %}
-                    <img src="data:image/png;base64,{{ logo_base64 }}" class="logo" alt="Logo">
-                    {% endif %}
-                    <h1 class="cert-title">{{ custom_text.get('title', 'Certificate of Completion') }}</h1>
-                    <p class="cert-subtitle">This is to certify that</p>
-                </header>
-                <main>
-                    <h2 class="cert-recipient">{{ recipient_name }}</h2>
-                    <p class="cert-body">{{ custom_text.get('body', 'has successfully completed the course') }}</p>
-                    <p class="cert-course">{{ course_title }}</p>
-                    <p class="cert-body">Awarded on {{ issue_date }}</p>
-                    {% if extra_fields %}
-                    <div class="extra-fields-container">
-                        {% for key, value in extra_fields.items() %}
-                        <div class="extra-field">
-                            <span class="extra-field-label">{{ key|replace('_', ' ')|title }}:</span>
-                            <span>{{ value }}</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </main>
+                
+                {% if logo_base64 %}
+                <img src="data:image/png;base64,{{ logo_base64 }}" class="logo" alt="Logo">
+                {% endif %}
+                
+                <h1 class="cert-title">{{ custom_text.get('title', 'Certificate of Completion') }}</h1>
+                <p class="cert-subtitle">This is to certify that</p>
+                <h2 class="cert-recipient">{{ recipient_name }}</h2>
+                <p class="cert-body">{{ custom_text.get('body', 'has successfully completed the course') }}</p>
+                <p class="cert-course">{{ course_title }}</p>
+                <p class="cert-date-text">Awarded on {{ issue_date }}</p>
+
                 <div class="footer">
-                    <div>
+                    <div class="signature-block">
                         {% if signature_image_base64 %}
                         <img src="data:image/png;base64,{{ signature_image_base64 }}" class="signature-image">
                         {% else %}
-                        <p class="signature-text">{{ signature }}</p>
+                        <p class="signature-value">{{ signature }}</p>
                         {% endif %}
-                        <p>Authorized Signature</p>
+                        <hr class="signature-line" />
+                        <p class="signature-label">Authorized Signature</p>
                     </div>
-                    <div>
-                        <p class="signature-text">{{ issuer_name }}</p>
-                        <p>Issuer</p>
+                    <div class="signature-block">
+                        <p class="signature-value">{{ issuer_name }}</p>
+                        <hr class="signature-line" />
+                        <p class="signature-label">Issuer</p>
                     </div>
-                    <p class="verification-id">Verification ID: {{ verification_id }}</p>
+                </div>
+
+                <div class="qr-block">
+                    <img src="data:image/png;base64,{{ qr_base64 }}" style="width: 70px; height: 70px;">
+                    <p>{{ verification_id }}</p>
                 </div>
             </div>
         </div>
