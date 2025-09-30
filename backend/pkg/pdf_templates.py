@@ -223,16 +223,26 @@ def get_modern_pdf_template():
                 border-radius: 12px; overflow: hidden; display: flex; 
             }
             .sidebar { 
-                width: 35%; padding: 1rem; 
+                width: 35%; 
+                padding: 3rem 1rem; 
                 background: linear-gradient(135deg, {{ primary_color }}, {{ secondary_color }}); 
-                display: flex; flex-direction: column; justify-content: space-between; 
+                display: flex; flex-direction: column; 
+                justify-content: space-between; 
                 align-items: center; color: white; 
             }
             .main-content { 
                 width: 65%; padding: 2rem; background: rgba(255, 255, 255, 0.9); 
                 display: flex; flex-direction: column; 
             }
-            .logo { max-width: 100px; max-height: 100px; object-fit: contain; justify-self: center; margin-bottom: 1rem; align-self: center; padding-left: 0.5rem; }
+            /* New container to ensure logo is centered */
+            .logo-container {
+                text-align: center;
+                width: 100%;
+            }
+            .logo { 
+                max-width: 100px; max-height: 100px; object-fit: contain; 
+                border-radius: 12px; 
+            }
             .cert-title { font-size: 2.5rem; font-weight: 700; color: {{ primary_color }}; text-transform: uppercase; }
             .cert-recipient { font-size: 3rem; font-weight: 700; color: {{ body_font_color }}; }
             .cert-body { font-size: 1.2rem; color: {{ body_font_color }}; }
@@ -255,19 +265,23 @@ def get_modern_pdf_template():
             }
             .signature-image { max-height: 40px; max-width: 150px; object-fit: contain; }
             .qr-code { text-align: center; }
-            .verification-id { font-size: 0.8rem; font-weight: bold; margin-top: 0.5rem; }
+            .qr-code img { border-radius: 8px; margin: 0.5rem 0; }
+            .verification-id { font-size: 0.8rem; font-weight: bold; word-break: break-all; }
         </style>
     </head>
     <body>
         <div class="certificate-wrapper">
             <div class="sidebar">
                 {% if logo_base64 %}
-                <img src="data:image/png;base64,{{ logo_base64 }}" class="logo" alt="Logo">
+                <!-- Wrapped logo in a container for reliable centering -->
+                <div class="logo-container">
+                    <img src="data:image/png;base64,{{ logo_base64 }}" class="logo" alt="Logo">
+                </div>
                 {% endif %}
                 <div class="qr-code">
                     <p>Verification ID</p>
-                    <p class="verification-id">{{ verification_id }}</p>
                     <img src="data:image/png;base64,{{ qr_base64 }}" style="width: 80px; height: 80px;">
+                    <p class="verification-id">{{ verification_id }}</p>
                 </div>
             </div>
             <div class="main-content">
