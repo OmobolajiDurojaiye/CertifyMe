@@ -7,9 +7,56 @@ import json
 
 template_bp = Blueprint('templates', __name__)
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'svg'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@template_bp.route('/upload-custom', methods=['POST'])
+@jwt_required()
+def create_custom_template():
+    user_id = int(get_jwt_identity())
+    
+    if 'template_image' not in request.files:
+        return jsonify({"msg": "Missing template image file."}), 400
+    if 'title' not in request.form or not request.form.get('title').strip():
+        return jsonify({"msg": "Missing template title."}), 400
+    if 'layout_data' not in request.form:
+        return jsonify({"msg": "Missing template layout data."}), 400
+
+    file = request.files['template_image']
+    title = request.form.get('title')
+    layout_data_str = request.form.get('layout_data')
+
+    if not (file and allowed_file(file.filename)):
+        return jsonify({"msg": "Invalid file type. Please use PNG or JPG."}), 400
+    
+    try:
+        layout_data = json.loads(layout_data_str)
+    except json.JSONDecodeError:
+        return jsonify({"msg": "Invalid layout data format."}), 400
+
+    filename = secure_filename(f"{user_id}_custom_{file.filename}")
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    
+    background_url = f"/uploads/{filename}"
+    
+    # Inject background image path into the layout_data for frontend preview
+    layout_data['background'] = {'image': background_url}
+    
+    new_template = Template(
+        user_id=user_id,
+        title=title,
+        background_url=background_url,
+        layout_style='visual',
+        layout_data=layout_data,
+        is_public=False
+    )
+    db.session.add(new_template)
+    db.session.commit()
+    
+    return jsonify({"msg": "Template created successfully", "template_id": new_template.id}), 201
+
 
 @template_bp.route('/', methods=['POST'])
 @jwt_required(locations=["headers"])
@@ -63,25 +110,27 @@ def get_user_templates():
     templates = Template.query.filter(
         (Template.user_id == user_id) | (Template.is_public == True)
     ).order_by(Template.is_public.asc(), Template.created_at.desc()).all()
+
+    templates_data = []
+    for t in templates:
+        templates_data.append({
+            'id': t.id,
+            'title': t.title,
+            'logo_url': t.logo_url,
+            'background_url': t.background_url,
+            'primary_color': t.primary_color,
+            'secondary_color': t.secondary_color,
+            'body_font_color': t.body_font_color,
+            'font_family': t.font_family,
+            'layout_style': t.layout_style,
+            # ✅ force JSON serialization
+            'layout_data': json.loads(json.dumps(t.layout_data)) if t.layout_data else None,
+            'is_public': t.is_public,
+            'custom_text': t.custom_text
+        })
     
-    templates_data = [{
-        'id': t.id,
-        'title': t.title,
-        'logo_url': t.logo_url,
-        'background_url': t.background_url,
-        'primary_color': t.primary_color,
-        'secondary_color': t.secondary_color,
-        'body_font_color': t.body_font_color,
-        'font_family': t.font_family,
-        'layout_style': t.layout_style,
-        'is_public': t.is_public,
-        'custom_text': t.custom_text
-    } for t in templates]
-    
-    # --- THIS IS THE FIX ---
-    # Return an object with a 'templates' key, containing the array.
     return jsonify({"templates": templates_data}), 200
-    # --- END OF FIX ---
+
 
 @template_bp.route('/<int:template_id>', methods=['GET'])
 @jwt_required(locations=["headers"])
@@ -90,14 +139,22 @@ def get_template(template_id):
     template = Template.query.get_or_404(template_id)
     if not template.is_public and template.user_id != user_id:
         return jsonify({"msg": "Permission denied"}), 403
-    
+
     return jsonify({
-        'id': template.id, 'title': template.title, 'logo_url': template.logo_url,
-        'background_url': template.background_url, 'primary_color': template.primary_color,
-        'secondary_color': template.secondary_color, 'body_font_color': template.body_font_color,
-        'font_family': template.font_family, 'layout_style': template.layout_style,
-        'is_public': template.is_public, 'custom_text': template.custom_text
+        'id': template.id,
+        'title': template.title,
+        'logo_url': template.logo_url,
+        'background_url': template.background_url,
+        'primary_color': template.primary_color,
+        'secondary_color': template.secondary_color,
+        'body_font_color': template.body_font_color,
+        'font_family': template.font_family,
+        'layout_style': template.layout_style,
+        'layout_data': json.loads(json.dumps(template.layout_data)) if template.layout_data else None,
+        'is_public': template.is_public,
+        'custom_text': template.custom_text
     }), 200
+
 
 @template_bp.route('/<int:template_id>', methods=['PUT'])
 @jwt_required(locations=["headers"])
@@ -109,7 +166,6 @@ def update_template(template_id):
 
     data = request.form
     
-    # Update main fields
     if 'title' in data: template.title = data.get('title')
     if 'primary_color' in data: template.primary_color = data.get('primary_color')
     if 'secondary_color' in data: template.secondary_color = data.get('secondary_color')
@@ -117,13 +173,11 @@ def update_template(template_id):
     if 'font_family' in data: template.font_family = data.get('font_family')
     if 'layout_style' in data: template.layout_style = data.get('layout_style')
 
-    # Update custom text
     custom_text_data = template.custom_text or {}
     if 'custom_title' in data: custom_text_data['title'] = data.get('custom_title')
     if 'custom_body' in data: custom_text_data['body'] = data.get('custom_body')
     template.custom_text = custom_text_data
 
-    # Handle file uploads
     if 'logo' in request.files:
         logo_file = request.files['logo']
         if logo_file and allowed_file(logo_file.filename):

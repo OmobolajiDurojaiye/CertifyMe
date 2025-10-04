@@ -41,7 +41,7 @@ def create_ticket():
         ticket_id=new_ticket.id,
         user_id=user_id,
         content=message,
-        image_url=image_url
+        image_url=image_url     
     )
     db.session.add(first_message)
     db.session.commit()
@@ -55,7 +55,7 @@ def get_ticket_details(ticket_id):
     ticket = SupportTicket.query.get_or_404(ticket_id)
 
     if ticket.user_id != user_id:
-        return jsonify({"msg": "Unauthorized"}), 403
+        return jsonify({"msg": "Unauthorized"}), 403                                                                                                                                                                                                                                                                                                        
 
     messages = ticket.messages.order_by(SupportMessage.created_at.asc()).all()
     

@@ -235,3 +235,8 @@ export const uploadEditorImage = (formData) =>
   apiClient.post("/uploads/editor-images", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+
+export const createCustomTemplate = (formData) =>
+  apiClient.post("/templates/upload-custom", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });

@@ -381,7 +381,7 @@ const CreateCertificatePage = () => {
   const handleTemplateChange = (e) => {
     const templateId = e.target.value;
     setFormData({ ...formData, template_id: templateId });
-    const template = templates.find((t) => t.id === parseInt(templateId));
+    const template = templates.find((t) => String(t.id) === String(templateId));
     setSelectedTemplate(template || null);
   };
 
@@ -463,10 +463,15 @@ const CreateCertificatePage = () => {
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg"
                   required
                 >
-                  <option value="">Select a template...</option>
+                  <option value="">Choose a template...</option>
                   {templates.map((t) => (
                     <option key={t.id} value={t.id}>
-                      {t.title} {t.is_public && "(System)"}
+                      {t.title}{" "}
+                      {t.is_public
+                        ? "(System)"
+                        : t.layout_style === "visual"
+                        ? "(Visual)"
+                        : ""}
                     </option>
                   ))}
                 </select>

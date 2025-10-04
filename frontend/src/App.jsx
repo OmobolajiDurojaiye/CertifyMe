@@ -19,6 +19,7 @@ import ContactSupportPage from "./pages/ContactSupportPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
+import UploadTemplatePage from "./pages/UploadTemplatePage";
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -107,6 +108,10 @@ function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="support" element={<ContactSupportPage />} />
           <Route path="support/:ticketId" element={<ContactSupportPage />} />
+          <Route
+            path="/dashboard/upload-template"
+            element={<UploadTemplatePage />}
+          />
         </Route>
       </Route>
 
