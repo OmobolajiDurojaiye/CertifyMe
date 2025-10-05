@@ -1,7 +1,13 @@
-import React, { useState, useRef, createRef } from "react";
+import React, { useState, useRef, createRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
-import { ArrowLeft, Save, UploadCloud } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  UploadCloud,
+  RotateCcw,
+  RotateCw,
+} from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import { createCustomTemplate } from "../api";
 import CustomTemplateEditor from "../components/CustomTemplateEditor";
@@ -35,11 +41,39 @@ const UploadTemplatePage = () => {
   const [templateImageFile, setTemplateImageFile] = useState(null);
   const [templateImageUrl, setTemplateImageUrl] = useState(null);
   const [elements, setElements] = useState([]);
+  const [history, setHistory] = useState([[]]);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: 842, height: 595 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const stageRef = createRef();
+
+  useEffect(() => {
+    if (!isLoadingHistory) {
+      setHistory((prev) => [...prev.slice(0, currentStep + 1), elements]);
+      setCurrentStep((prev) => prev + 1);
+    } else {
+      setIsLoadingHistory(false);
+    }
+  }, [elements, isLoadingHistory]);
+
+  const handleUndo = () => {
+    if (currentStep > 0) {
+      setIsLoadingHistory(true);
+      setCurrentStep((prev) => prev - 1);
+      setElements(history[currentStep - 1]);
+    }
+  };
+
+  const handleRedo = () => {
+    if (currentStep < history.length - 1) {
+      setIsLoadingHistory(true);
+      setCurrentStep((prev) => prev + 1);
+      setElements(history[currentStep + 1]);
+    }
+  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -72,13 +106,16 @@ const UploadTemplatePage = () => {
     const pos = stageRef.current.getPointerPosition();
     const placeholder = JSON.parse(e.dataTransfer.getData("text/plain"));
 
+    const defaultWidth = placeholder.defaultWidth || 250;
+    const isQr = placeholder.isQr || false;
+
     const newElement = {
       id: `el_${Date.now()}`,
       type: "placeholder",
       text: placeholder.value,
-      x: pos.x - (placeholder.defaultWidth || 250) / 2, // Center the drop
-      y: pos.y - 15, // Adjust for font height
-      width: placeholder.defaultWidth || 250,
+      x: pos.x - defaultWidth / 2,
+      y: pos.y - 15,
+      width: defaultWidth,
       height: 30,
       fontSize: 24,
       fontFamily: "Times New Roman",
@@ -86,16 +123,18 @@ const UploadTemplatePage = () => {
       align: "left",
       fontStyle: "normal",
       rotation: 0,
+      verticalAlign: "top",
+      isQr,
     };
 
-    if (placeholder.isQr) {
-      Object.assign(newElement, {
-        width: 100,
-        height: 100,
-        text: "{{qr_code}}",
-        align: "center",
-      });
+    if (isQr) {
+      newElement.x = pos.x - 50;
+      newElement.y = pos.y - 50;
+      newElement.width = 100;
+      newElement.height = 100;
+      newElement.align = "center";
     }
+
     setElements([...elements, newElement]);
   };
 
@@ -111,7 +150,21 @@ const UploadTemplatePage = () => {
     // The backend will create the 'background' key from the uploaded image
     const layoutData = {
       canvas: canvasSize,
-      elements: elements.map(({ id, ...rest }) => rest), // Remove client-side ID
+      elements: elements.map((el) => ({
+        type: el.type,
+        text: el.text,
+        x: el.x,
+        y: el.y,
+        width: el.width,
+        height: el.height,
+        fontSize: el.fontSize,
+        fontFamily: el.fontFamily,
+        fill: el.fill,
+        align: el.align,
+        fontStyle: el.fontStyle,
+        rotation: el.rotation,
+        verticalAlign: el.verticalAlign,
+      })),
     };
 
     const formData = new FormData();
@@ -152,18 +205,34 @@ const UploadTemplatePage = () => {
             className="text-lg font-semibold border-b-2 border-transparent focus:border-blue-500 outline-none"
           />
         </div>
-        <button
-          onClick={handleSaveTemplate}
-          disabled={isSubmitting}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 disabled:opacity-50"
-        >
-          {isSubmitting ? (
-            <Spinner animation="border" size="sm" />
-          ) : (
-            <Save size={18} />
-          )}
-          <span>{isSubmitting ? "Saving..." : "Save Template"}</span>
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleUndo}
+            disabled={currentStep <= 0}
+            className="text-gray-600 hover:text-gray-900 disabled:opacity-50"
+          >
+            <RotateCcw size={18} />
+          </button>
+          <button
+            onClick={handleRedo}
+            disabled={currentStep >= history.length - 1}
+            className="text-gray-600 hover:text-gray-900 disabled:opacity-50"
+          >
+            <RotateCw size={18} />
+          </button>
+          <button
+            onClick={handleSaveTemplate}
+            disabled={isSubmitting}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <Spinner animation="border" size="sm" />
+            ) : (
+              <Save size={18} />
+            )}
+            <span>{isSubmitting ? "Saving..." : "Save Template"}</span>
+          </button>
+        </div>
       </header>
 
       <div className="flex-grow grid grid-cols-12 gap-4 p-4">
@@ -212,6 +281,7 @@ const UploadTemplatePage = () => {
                     setElements(elements.filter((el) => el.id !== selectedId));
                     setSelectedId(null);
                   }}
+                  onDone={() => setSelectedId(null)}
                 />
               ) : (
                 <div className="text-center text-gray-500 p-4 bg-gray-50 rounded-lg">

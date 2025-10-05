@@ -6,6 +6,10 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  AlignVerticalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  Check,
 } from "lucide-react";
 
 const FONT_FAMILIES = [
@@ -19,7 +23,7 @@ const FONT_FAMILIES = [
   "Comic Sans MS",
 ];
 
-const TextElementControls = ({ element, onUpdate, onDelete }) => {
+const TextElementControls = ({ element, onUpdate, onDelete, onDone }) => {
   const handleStyleToggle = (style) => {
     const currentStyle = element.fontStyle || "normal";
     if (currentStyle.includes(style)) {
@@ -29,16 +33,67 @@ const TextElementControls = ({ element, onUpdate, onDelete }) => {
     }
   };
 
+  if (element.isQr) {
+    const handleSizeChange = (e) => {
+      const val = parseInt(e.target.value, 10);
+      onUpdate({ width: val, height: val });
+    };
+
+    return (
+      <div className="space-y-4 p-4 border rounded-lg bg-white">
+        <div className="flex justify-between items-center">
+          <h4 className="font-semibold text-gray-800">QR Code Placeholder</h4>
+          <div className="flex gap-2">
+            <button
+              onClick={onDone}
+              className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100"
+            >
+              <Check size={18} />
+            </button>
+            <button
+              onClick={onDelete}
+              className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
+        </div>
+        <div>
+          <label className="text-sm font-medium text-gray-600">Size (px)</label>
+          <input
+            type="number"
+            value={element.width}
+            onChange={handleSizeChange}
+            className="w-full mt-1 p-2 border rounded-md"
+            min={5}
+          />
+        </div>
+        <p className="text-sm text-gray-500">
+          The QR Code will be generated automatically when issuing the
+          certificate.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-white">
       <div className="flex justify-between items-center">
         <h4 className="font-semibold text-gray-800">Element Properties</h4>
-        <button
-          onClick={onDelete}
-          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100"
-        >
-          <Trash2 size={18} />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={onDone}
+            className="text-green-500 hover:text-green-700 p-1 rounded-full hover:bg-green-100"
+          >
+            <Check size={18} />
+          </button>
+          <button
+            onClick={onDelete}
+            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-100"
+          >
+            <Trash2 size={18} />
+          </button>
+        </div>
       </div>
 
       <div>
@@ -106,7 +161,9 @@ const TextElementControls = ({ element, onUpdate, onDelete }) => {
           </div>
         </div>
         <div>
-          <label className="text-sm font-medium text-gray-600">Align</label>
+          <label className="text-sm font-medium text-gray-600">
+            Horizontal Align
+          </label>
           <div className="flex mt-1">
             <button
               onClick={() => onUpdate({ align: "left" })}
@@ -137,6 +194,46 @@ const TextElementControls = ({ element, onUpdate, onDelete }) => {
               }`}
             >
               <AlignRight size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4">
+        <div>
+          <label className="text-sm font-medium text-gray-600">
+            Vertical Align
+          </label>
+          <div className="flex mt-1">
+            <button
+              onClick={() => onUpdate({ verticalAlign: "top" })}
+              className={`p-2 border rounded-l-md ${
+                element.verticalAlign === "top"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              <AlignVerticalJustifyStart size={16} />
+            </button>
+            <button
+              onClick={() => onUpdate({ verticalAlign: "middle" })}
+              className={`p-2 border-t border-b ${
+                element.verticalAlign === "middle"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              <AlignVerticalJustifyCenter size={16} />
+            </button>
+            <button
+              onClick={() => onUpdate({ verticalAlign: "bottom" })}
+              className={`p-2 border rounded-r-md ${
+                element.verticalAlign === "bottom"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              <AlignVerticalJustifyEnd size={16} />
             </button>
           </div>
         </div>
