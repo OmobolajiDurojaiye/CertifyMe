@@ -16,7 +16,7 @@ from ..pdf_templates import get_classic_pdf_template, get_modern_pdf_template
 certificate_bp = Blueprint('certificates', __name__)
 
 def parse_flexible_date(date_string):
-    formats_to_try = ['%Y-%m-%d', '%m/%d/%Y', '%m-%d-%Y', '%d-%b-%Y']
+    formats_to_try = ['%Y-%m-%d', '%m/%d/Y', '%m-%d-%Y', '%d-%b-%Y']
     for fmt in formats_to_try:
         try: return datetime.strptime(date_string, fmt).date()
         except ValueError: continue
@@ -54,8 +54,19 @@ def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
         "{{issue_date}}": certificate.issue_date.strftime('%B %d, %Y'),
         "{{issuer_name}}": certificate.issuer_name,
         "{{verification_id}}": certificate.verification_id,
-        "{{signature}}": certificate.signature or certificate.issuer_name
+        # Signature is handled next
     }
+    
+    # --- THIS IS THE FIX ---
+    # Handle signature: check for an uploaded image first, then fall back to text.
+    signature_image_base64 = get_image_as_base64(issuer.signature_image_url)
+    if signature_image_base64:
+        # If an image exists, the placeholder will be replaced with an HTML img tag.
+        dynamic_data["{{signature}}"] = f'<img src="data:image/png;base64,{signature_image_base64}" style="width: 100%; height: 100%; object-fit: contain;">'
+    else:
+        # Otherwise, fall back to the text signature.
+        dynamic_data["{{signature}}"] = certificate.signature or certificate.issuer_name
+    # --- END OF FIX ---
     
     # Generate QR code
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -164,11 +175,9 @@ def _generate_certificate_pdf_in_memory(certificate):
     template = Template.query.get_or_404(certificate.template_id)
     issuer = User.query.get_or_404(certificate.user_id)
     
-    # --- THIS IS THE FIX ---
     # Route to the correct PDF generator based on the template's layout style.
     if template.layout_style == 'visual':
         return _generate_visual_certificate_pdf_in_memory(certificate, template, issuer)
-    # --- END OF FIX ---
     
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
