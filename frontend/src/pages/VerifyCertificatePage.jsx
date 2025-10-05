@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Container, Form, Button, Alert, Card, Spinner } from "react-bootstrap";
-import { verifyCertificate } from "../api";
+import { verifyCertificate } from "../api"; // We ONLY need the public verifyCertificate API
 import { SERVER_BASE_URL } from "../config";
 import QRCode from "react-qr-code";
 import { CheckCircle, XCircle, Search } from "lucide-react";
-import "../styles/VerifyPage.css"; // Import the new stylesheet
+import KonvaPreview from "../components/KonvaPreview";
+import "../styles/VerifyPage.css";
 
 // A minimal header just for this page
 const VerifyHeader = () => (
   <header className="verify-header">
     <Container>
       <Link to="/" className="navbar-brand">
-        {/* <img src="/images/certbadge.png" alt="CertifyMe Logo" height="28" /> */}
         <span>CertifyMe</span>
       </Link>
     </Container>
@@ -33,6 +33,28 @@ const VerifyFooter = () => (
 // The certificate display component
 const CertificateDisplay = ({ certificate, template }) => {
   if (!certificate || !template) return null;
+
+  // Handle visual templates using KonvaPreview
+  if (template.layout_style === "visual") {
+    // ADDED: A defensive check to provide a clear error if the backend hasn't been updated yet.
+    if (!template.layout_data) {
+      return (
+        <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3 p-4">
+          <p className="text-danger text-center mb-0">
+            <strong>Preview Unavailable:</strong> The API did not provide the
+            necessary layout data for this visual template. This requires a
+            backend update.
+          </p>
+        </div>
+      );
+    }
+    return (
+      <KonvaPreview
+        layoutData={template.layout_data}
+        dynamicData={certificate}
+      />
+    );
+  }
 
   const serverUrl = SERVER_BASE_URL;
   const {
@@ -277,6 +299,7 @@ const VerifyCertificatePage = () => {
     setLoading(true);
     navigate(`/verify/${idToVerify}`, { replace: true });
     try {
+      // This single API call is now expected to return the FULL template data.
       const response = await verifyCertificate(idToVerify);
       setCertificate(response.data.certificate);
       setTemplate(response.data.template);
@@ -294,6 +317,7 @@ const VerifyCertificatePage = () => {
     if (paramId) {
       handleVerify(paramId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramId]);
 
   const handleSubmit = (e) => {

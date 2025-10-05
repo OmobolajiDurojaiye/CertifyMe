@@ -528,32 +528,40 @@ def verify_certificate(verification_id):
         return jsonify({"msg": "Certificate not found"}), 404
 
     template = Template.query.get_or_404(certificate.template_id)
-    issuer = User.query.get_or_404(certificate.user_id)
+    # The issuer object is not needed by the frontend display component, so we can omit it.
+    
+    # Construct a comprehensive certificate object for the frontend
+    certificate_data = {
+        "id": certificate.id,
+        "recipient_name": certificate.recipient_name,
+        "recipient_email": certificate.recipient_email,
+        "course_title": certificate.course_title,
+        "issue_date": certificate.issue_date.isoformat(),
+        "issuer_name": certificate.issuer_name,
+        "status": certificate.status,
+        "verification_id": certificate.verification_id,
+        "signature": certificate.signature, # Added signature
+        "extra_fields": certificate.extra_fields
+    }
+
+    # Construct a comprehensive template object with ALL data the frontend might need
+    template_data = {
+        "id": template.id,
+        "title": template.title,
+        "layout_style": template.layout_style,
+        "layout_data": template.layout_data,          # CRITICAL: Added for visual templates
+        "logo_url": template.logo_url,                # Added for classic/modern templates
+        "background_url": template.background_url,    # Added for classic/modern templates
+        "primary_color": template.primary_color,
+        "secondary_color": template.secondary_color,
+        "body_font_color": template.body_font_color,  # Added for classic/modern templates
+        "font_family": template.font_family,
+        "custom_text": template.custom_text
+    }
     
     return jsonify({
-        "certificate": {
-            "id": certificate.id,
-            "recipient_name": certificate.recipient_name,
-            "recipient_email": certificate.recipient_email,
-            "course_title": certificate.course_title,
-            "issue_date": certificate.issue_date.isoformat(),
-            "issuer_name": certificate.issuer_name,
-            "status": certificate.status,
-            "verification_id": certificate.verification_id,
-            "extra_fields": certificate.extra_fields
-        },
-        "template": {
-            "title": template.title,
-            "primary_color": template.primary_color,
-            "secondary_color": template.secondary_color,
-            "font_family": template.font_family,
-            "layout_style": template.layout_style,
-            "custom_text": template.custom_text
-        },
-        "issuer": {
-            "name": issuer.name,
-            "email": issuer.email
-        }
+        "certificate": certificate_data,
+        "template": template_data
     }), 200
 
 @certificate_bp.route('/<int:cert_id>/status', methods=['PUT'])

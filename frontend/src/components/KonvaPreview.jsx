@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Image as KonvaImage, Text } from "react-konva";
 import useImage from "use-image";
-import { SERVER_BASE_URL } from "../config"; // ✅ make sure this points to your backend, e.g. http://127.0.0.1:5000
+import { SERVER_BASE_URL } from "../config";
 
-// 🖼️ Component for rendering background image
+// Component for rendering background image
 const BackgroundImage = ({ src, width, height }) => {
   const [image] = useImage(src, "anonymous");
   return image ? (
@@ -11,16 +11,17 @@ const BackgroundImage = ({ src, width, height }) => {
   ) : null;
 };
 
-const KonvaPreview = ({ layoutData, dynamicData, previewData }) => {
+const KonvaPreview = ({ layoutData, dynamicData }) => {
   const containerRef = useRef(null);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [dimensions, setDimensions] = useState({ width: 800, height: 566 });
 
-  // 🧩 Auto-scale to fit parent container
+  // Auto-scale to fit parent container
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
         const width = containerRef.current.offsetWidth;
-        const height = width * 0.707; // maintain aspect ratio (A4 ratio)
+        // Maintain a standard A4-like aspect ratio (landscape)
+        const height = width / 1.414;
         setDimensions({ width, height });
       }
     };
@@ -29,167 +30,88 @@ const KonvaPreview = ({ layoutData, dynamicData, previewData }) => {
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  // 🧠 Normalize data for all template types
-  let normalized;
-  if (previewData) {
-    normalized = previewData;
-  } else if (layoutData) {
-    normalized = {
-      type: "custom",
-      templateData: {
-        // ✅ Build full image path from backend
-        backgroundImage: layoutData?.background?.image?.startsWith("http")
-          ? layoutData.background.image
-          : `${SERVER_BASE_URL}${layoutData.background.image}`,
-
-        width: layoutData?.canvas?.width || 842,
-        height: layoutData?.canvas?.height || 595,
-        textElements: (layoutData?.elements || []).map((el) => {
-          let text = el.text || "";
-          if (dynamicData) {
-            text = text
-              .replace(
-                /{{recipient_name}}/gi,
-                dynamicData.recipient_name || "Recipient Name"
-              )
-              .replace(
-                /{{issuer_name}}/gi,
-                dynamicData.issuer_name || "Issuer Name"
-              )
-              .replace(/{{issue_date}}/gi, dynamicData.issue_date || "Date")
-              .replace(/{{signature}}/gi, dynamicData.signature || "Signature")
-              .replace(
-                /{{course_title}}/gi,
-                dynamicData.course_title || "Course Title"
-              );
-          }
-          return { ...el, text };
-        }),
-      },
-    };
-  }
-
-  if (!normalized) {
+  // If there's no layout data, we can't render anything.
+  if (!layoutData) {
     return (
-      <div className="flex items-center justify-center h-96 bg-gray-100">
-        <p className="text-gray-500">No preview available</p>
+      <div className="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+        <p className="text-gray-500">No visual template data available.</p>
       </div>
     );
   }
 
-  // 🧱 Custom (Visual) Template Preview
-  if (normalized.type === "custom" && normalized.templateData) {
-    const { templateData } = normalized;
-    const scaleX = dimensions.width / (templateData.width || 842);
-    const scaleY = dimensions.height / (templateData.height || 595);
+  // Define canvas base dimensions from layout data or use defaults
+  const baseWidth = layoutData?.canvas?.width || 842;
+  const baseHeight = layoutData?.canvas?.height || 595;
 
-    return (
-      <div ref={containerRef} className="w-full">
-        <Stage width={dimensions.width} height={dimensions.height}>
-          <Layer>
-            {/* 🖼️ Background image */}
-            {templateData.backgroundImage && (
-              <BackgroundImage
-                src={templateData.backgroundImage}
-                width={dimensions.width}
-                height={dimensions.height}
-              />
-            )}
+  // Calculate scaling factors
+  const scaleX = dimensions.width / baseWidth;
+  const scaleY = dimensions.height / baseHeight;
 
-            {/* ✍️ Text elements (placeholders replaced with actual data) */}
-            {(templateData.textElements || []).map((el, index) => (
-              <Text
-                key={index}
-                x={el.x * scaleX}
-                y={el.y * scaleY}
-                text={el.text}
-                fontSize={(el.fontSize || 20) * scaleX}
-                fontFamily={el.fontFamily || "Arial"}
-                fill={el.fill || "#000"}
-                align={el.align || "left"}
-                rotation={el.rotation || 0}
-                width={el.width ? el.width * scaleX : undefined}
-              />
-            ))}
-          </Layer>
-        </Stage>
-      </div>
-    );
-  }
+  // Construct the full background image URL
+  const backgroundImageSrc = layoutData?.background?.image
+    ? layoutData.background.image.startsWith("http")
+      ? layoutData.background.image
+      : `${SERVER_BASE_URL}${layoutData.background.image}`
+    : null;
 
-  // 🪄 Built-in Template Previews
-  const data = normalized.data || {};
+  // Process text elements and replace placeholders with dynamic data
+  const textElements = (layoutData?.elements || []).map((el) => {
+    let text = el.text || "";
+    if (dynamicData) {
+      // Use fallback text if dynamicData fields are empty
+      const recipientName = dynamicData.recipient_name || "Recipient Name";
+      const issuerName = dynamicData.issuer_name || "Issuer Name";
+      const issueDate = dynamicData.issue_date
+        ? new Date(dynamicData.issue_date).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        : "Issue Date";
+      const signature = dynamicData.signature || issuerName; // Fallback signature to issuer name
+      const courseTitle = dynamicData.course_title || "Course Title";
 
-  // Modern layout
-  if (normalized.type === "modern") {
-    return (
-      <div
-        ref={containerRef}
-        className="w-full bg-gray-900 text-white p-8"
-        style={{ minHeight: dimensions.height }}
-      >
-        <div className="bg-gray-800 p-6 mb-6">
-          <h1 className="text-4xl font-bold text-center">CERTIFICATE</h1>
-          <p className="text-center text-gray-400 mt-2">OF ACHIEVEMENT</p>
-        </div>
-        <div className="text-center space-y-6">
-          <h2 className="text-3xl font-bold text-blue-400">
-            {data.recipient_name || "Recipient Name"}
-          </h2>
-          <p className="text-lg">has successfully completed</p>
-          <h3 className="text-2xl font-bold text-pink-400">
-            {data.course_name || "Course Name"}
-          </h3>
-          <div className="mt-8 space-y-2">
-            <p>Date: {data.issue_date || "Date"}</p>
-            <p>Instructor: {data.instructor_name || "Instructor Name"}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+      text = text
+        .replace(/{{recipient_name}}/gi, recipientName)
+        .replace(/{{issuer_name}}/gi, issuerName)
+        .replace(/{{issue_date}}/gi, issueDate)
+        .replace(/{{signature}}/gi, signature)
+        .replace(/{{course_title}}/gi, courseTitle);
+    }
+    return { ...el, text };
+  });
 
-  // Classic layout
-  if (normalized.type === "classic") {
-    return (
-      <div
-        ref={containerRef}
-        className="w-full bg-white p-8 border-8 border-double border-yellow-700"
-        style={{ minHeight: dimensions.height }}
-      >
-        <div className="text-center space-y-6">
-          <h1 className="text-5xl font-serif text-yellow-800">Certificate</h1>
-          <p className="text-xl text-yellow-700">of Achievement</p>
-          <hr className="border-t-2 border-yellow-600 w-1/2 mx-auto" />
-          <p className="text-lg mt-8">This is to certify that</p>
-          <h2 className="text-3xl font-bold text-yellow-800">
-            {data.recipient_name || "Recipient Name"}
-          </h2>
-          <p className="text-lg">has successfully completed</p>
-          <h3 className="text-2xl font-bold text-yellow-800">
-            {data.course_name || "Course Name"}
-          </h3>
-          <div className="mt-12 flex justify-between px-12">
-            <div>
-              <p className="border-t-2 border-yellow-700 pt-2">
-                Date: {data.issue_date || "Date"}
-              </p>
-            </div>
-            <div>
-              <p className="border-t-2 border-yellow-700 pt-2">
-                Instructor: {data.instructor_name || "Instructor"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Fallback
   return (
-    <div className="flex items-center justify-center h-96 bg-gray-100">
-      <p className="text-gray-500">Unknown template type</p>
+    <div ref={containerRef} className="w-full h-full">
+      <Stage width={dimensions.width} height={dimensions.height}>
+        <Layer>
+          {/* Background image */}
+          {backgroundImageSrc && (
+            <BackgroundImage
+              src={backgroundImageSrc}
+              width={dimensions.width}
+              height={dimensions.height}
+            />
+          )}
+
+          {/* Text elements */}
+          {textElements.map((el, index) => (
+            <Text
+              key={index}
+              x={el.x * scaleX}
+              y={el.y * scaleY}
+              text={el.text}
+              fontSize={(el.fontSize || 20) * Math.min(scaleX, scaleY)} // Scale font more uniformly
+              fontFamily={el.fontFamily || "Arial"}
+              fill={el.fill || "#000"}
+              align={el.align || "left"}
+              rotation={el.rotation || 0}
+              width={el.width ? el.width * scaleX : undefined}
+              draggable={false} // Ensure text is not draggable in preview
+            />
+          ))}
+        </Layer>
+      </Stage>
     </div>
   );
 };

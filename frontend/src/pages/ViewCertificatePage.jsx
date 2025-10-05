@@ -14,6 +14,7 @@ import {
   getCertificate,
   getCertificatePDF,
   updateCertificateStatus,
+  getTemplates, // <-- IMPORT getTemplates
 } from "../api";
 import { SERVER_BASE_URL } from "../config";
 import QRCode from "react-qr-code";
@@ -27,6 +28,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
+import KonvaPreview from "../components/KonvaPreview";
 
 class ErrorBoundary extends Component {
   state = { hasError: false, error: null };
@@ -48,6 +50,17 @@ class ErrorBoundary extends Component {
 
 const CertificateDisplay = ({ certificate, template }) => {
   if (!certificate || !template) return null;
+
+  // Handle visual templates using KonvaPreview
+  if (template.layout_style === "visual") {
+    // Pass layout_data which should now be present
+    return (
+      <KonvaPreview
+        layoutData={template.layout_data}
+        dynamicData={certificate}
+      />
+    );
+  }
 
   const {
     layout_style,
@@ -86,8 +99,6 @@ const CertificateDisplay = ({ certificate, template }) => {
       }
     : {};
 
-  // --- THIS IS THE FIX ---
-  // The new, corrected render function for the 'classic' template
   const renderClassic = () => (
     <div
       className="h-100 w-100 bg-white relative flex flex-column shadow-2xl rounded-xl overflow-hidden"
@@ -194,7 +205,6 @@ const CertificateDisplay = ({ certificate, template }) => {
       </div>
     </div>
   );
-  // --- END OF FIX ---
 
   const renderModern = () => (
     <div
@@ -336,9 +346,24 @@ function ViewCertificatePage() {
   useEffect(() => {
     const fetchCertificate = async () => {
       try {
+        // Step 1: Fetch certificate data and its partial template info
         const response = await getCertificate(certId);
-        setCertificate(response.data.certificate);
-        setTemplate(response.data.template);
+        const certData = response.data.certificate;
+        const partialTemplate = response.data.template;
+
+        setCertificate(certData);
+
+        // Step 2: If it's a visual template, fetch the full template data
+        if (partialTemplate && partialTemplate.layout_style === "visual") {
+          const templatesResponse = await getTemplates();
+          const fullTemplate = templatesResponse.data.templates.find(
+            (t) => t.id === partialTemplate.id
+          );
+          setTemplate(fullTemplate || partialTemplate); // Fallback to partial if not found
+        } else {
+          // For other templates, the partial data is sufficient
+          setTemplate(partialTemplate);
+        }
       } catch (err) {
         setError(
           err.response?.data?.msg || "Could not fetch certificate details."
