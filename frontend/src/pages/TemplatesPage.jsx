@@ -598,13 +598,13 @@ function TemplatesPage() {
             Create with Visual Editor
           </Button> */}
         </Link>
-        <Link
+        {/* <Link
           to="/dashboard/upload-template"
           className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-5 rounded-lg flex items-center gap-2 w-full sm:w-auto justify-center"
         >
           <Brush size={18} />
           Upload Your Own Template
-        </Link>
+        </Link> */}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="col-span-12 lg:col-span-4">
