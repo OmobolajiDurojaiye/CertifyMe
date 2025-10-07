@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from ..models import db, Template, Certificate
 import json
+from sqlalchemy.orm.attributes import flag_modified # Import flag_modified
 
 template_bp = Blueprint('templates', __name__)
 
@@ -41,7 +42,6 @@ def create_custom_template():
     
     background_url = f"/uploads/{filename}"
     
-    # Inject background image path into the layout_data for frontend preview
     layout_data['background'] = {'image': background_url}
     
     new_template = Template(
@@ -57,7 +57,6 @@ def create_custom_template():
     
     return jsonify({"msg": "Template created successfully", "template_id": new_template.id}), 201
 
-# --- THIS IS THE NEW FEATURE ---
 @template_bp.route('/upload-custom/<int:template_id>', methods=['PUT'])
 @jwt_required()
 def update_custom_template(template_id):
@@ -71,13 +70,14 @@ def update_custom_template(template_id):
     if title:
         template.title = title
     
+    layout_data = {}
     if 'layout_data' in request.form:
         try:
             layout_data = json.loads(request.form.get('layout_data'))
-            template.layout_data = layout_data
         except json.JSONDecodeError:
             return jsonify({"msg": "Invalid layout data format."}), 400
 
+    # Handle file upload if it exists
     if 'template_image' in request.files:
         file = request.files['template_image']
         if file and allowed_file(file.filename):
@@ -88,14 +88,17 @@ def update_custom_template(template_id):
             background_url = f"/uploads/{filename}"
             template.background_url = background_url
             
-            # Ensure layout_data and background object exist before updating
-            if template.layout_data is None: template.layout_data = {}
-            if 'background' not in template.layout_data: template.layout_data['background'] = {}
-            template.layout_data['background']['image'] = background_url
+            if 'background' not in layout_data:
+                layout_data['background'] = {}
+            layout_data['background']['image'] = background_url
+            
+    template.layout_data = layout_data
+    # Explicitly tell SQLAlchemy that the mutable JSON field has been changed
+    flag_modified(template, "layout_data")
 
     db.session.commit()
     return jsonify({"msg": "Template updated successfully", "template_id": template.id}), 200
-# --- END OF NEW FEATURE ---
+
 
 @template_bp.route('/', methods=['POST'])
 @jwt_required(locations=["headers"])
@@ -162,7 +165,7 @@ def get_user_templates():
             'body_font_color': t.body_font_color,
             'font_family': t.font_family,
             'layout_style': t.layout_style,
-            'layout_data': json.loads(json.dumps(t.layout_data)) if t.layout_data else None,
+            'layout_data': t.layout_data,
             'is_public': t.is_public,
             'custom_text': t.custom_text
         })
@@ -188,7 +191,7 @@ def get_template(template_id):
         'body_font_color': template.body_font_color,
         'font_family': template.font_family,
         'layout_style': template.layout_style,
-        'layout_data': json.loads(json.dumps(template.layout_data)) if template.layout_data else None,
+        'layout_data': template.layout_data,
         'is_public': template.is_public,
         'custom_text': template.custom_text
     }), 200
@@ -233,7 +236,6 @@ def update_template(template_id):
     db.session.commit()
     return jsonify({"msg": "Template updated successfully"}), 200
     
-
 @template_bp.route('/<int:template_id>', methods=['DELETE'])
 @jwt_required(locations=["headers"])
 def delete_template(template_id):
@@ -243,7 +245,6 @@ def delete_template(template_id):
     if template.is_public or template.user_id != user_id:
         return jsonify({"msg": "Permission denied"}), 403
 
-    # Check if the template is being used by any certificates
     if Certificate.query.filter_by(template_id=template.id).first():
         return jsonify({"msg": "Cannot delete template as it is currently in use by one or more certificates."}), 409
 
