@@ -36,9 +36,7 @@ import AdminPaymentDetailsPage from "./pages/AdminPaymentDetailsPage";
 import AdminSupportPage from "./pages/AdminSupportPage";
 import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage";
 
-// --- THIS IS THE NEW FEATURE ---
 import DocsPage from "./pages/DocsPage";
-// --- END OF NEW FEATURE ---
 
 const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 
@@ -96,8 +94,9 @@ function App() {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="support" element={<ContactSupportPage />} />
           <Route path="support/:ticketId" element={<ContactSupportPage />} />
+          <Route path="upload-template" element={<UploadTemplatePage />} />
           <Route
-            path="/dashboard/upload-template"
+            path="upload-template/:templateId"
             element={<UploadTemplatePage />}
           />
         </Route>

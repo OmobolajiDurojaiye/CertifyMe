@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { getTemplates, createTemplate, updateTemplate } from "../api";
+import {
+  getTemplates,
+  createTemplate,
+  updateTemplate,
+  deleteTemplate,
+} from "../api";
 import {
   CheckCircle,
   Info,
@@ -10,6 +15,7 @@ import {
   Brush,
   Copy,
   Check,
+  Trash2,
 } from "lucide-react";
 import { SERVER_BASE_URL } from "../config";
 import { Spinner, Modal, Button } from "react-bootstrap";
@@ -298,7 +304,7 @@ const FormFileInput = ({ label, ...props }) => (
   </div>
 );
 
-const TemplateCard = ({ template, onEditClick }) => {
+const TemplateCard = ({ template, onEditClick, onDeleteClick }) => {
   const [isCopied, setIsCopied] = useState(false);
 
   const handleCopyId = (e) => {
@@ -358,24 +364,37 @@ const TemplateCard = ({ template, onEditClick }) => {
             </div>
           </div>
           {!template.is_public && (
-            <Link
-              to={
-                template.layout_style === "visual"
-                  ? `/dashboard/editor/${template.id}`
-                  : "#"
-              }
-              onClick={
-                template.layout_style !== "visual"
-                  ? (e) => {
-                      e.preventDefault();
-                      onEditClick(template);
-                    }
-                  : undefined
-              }
-              className="text-indigo-600 hover:text-indigo-800 flex-shrink-0 ml-2"
-            >
-              <Edit2 size={20} />
-            </Link>
+            <div className="flex items-center flex-shrink-0 ml-2">
+              <Link
+                to={
+                  template.layout_style === "visual"
+                    ? `/dashboard/upload-template/${template.id}`
+                    : "#"
+                }
+                onClick={
+                  template.layout_style !== "visual"
+                    ? (e) => {
+                        e.preventDefault();
+                        onEditClick(template);
+                      }
+                    : undefined
+                }
+                className="text-indigo-600 hover:text-indigo-800 p-1"
+                title="Edit Template"
+              >
+                <Edit2 size={20} />
+              </Link>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onDeleteClick(template);
+                }}
+                className="text-red-600 hover:text-red-800 p-1"
+                title="Delete Template"
+              >
+                <Trash2 size={20} />
+              </button>
+            </div>
           )}
         </div>
         <div className="mt-4 bg-gray-50 p-2 rounded-md flex items-center justify-between">
@@ -435,6 +454,8 @@ function TemplatesPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState(null);
 
   const fontOptions = [
     "Georgia",
@@ -582,6 +603,30 @@ function TemplatesPage() {
     });
   };
 
+  const handleDeleteClick = (template) => {
+    setTemplateToDelete(template);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!templateToDelete) return;
+    const promise = deleteTemplate(templateToDelete.id);
+    toast.promise(promise, {
+      loading: "Deleting template...",
+      success: () => {
+        setShowDeleteModal(false);
+        setTemplateToDelete(null);
+        fetchTemplates();
+        return "Template deleted successfully!";
+      },
+      error: (err) => {
+        setShowDeleteModal(false);
+        setTemplateToDelete(null);
+        return err.response?.data?.msg || "Failed to delete template.";
+      },
+    });
+  };
+
   const currentFormState = showEditModal ? editFormData : formData;
 
   return (
@@ -589,15 +634,6 @@ function TemplatesPage() {
       <Toaster position="top-center" />
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <h2 className="text-3xl font-bold text-gray-900">Manage Templates</h2>
-        <Link to="/dashboard/editor">
-          {/* <Button
-            variant="primary"
-            className="flex items-center w-full sm:w-auto justify-center"
-          >
-            <Brush size={18} className="me-2" />
-            Create with Visual Editor
-          </Button> */}
-        </Link>
         <Link
           to="/dashboard/upload-template"
           className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-5 rounded-lg flex items-center gap-2 w-full sm:w-auto justify-center"
@@ -717,6 +753,7 @@ function TemplatesPage() {
                 key={t.id}
                 template={t}
                 onEditClick={handleEditClick}
+                onDeleteClick={handleDeleteClick}
               />
             ))}
           </div>
@@ -814,6 +851,30 @@ function TemplatesPage() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      <Modal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Deletion</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete the template "
+          <strong>{templateToDelete?.title}</strong>"? This action cannot be
+          undone.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDeleteConfirm}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
       {isFullscreen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 md:p-8"

@@ -162,6 +162,10 @@ export const updateTemplate = (templateId, formData) =>
   apiClient.put(`/templates/${templateId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+// --- THIS IS THE NEW FEATURE ---
+export const deleteTemplate = (templateId) =>
+  apiClient.delete(`/templates/${templateId}`);
+// --- END OF NEW FEATURE ---
 
 // API calls for the visual template editor
 export const createVisualTemplate = (templateData) =>
@@ -238,5 +242,10 @@ export const uploadEditorImage = (formData) =>
 
 export const createCustomTemplate = (formData) =>
   apiClient.post("/templates/upload-custom", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+export const updateCustomTemplate = (templateId, formData) =>
+  apiClient.put(`/templates/upload-custom/${templateId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });

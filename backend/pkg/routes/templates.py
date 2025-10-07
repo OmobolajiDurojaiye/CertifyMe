@@ -2,7 +2,7 @@ import os
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
-from ..models import db, Template
+from ..models import db, Template, Certificate
 import json
 
 template_bp = Blueprint('templates', __name__)
@@ -57,6 +57,45 @@ def create_custom_template():
     
     return jsonify({"msg": "Template created successfully", "template_id": new_template.id}), 201
 
+# --- THIS IS THE NEW FEATURE ---
+@template_bp.route('/upload-custom/<int:template_id>', methods=['PUT'])
+@jwt_required()
+def update_custom_template(template_id):
+    user_id = int(get_jwt_identity())
+    template = Template.query.get_or_404(template_id)
+
+    if template.is_public or template.user_id != user_id or template.layout_style != 'visual':
+        return jsonify({"msg": "Permission denied"}), 403
+
+    title = request.form.get('title', '').strip()
+    if title:
+        template.title = title
+    
+    if 'layout_data' in request.form:
+        try:
+            layout_data = json.loads(request.form.get('layout_data'))
+            template.layout_data = layout_data
+        except json.JSONDecodeError:
+            return jsonify({"msg": "Invalid layout data format."}), 400
+
+    if 'template_image' in request.files:
+        file = request.files['template_image']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(f"{user_id}_custom_{template.id}_{file.filename}")
+            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+            file.save(file_path)
+            
+            background_url = f"/uploads/{filename}"
+            template.background_url = background_url
+            
+            # Ensure layout_data and background object exist before updating
+            if template.layout_data is None: template.layout_data = {}
+            if 'background' not in template.layout_data: template.layout_data['background'] = {}
+            template.layout_data['background']['image'] = background_url
+
+    db.session.commit()
+    return jsonify({"msg": "Template updated successfully", "template_id": template.id}), 200
+# --- END OF NEW FEATURE ---
 
 @template_bp.route('/', methods=['POST'])
 @jwt_required(locations=["headers"])
@@ -123,7 +162,6 @@ def get_user_templates():
             'body_font_color': t.body_font_color,
             'font_family': t.font_family,
             'layout_style': t.layout_style,
-            # ✅ force JSON serialization
             'layout_data': json.loads(json.dumps(t.layout_data)) if t.layout_data else None,
             'is_public': t.is_public,
             'custom_text': t.custom_text
@@ -194,3 +232,21 @@ def update_template(template_id):
 
     db.session.commit()
     return jsonify({"msg": "Template updated successfully"}), 200
+    
+
+@template_bp.route('/<int:template_id>', methods=['DELETE'])
+@jwt_required(locations=["headers"])
+def delete_template(template_id):
+    user_id = int(get_jwt_identity())
+    template = Template.query.get_or_404(template_id)
+
+    if template.is_public or template.user_id != user_id:
+        return jsonify({"msg": "Permission denied"}), 403
+
+    # Check if the template is being used by any certificates
+    if Certificate.query.filter_by(template_id=template.id).first():
+        return jsonify({"msg": "Cannot delete template as it is currently in use by one or more certificates."}), 409
+
+    db.session.delete(template)
+    db.session.commit()
+    return jsonify({"msg": "Template deleted successfully"}), 200

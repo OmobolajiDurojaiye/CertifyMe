@@ -1,5 +1,5 @@
 import React, { useState, useRef, createRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 import {
   ArrowLeft,
@@ -9,9 +9,14 @@ import {
   RotateCw,
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
-import { createCustomTemplate } from "../api";
+import {
+  createCustomTemplate,
+  getTemplate,
+  updateCustomTemplate,
+} from "../api";
 import CustomTemplateEditor from "../components/CustomTemplateEditor";
 import TextElementControls from "../components/TextElementControls";
+import { SERVER_BASE_URL } from "../config";
 
 const PLACEHOLDERS = [
   { name: "Recipient Name", value: "{{recipient_name}}", defaultWidth: 350 },
@@ -36,6 +41,7 @@ const DraggablePlaceholder = ({ placeholder }) => (
 );
 
 const UploadTemplatePage = () => {
+  const { templateId } = useParams();
   const navigate = useNavigate();
   const [templateTitle, setTemplateTitle] = useState("");
   const [templateImageFile, setTemplateImageFile] = useState(null);
@@ -47,31 +53,67 @@ const UploadTemplatePage = () => {
   const [selectedId, setSelectedId] = useState(null);
   const [canvasSize, setCanvasSize] = useState({ width: 842, height: 595 });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!templateId);
   const fileInputRef = useRef(null);
   const stageRef = createRef();
 
   useEffect(() => {
+    if (templateId) {
+      const fetchTemplateData = async () => {
+        try {
+          const response = await getTemplate(templateId);
+          const { title, layout_data } = response.data;
+          setTemplateTitle(title);
+          if (layout_data) {
+            const loadedElements = layout_data.elements || [];
+            setElements(loadedElements);
+            setCanvasSize(layout_data.canvas || { width: 842, height: 595 });
+            if (layout_data.background?.image) {
+              setTemplateImageUrl(
+                `${SERVER_BASE_URL}${layout_data.background.image}`
+              );
+            }
+            setHistory([loadedElements]);
+            setCurrentStep(0);
+          }
+        } catch (error) {
+          toast.error("Failed to load template data.");
+          navigate("/dashboard/templates");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchTemplateData();
+    }
+  }, [templateId, navigate]);
+
+  useEffect(() => {
     if (!isLoadingHistory) {
-      setHistory((prev) => [...prev.slice(0, currentStep + 1), elements]);
-      setCurrentStep((prev) => prev + 1);
+      const newHistory = history.slice(0, currentStep + 1);
+      newHistory.push(elements);
+      setHistory(newHistory);
+      setCurrentStep(newHistory.length - 1);
     } else {
       setIsLoadingHistory(false);
     }
-  }, [elements, isLoadingHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elements]);
 
   const handleUndo = () => {
     if (currentStep > 0) {
       setIsLoadingHistory(true);
-      setCurrentStep((prev) => prev - 1);
-      setElements(history[currentStep - 1]);
+      const prevStep = currentStep - 1;
+      setCurrentStep(prevStep);
+      setElements(history[prevStep]);
     }
   };
 
   const handleRedo = () => {
     if (currentStep < history.length - 1) {
       setIsLoadingHistory(true);
-      setCurrentStep((prev) => prev + 1);
-      setElements(history[currentStep + 1]);
+      const nextStep = currentStep + 1;
+      setCurrentStep(nextStep);
+      setElements(history[nextStep]);
     }
   };
 
@@ -141,17 +183,17 @@ const UploadTemplatePage = () => {
   const handleSaveTemplate = async () => {
     if (!templateTitle.trim())
       return toast.error("Please provide a title for your template.");
-    if (!templateImageFile)
-      return toast.error("Please upload a template image.");
+    if (!templateImageUrl)
+      return toast.error("Please upload or keep a template image.");
     if (elements.length === 0)
       return toast.error("Please add at least one placeholder element.");
 
     setIsSubmitting(true);
-    // The backend will create the 'background' key from the uploaded image
+    // --- THIS IS THE FIX ---
     const layoutData = {
       canvas: canvasSize,
       elements: elements.map((el) => ({
-        type: el.type,
+        type: "placeholder",
         text: el.text,
         x: el.x,
         y: el.y,
@@ -164,22 +206,39 @@ const UploadTemplatePage = () => {
         fontStyle: el.fontStyle,
         rotation: el.rotation,
         verticalAlign: el.verticalAlign,
+        isQr: el.isQr,
       })),
     };
 
+    // If editing and NOT uploading a new file, preserve the existing background path
+    if (templateId && !templateImageFile && templateImageUrl) {
+      const relativePath = templateImageUrl.replace(SERVER_BASE_URL, "");
+      layoutData.background = { image: relativePath };
+    }
+    // --- END OF FIX ---
+
     const formData = new FormData();
     formData.append("title", templateTitle);
-    formData.append("template_image", templateImageFile);
     formData.append("layout_data", JSON.stringify(layoutData));
+    if (templateImageFile) {
+      formData.append("template_image", templateImageFile);
+    }
 
-    const promise = createCustomTemplate(formData);
+    const promise = templateId
+      ? updateCustomTemplate(templateId, formData)
+      : createCustomTemplate(formData);
+
     toast.promise(promise, {
-      loading: "Saving template...",
+      loading: templateId ? "Updating template..." : "Saving template...",
       success: () => {
         setTimeout(() => navigate("/dashboard/templates"), 1500);
-        return "Template saved successfully! Redirecting...";
+        return `Template ${
+          templateId ? "updated" : "saved"
+        } successfully! Redirecting...`;
       },
-      error: (err) => err.response?.data?.msg || "Failed to save template.",
+      error: (err) =>
+        err.response?.data?.msg ||
+        `Failed to ${templateId ? "update" : "save"} template.`,
     });
     promise.finally(() => setIsSubmitting(false));
   };
@@ -238,7 +297,12 @@ const UploadTemplatePage = () => {
       <div className="flex-grow grid grid-cols-12 gap-4 p-4">
         <aside className="col-span-3 bg-white rounded-lg shadow p-4 flex flex-col gap-4">
           <h3 className="font-bold text-lg">Controls</h3>
-          {!templateImageUrl ? (
+          {isLoading ? (
+            <div className="text-center p-6">
+              <Spinner />
+              <p className="mt-2 text-gray-500">Loading template...</p>
+            </div>
+          ) : !templateImageUrl ? (
             <div
               onClick={() => fileInputRef.current?.click()}
               className="text-center p-6 border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
@@ -312,7 +376,7 @@ const UploadTemplatePage = () => {
             />
           ) : (
             <div className="text-gray-500">
-              Please upload a template image to begin.
+              {isLoading ? " " : "Please upload a template image to begin."}
             </div>
           )}
         </main>
