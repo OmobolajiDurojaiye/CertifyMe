@@ -64,8 +64,17 @@ const UploadTemplatePage = () => {
           const response = await getTemplate(templateId);
           const { title, layout_data } = response.data;
           setTemplateTitle(title);
+
           if (layout_data) {
-            const loadedElements = layout_data.elements || [];
+            // ✅ FIX: Ensure every element has a unique ID to prevent shared editing
+            const loadedElements = (layout_data.elements || []).map(
+              (el, index) => ({
+                ...el,
+                id:
+                  el.id ||
+                  `el_${Math.random().toString(36).substring(2, 11)}_${index}`,
+              })
+            );
             setElements(loadedElements);
             setCanvasSize(layout_data.canvas || { width: 842, height: 595 });
             if (layout_data.background?.image) {
@@ -96,7 +105,6 @@ const UploadTemplatePage = () => {
     } else {
       setIsLoadingHistory(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elements]);
 
   const handleUndo = () => {
@@ -125,7 +133,6 @@ const UploadTemplatePage = () => {
         const img = new Image();
         img.onload = () => {
           const aspectRatio = img.width / img.height;
-          // Standard A4 landscape width
           const canvasWidth = 842;
           const canvasHeight = canvasWidth / aspectRatio;
           setCanvasSize({ width: canvasWidth, height: canvasHeight });
@@ -152,10 +159,7 @@ const UploadTemplatePage = () => {
     const isQr = placeholder.isQr || false;
 
     const newElement = {
-      // --- THIS IS THE FIX (Part 1) ---
-      // Using a more robust random string for the ID instead of Date.now()
       id: `el_${Math.random().toString(36).substring(2, 11)}`,
-      // --- END OF FIX ---
       type: "placeholder",
       text: placeholder.value,
       x: pos.x - defaultWidth / 2,
@@ -194,10 +198,8 @@ const UploadTemplatePage = () => {
     setIsSubmitting(true);
     const layoutData = {
       canvas: canvasSize,
-      // --- THIS IS THE FIX (Part 2) ---
-      // Ensure the element 'id' is saved along with its other properties
       elements: elements.map((el) => ({
-        id: el.id, // <-- CRITICAL FIX: Save the ID
+        id: el.id,
         type: "placeholder",
         text: el.text,
         x: el.x,
@@ -213,7 +215,6 @@ const UploadTemplatePage = () => {
         verticalAlign: el.verticalAlign,
         isQr: el.isQr,
       })),
-      // --- END OF FIX ---
     };
 
     if (templateId && !templateImageFile && templateImageUrl) {
