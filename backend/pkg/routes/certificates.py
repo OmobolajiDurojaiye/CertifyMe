@@ -521,6 +521,25 @@ def send_bulk_emails():
         return jsonify({"msg": f"Sent {sent} emails with {len(errors)} errors", "sent": sent, "errors": errors}), 207
     return jsonify({"msg": f"Successfully sent {sent} emails"}), 200
 
+@certificate_bp.route('/<int:cert_id>', methods=['DELETE'])
+@jwt_required()
+def delete_certificate(cert_id):
+    user_id = int(get_jwt_identity())
+    certificate = Certificate.query.get_or_404(cert_id)
+    if certificate.user_id != user_id:
+        return jsonify({"msg": "Permission denied"}), 403
+
+    try:
+        db.session.delete(certificate)
+        db.session.commit()
+        current_app.logger.info(f"Certificate {cert_id} deleted by user {user_id}")
+        return jsonify({"msg": "Certificate deleted successfully"}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error deleting certificate {cert_id}: {e}")
+        db.session.rollback()
+        return jsonify({"msg": "Failed to delete certificate"}), 500
+
+
 @certificate_bp.route('/verify/<string:verification_id>', methods=['GET'])
 def verify_certificate(verification_id):
     certificate = Certificate.query.filter_by(verification_id=verification_id).first()
