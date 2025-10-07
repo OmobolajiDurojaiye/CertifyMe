@@ -152,7 +152,10 @@ const UploadTemplatePage = () => {
     const isQr = placeholder.isQr || false;
 
     const newElement = {
-      id: `el_${Date.now()}`,
+      // --- THIS IS THE FIX (Part 1) ---
+      // Using a more robust random string for the ID instead of Date.now()
+      id: `el_${Math.random().toString(36).substring(2, 11)}`,
+      // --- END OF FIX ---
       type: "placeholder",
       text: placeholder.value,
       x: pos.x - defaultWidth / 2,
@@ -189,10 +192,12 @@ const UploadTemplatePage = () => {
       return toast.error("Please add at least one placeholder element.");
 
     setIsSubmitting(true);
-    // --- THIS IS THE FIX ---
     const layoutData = {
       canvas: canvasSize,
+      // --- THIS IS THE FIX (Part 2) ---
+      // Ensure the element 'id' is saved along with its other properties
       elements: elements.map((el) => ({
+        id: el.id, // <-- CRITICAL FIX: Save the ID
         type: "placeholder",
         text: el.text,
         x: el.x,
@@ -208,14 +213,13 @@ const UploadTemplatePage = () => {
         verticalAlign: el.verticalAlign,
         isQr: el.isQr,
       })),
+      // --- END OF FIX ---
     };
 
-    // If editing and NOT uploading a new file, preserve the existing background path
     if (templateId && !templateImageFile && templateImageUrl) {
       const relativePath = templateImageUrl.replace(SERVER_BASE_URL, "");
       layoutData.background = { image: relativePath };
     }
-    // --- END OF FIX ---
 
     const formData = new FormData();
     formData.append("title", templateTitle);
