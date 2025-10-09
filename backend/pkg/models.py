@@ -40,11 +40,9 @@ class Company(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Explicitly defined relationships to resolve ambiguity
     users = db.relationship('User', backref='company', lazy=True, foreign_keys='User.company_id')
     owner = db.relationship('User', backref=db.backref('owned_company', uselist=False), foreign_keys=[owner_id])
     
-    # Relationships with ondelete='SET NULL' to preserve records if company is deleted
     templates = db.relationship('Template', backref='company', lazy=True)
     certificates = db.relationship('Certificate', backref='company', lazy=True)
 
@@ -64,12 +62,10 @@ class User(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
 
-    # Relationships that should be deleted if the user is deleted
     templates = db.relationship('Template', backref='user', lazy=True, cascade="all, delete-orphan")
     groups = db.relationship('Group', backref='user', lazy=True, cascade="all, delete-orphan")
     support_tickets = db.relationship('SupportTicket', backref='user', lazy=True, cascade="all, delete-orphan")
     
-    # Relationships where user_id should be nullified to preserve records
     certificates = db.relationship('Certificate', backref='issuer', lazy=True)
     payments = db.relationship('Payment', backref='user', lazy=True)
 
@@ -117,7 +113,11 @@ class Template(db.Model):
         "body": "has successfully completed the course"
     })
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    certificates = db.relationship('Certificate', backref='template', lazy=True)
+    
+    # --- THIS IS THE FIX ---
+    # If a Template is deleted, all Certificates using it will also be deleted.
+    certificates = db.relationship('Certificate', backref='template', lazy=True, cascade="all, delete-orphan")
+    # --- END OF FIX ---
 
 class Group(db.Model):
     __tablename__ = 'groups'
@@ -131,7 +131,11 @@ class Certificate(db.Model):
     __tablename__ = 'certificates'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    template_id = db.Column(db.Integer, db.ForeignKey('templates.id'), nullable=False)
+    # --- THIS IS THE FIX ---
+    # The ForeignKey needs ondelete='CASCADE' at the database level for this to be robust.
+    # The relationship on the Template side will handle the SQLAlchemy ORM part.
+    template_id = db.Column(db.Integer, db.ForeignKey('templates.id', ondelete='CASCADE'), nullable=False)
+    # --- END OF FIX ---
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL'), nullable=True)
     recipient_name = db.Column(db.String(150), nullable=False)
