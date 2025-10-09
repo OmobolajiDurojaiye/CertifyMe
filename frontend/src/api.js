@@ -216,9 +216,12 @@ export const uploadUserSignature = (formData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-// --- THIS IS THE NEW FEATURE ---
+export const switchToCompany = (companyName) =>
+  apiClient.post("/users/me/switch-to-company", {
+    company_name: companyName,
+  });
+
 export const generateApiKey = () => apiClient.post("/users/me/api-key");
-// --- END OF NEW FEATURE ---
 
 export const getGroups = (page = 1) => apiClient.get(`/groups/?page=${page}`);
 export const createGroup = (name) => apiClient.post("/groups/", { name });

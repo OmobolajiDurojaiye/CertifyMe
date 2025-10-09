@@ -1,5 +1,3 @@
-// frontend/src/pages/SettingsPage.jsx
-
 import React, { useState, useEffect } from "react";
 import {
   Tab,
@@ -23,6 +21,7 @@ import {
   initializePayment as apiInitializePayment,
   uploadUserSignature,
   generateApiKey,
+  switchToCompany,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, useLocation, Link } from "react-router-dom";
@@ -35,7 +34,6 @@ import {
 } from "react-bootstrap-icons";
 import { useUser } from "../context/UserContext";
 
-// ... (PlanCard and BillingContent components remain unchanged) ...
 const PlanCard = ({
   title,
   price,
@@ -49,16 +47,12 @@ const PlanCard = ({
   <Card
     className={`h-100 d-flex flex-column ${current ? "border-primary" : ""}`}
   >
-    {" "}
     <Card.Body className="d-flex flex-column">
-      {" "}
-      <h5 className="fw-bold">{title}</h5>{" "}
-      <h2 className="fw-bolder my-3">{price}</h2>{" "}
+      <h5 className="fw-bold">{title}</h5>
+      <h2 className="fw-bolder my-3">{price}</h2>
       <ul className="list-unstyled mb-4">
-        {" "}
         {features.map((feature, index) => (
           <li key={index} className="mb-2 d-flex align-items-center">
-            {" "}
             <svg
               className="me-2 flex-shrink-0"
               width="16"
@@ -66,19 +60,16 @@ const PlanCard = ({
               fill="green"
               viewBox="0 0 16 16"
             >
-              {" "}
-              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />{" "}
-            </svg>{" "}
-            {feature}{" "}
+              <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+            </svg>
+            {feature}
           </li>
-        ))}{" "}
-      </ul>{" "}
+        ))}
+      </ul>
       <div className="mt-auto">
-        {" "}
         {current ? (
           <Button variant="outline-success" className="w-100" disabled>
-            {" "}
-            Current Plan{" "}
+            Current Plan
           </Button>
         ) : (
           <Button
@@ -87,32 +78,25 @@ const PlanCard = ({
             onClick={onAction}
             disabled={disabled || loading}
           >
-            {" "}
-            {loading ? <Spinner size="sm" /> : actionText}{" "}
+            {loading ? <Spinner size="sm" /> : actionText}
           </Button>
-        )}{" "}
-      </div>{" "}
-    </Card.Body>{" "}
+        )}
+      </div>
+    </Card.Body>
   </Card>
 );
 const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
   <Card className="page-content-card mb-4">
-    {" "}
     <Card.Body>
-      {" "}
       <Card.Title as="h5" className="fw-bold mb-4">
-        {" "}
-        Choose Your Plan{" "}
-      </Card.Title>{" "}
+        Choose Your Plan
+      </Card.Title>
       <Alert variant="info" className="mb-4">
-        {" "}
-        Current Plan: {user?.role?.toUpperCase() || "FREE"} -{" "}
-        {user?.cert_quota || 10} certificates remaining{" "}
-      </Alert>{" "}
+        Current Plan: {user?.role?.toUpperCase() || "FREE"} -
+        {user?.cert_quota || 10} certificates remaining
+      </Alert>
       <Row className="g-3">
-        {" "}
         <Col md={6} lg={3}>
-          {" "}
           <PlanCard
             title="Starter"
             price="$15 for 500 certs"
@@ -126,10 +110,9 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             onAction={() => handleUpgrade("starter")}
             current={user?.role === "starter"}
             loading={processingPlan === "starter"}
-          />{" "}
-        </Col>{" "}
+          />
+        </Col>
         <Col md={6} lg={3}>
-          {" "}
           <PlanCard
             title="Growth"
             price="$50 for 2,000 certs"
@@ -144,10 +127,9 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             onAction={() => handleUpgrade("growth")}
             current={user?.role === "growth"}
             loading={processingPlan === "growth"}
-          />{" "}
-        </Col>{" "}
+          />
+        </Col>
         <Col md={6} lg={3}>
-          {" "}
           <PlanCard
             title="Pro"
             price="$100 for 5,000 certs"
@@ -162,10 +144,9 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             onAction={() => handleUpgrade("pro")}
             current={user?.role === "pro"}
             loading={processingPlan === "pro"}
-          />{" "}
-        </Col>{" "}
+          />
+        </Col>
         <Col md={6} lg={3}>
-          {" "}
           <PlanCard
             title="Enterprise"
             price="$300 for 20,000 certs"
@@ -181,14 +162,13 @@ const BillingContent = ({ user, processingPlan, handleUpgrade }) => (
             onAction={() => handleUpgrade("enterprise")}
             current={user?.role === "enterprise"}
             loading={processingPlan === "enterprise"}
-          />{" "}
-        </Col>{" "}
-      </Row>{" "}
-    </Card.Body>{" "}
+          />
+        </Col>
+      </Row>
+    </Card.Body>
   </Card>
 );
 
-// Reusable Premium Lock Overlays
 const SignatureLock = () => (
   <div
     className="d-flex flex-column justify-content-center align-items-center position-absolute"
@@ -255,9 +235,12 @@ function SettingsPage() {
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [newApiKey, setNewApiKey] = useState("");
   const [isCopied, setIsCopied] = useState(false);
+  const [newCompanyName, setNewCompanyName] = useState("");
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const isFreeUser = user && user.role === "free";
   const hasApiAccess = user && ["pro", "enterprise"].includes(user.role);
+  const isCompanyUser = user && user.company;
 
   const initializePayment = usePaystackPayment(paystackConfig);
 
@@ -277,8 +260,9 @@ function SettingsPage() {
   };
 
   useEffect(() => {
-    /* ... existing useEffects ... */ fetchUser();
+    fetchUser();
   }, [navigate, location.search]);
+
   useEffect(() => {
     if (paystackConfig) {
       initializePayment({
@@ -350,6 +334,27 @@ function SettingsPage() {
     });
   };
 
+  const handleSwitchToCompany = async (e) => {
+    e.preventDefault();
+    if (!newCompanyName.trim()) {
+      toast.error("Please enter a company name.");
+      return;
+    }
+    setIsSwitching(true);
+    try {
+      const res = await switchToCompany(newCompanyName);
+      toast.success(res.data.msg);
+      // Reload the page to get fresh user context data
+      window.location.reload();
+    } catch (error) {
+      toast.error(
+        error.response?.data?.msg || "Failed to create company account."
+      );
+    } finally {
+      setIsSwitching(false);
+    }
+  };
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(newApiKey);
     setIsCopied(true);
@@ -385,8 +390,6 @@ function SettingsPage() {
           <Nav.Item>
             <Nav.Link eventKey="billing">Billing</Nav.Link>
           </Nav.Item>
-
-          {/* --- CONDITIONAL DEVELOPER TAB --- */}
           <Nav.Item>
             {hasApiAccess ? (
               <Nav.Link eventKey="developer">Developer</Nav.Link>
@@ -408,6 +411,14 @@ function SettingsPage() {
               <Card.Title as="h5" className="fw-bold mb-4">
                 Public Profile
               </Card.Title>
+              {isCompanyUser && (
+                <Alert variant="success">
+                  <Info size={20} className="me-2" />
+                  This account is part of the{" "}
+                  <strong>{user.company.name}</strong> company. Certificates you
+                  create will be issued by this company.
+                </Alert>
+              )}
               <Form>
                 <Row>
                   <Col md={6}>
@@ -433,6 +444,53 @@ function SettingsPage() {
                 </Row>
               </Form>
             </Card>
+
+            {!isCompanyUser && (
+              <Card className="page-content-card mb-4">
+                <Card.Title as="h5" className="fw-bold mb-4">
+                  Create a Company Account
+                </Card.Title>
+                <Card.Text>
+                  Switch to a company account to have all your certificates
+                  officially issued under your company's name. This action
+                  cannot be undone.
+                </Card.Text>
+                <Form onSubmit={handleSwitchToCompany}>
+                  <Row className="align-items-end">
+                    <Col md={8}>
+                      <Form.Group>
+                        <Form.Label>Company / Institution Name</Form.Label>
+                        <Form.Control
+                          type="text"
+                          placeholder="Enter your company's name"
+                          value={newCompanyName}
+                          onChange={(e) => setNewCompanyName(e.target.value)}
+                          required
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                      <Button
+                        variant="primary"
+                        type="submit"
+                        className="w-100"
+                        disabled={isSwitching}
+                      >
+                        {isSwitching ? (
+                          <>
+                            <Spinner as="span" size="sm" className="me-2" />
+                            Creating...
+                          </>
+                        ) : (
+                          "Switch to Company Account"
+                        )}
+                      </Button>
+                    </Col>
+                  </Row>
+                </Form>
+              </Card>
+            )}
+
             <Card
               className="page-content-card mb-4"
               style={{ position: "relative" }}
@@ -522,7 +580,6 @@ function SettingsPage() {
           </Tab.Pane>
 
           <Tab.Pane eventKey="developer">
-            {/* --- CONDITIONAL DEVELOPER CONTENT --- */}
             {hasApiAccess ? (
               <Card className="page-content-card">
                 <Card.Title as="h5" className="fw-bold mb-4">

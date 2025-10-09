@@ -10,6 +10,8 @@ function SignupPage() {
     name: "",
     email: "",
     password: "",
+    account_type: "individual",
+    company_name: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,8 +30,21 @@ function SignupPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    const { name, email, password, account_type, company_name } = formData;
+    const payload = { name, email, password, account_type };
+
+    if (account_type === "company") {
+      if (!company_name.trim()) {
+        setError("Company Name is required for a company account.");
+        setLoading(false);
+        return;
+      }
+      payload.company_name = company_name;
+    }
+
     try {
-      await signupUser(formData);
+      await signupUser(payload);
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.msg || "Signup failed. Please try again.");
@@ -58,6 +73,45 @@ function SignupPage() {
           <h3>Create an Account</h3>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>Account Type</Form.Label>
+              <div className="d-flex">
+                <Form.Check
+                  type="radio"
+                  label="Individual"
+                  name="account_type"
+                  id="individual"
+                  value="individual"
+                  checked={formData.account_type === "individual"}
+                  onChange={handleChange}
+                  className="me-3"
+                />
+                <Form.Check
+                  type="radio"
+                  label="Company / Institution"
+                  name="account_type"
+                  id="company"
+                  value="company"
+                  checked={formData.account_type === "company"}
+                  onChange={handleChange}
+                />
+              </div>
+            </Form.Group>
+
+            {formData.account_type === "company" && (
+              <Form.Group className="mb-3" controlId="company_name">
+                <Form.Label>Company / Institution Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="company_name"
+                  value={formData.company_name}
+                  onChange={handleChange}
+                  placeholder="Enter your company's name"
+                  required
+                />
+              </Form.Group>
+            )}
+
             <Form.Group className="mb-3" controlId="name">
               <Form.Label>Full Name</Form.Label>
               <Form.Control

@@ -2,9 +2,9 @@ import os
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
-from ..models import db, Template, Certificate
+from ..models import db, Template, Certificate, User
 import json
-from sqlalchemy.orm.attributes import flag_modified # Import flag_modified
+from sqlalchemy.orm.attributes import flag_modified
 
 template_bp = Blueprint('templates', __name__)
 
@@ -16,6 +16,7 @@ def allowed_file(filename):
 @jwt_required()
 def create_custom_template():
     user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(user_id)
     
     if 'template_image' not in request.files:
         return jsonify({"msg": "Missing template image file."}), 400
@@ -46,6 +47,7 @@ def create_custom_template():
     
     new_template = Template(
         user_id=user_id,
+        company_id=user.company_id,
         title=title,
         background_url=background_url,
         layout_style='visual',
@@ -77,7 +79,6 @@ def update_custom_template(template_id):
         except json.JSONDecodeError:
             return jsonify({"msg": "Invalid layout data format."}), 400
 
-    # Handle file upload if it exists
     if 'template_image' in request.files:
         file = request.files['template_image']
         if file and allowed_file(file.filename):
@@ -93,7 +94,6 @@ def update_custom_template(template_id):
             layout_data['background']['image'] = background_url
             
     template.layout_data = layout_data
-    # Explicitly tell SQLAlchemy that the mutable JSON field has been changed
     flag_modified(template, "layout_data")
 
     db.session.commit()
@@ -104,6 +104,7 @@ def update_custom_template(template_id):
 @jwt_required(locations=["headers"])
 def create_template():
     user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(user_id)
     if 'title' not in request.form:
         return jsonify({"msg": "Missing title part"}), 400
 
@@ -131,6 +132,7 @@ def create_template():
 
     new_template = Template(
         user_id=user_id,
+        company_id=user.company_id,
         title=data.get('title'),
         logo_url=logo_url,
         background_url=background_url,

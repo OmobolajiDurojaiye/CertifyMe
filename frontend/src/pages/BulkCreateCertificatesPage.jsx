@@ -321,6 +321,20 @@ const BulkCreateCertificatesPage = () => {
         header: true,
         skipEmptyLines: true,
         complete: (result) => {
+          if (result.errors.length > 0) {
+            setError(
+              "There was an error parsing the CSV file. Please ensure it's correctly formatted."
+            );
+            setCsvData([]);
+            return;
+          }
+          if (result.data.length === 0) {
+            setError(
+              "CSV file appears to be empty or headers could not be read."
+            );
+            setCsvData([]);
+            return;
+          }
           const requiredHeaders = [
             "recipient_name",
             "recipient_email",
@@ -328,7 +342,7 @@ const BulkCreateCertificatesPage = () => {
             "issuer_name",
             "issue_date",
           ];
-          const headers = Object.keys(result.data[0] || {}).map((h) =>
+          const headers = Object.keys(result.data[0]).map((h) =>
             h.toLowerCase().trim().replace(/\s+/g, "_")
           );
           if (!requiredHeaders.every((h) => headers.includes(h))) {
@@ -383,7 +397,28 @@ const BulkCreateCertificatesPage = () => {
       setSuccess(`${response.data.msg}. Redirecting to dashboard...`);
       setTimeout(() => navigate("/dashboard"), 3000);
     } catch (err) {
-      setError(err.response?.data?.msg || "An unexpected error occurred.");
+      // --- THIS IS THE FIX ---
+      if (err.response && err.response.status === 207) {
+        // Handle Multi-Status response with detailed errors
+        const { msg, errors } = err.response.data;
+        const errorDetails = errors
+          .map((e) => `Row ${e.row}: ${e.msg}`)
+          .join("\n");
+        setError(
+          <>
+            <strong>{msg}</strong>
+            <br />
+            Please check the following issues in your CSV file:
+            <pre className="mt-2 bg-light p-2 rounded small">
+              {errorDetails}
+            </pre>
+          </>
+        );
+      } else {
+        // Handle other types of errors
+        setError(err.response?.data?.msg || "An unexpected error occurred.");
+      }
+      // --- END OF FIX ---
     } finally {
       setSubmitting(false);
     }
@@ -425,9 +460,9 @@ const BulkCreateCertificatesPage = () => {
             Bulk Create Certificates
           </h2>
           {error && (
-            <Alert variant="danger" className="d-flex align-items-center">
-              <Info className="me-2" />
-              {error}
+            <Alert variant="danger" className="d-flex align-items-start">
+              <Info className="me-2 mt-1 flex-shrink-0" />
+              <div>{error}</div>
             </Alert>
           )}
           {success && (

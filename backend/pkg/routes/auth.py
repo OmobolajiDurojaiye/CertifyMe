@@ -3,7 +3,7 @@ from flask_jwt_extended import create_access_token, decode_token
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from bcrypt import hashpw, gensalt, checkpw
 from datetime import datetime, timedelta
-from ..models import User
+from ..models import User, Company
 from ..extensions import db
 from ..utils.email_utils import send_password_reset_email
 
@@ -12,21 +12,46 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/register', methods=['POST'])
 def register():
     data = request.get_json()
-    if not all(key in data for key in ['name', 'email', 'password']):
-        return jsonify({"msg": "Missing name, email, or password"}), 400
+    required_fields = ['name', 'email', 'password', 'account_type']
+    if not all(key in data for key in required_fields):
+        return jsonify({"msg": "Missing required fields"}), 400
 
     if User.query.filter_by(email=data['email']).first():
         return jsonify({"msg": "Email already registered"}), 409
 
-    hashed_password = hashpw(data['password'].encode('utf-8'), gensalt())
+    account_type = data.get('account_type', 'individual')
+    company_name = data.get('company_name', '').strip()
 
+    if account_type == 'company' and not company_name:
+        return jsonify({"msg": "Company name is required for a company account"}), 400
+
+    hashed_password = hashpw(data['password'].encode('utf-8'), gensalt())
+    
     new_user = User(
         name=data['name'],
         email=data['email'],
         password_hash=hashed_password.decode('utf-8')
     )
-    db.session.add(new_user)
-    db.session.commit()
+
+    if account_type == 'company':
+        try:
+            db.session.add(new_user)
+            db.session.flush()
+
+            new_company = Company(name=company_name, owner_id=new_user.id)
+            db.session.add(new_company)
+            db.session.flush()
+
+            new_user.company_id = new_company.id
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error during company registration: {e}")
+            return jsonify({"msg": "Failed to create company account"}), 500
+    else:
+        db.session.add(new_user)
+        db.session.commit()
+
     return jsonify({"msg": "User created successfully"}), 201
 
 @auth_bp.route('/login', methods=['POST'])
@@ -38,7 +63,6 @@ def login():
     user = User.query.filter_by(email=data['email']).first()
 
     if user and checkpw(data['password'].encode('utf-8'), user.password_hash.encode('utf-8')):
-        # Update the last_login timestamp upon successful login
         user.last_login = datetime.utcnow()
         db.session.commit()
         access_token = create_access_token(identity=str(user.id))
@@ -55,18 +79,14 @@ def forgot_password():
 
     user = User.query.filter_by(email=email).first()
 
-    # To prevent user enumeration, always return a success-like message.
-    # The actual email is only sent if the user exists.
     if user:
         try:
-            # Create a short-lived token specifically for password reset
             reset_token = create_access_token(
                 identity=str(user.id), 
                 expires_delta=timedelta(minutes=15),
                 additional_claims={'purpose': 'password_reset'}
             )
             
-            # Assuming FRONTEND_URL is configured in your Flask app
             frontend_url = current_app.config.get('FRONTEND_URL', 'http://localhost:3000')
             reset_url = f"{frontend_url}/reset-password/{reset_token}"
             
@@ -75,7 +95,6 @@ def forgot_password():
 
         except Exception as e:
             current_app.logger.error(f"Failed to send password reset email: {e}")
-            # Still return a generic message to the client for security
             pass
 
     return jsonify({"msg": "If an account with that email exists, a password reset link has been sent."}), 200
@@ -91,10 +110,8 @@ def reset_password():
         return jsonify({"msg": "Token and new password are required"}), 400
 
     try:
-        # Manually decode the token to verify its signature, expiry, and purpose
         decoded_token = decode_token(token)
         
-        # Verify this token is specifically for password reset
         if decoded_token.get('purpose') != 'password_reset':
             return jsonify({"msg": "Invalid token type"}), 401
         
@@ -104,7 +121,6 @@ def reset_password():
         if not user:
             return jsonify({"msg": "User not found"}), 404
 
-        # Hash the new password and update the user record
         hashed_password = hashpw(new_password.encode('utf-8'), gensalt())
         user.password_hash = hashed_password.decode('utf-8')
         db.session.commit()

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Container, Form, Button, Alert, Card, Spinner } from "react-bootstrap";
-import { verifyCertificate } from "../api"; // We ONLY need the public verifyCertificate API
+import { verifyCertificate } from "../api";
 import { SERVER_BASE_URL } from "../config";
 import QRCode from "react-qr-code";
-import { CheckCircle, XCircle, Search } from "lucide-react";
+import { CheckCircle, XCircle, Search, Building } from "lucide-react";
 import KonvaPreview from "../components/KonvaPreview";
 import "../styles/VerifyPage.css";
 
@@ -34,9 +34,7 @@ const VerifyFooter = () => (
 const CertificateDisplay = ({ certificate, template }) => {
   if (!certificate || !template) return null;
 
-  // Handle visual templates using KonvaPreview
   if (template.layout_style === "visual") {
-    // ADDED: A defensive check to provide a clear error if the backend hasn't been updated yet.
     if (!template.layout_data) {
       return (
         <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3 p-4">
@@ -284,6 +282,9 @@ const VerifyCertificatePage = () => {
   const [verificationId, setVerificationId] = useState(paramId || "");
   const [certificate, setCertificate] = useState(null);
   const [template, setTemplate] = useState(null);
+  // --- THIS IS THE NEW FEATURE ---
+  const [company, setCompany] = useState(null);
+  // --- END OF NEW FEATURE ---
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(!!paramId);
   const navigate = useNavigate();
@@ -296,13 +297,18 @@ const VerifyCertificatePage = () => {
     setError("");
     setCertificate(null);
     setTemplate(null);
+    // --- THIS IS THE NEW FEATURE ---
+    setCompany(null);
+    // --- END OF NEW FEATURE ---
     setLoading(true);
     navigate(`/verify/${idToVerify}`, { replace: true });
     try {
-      // This single API call is now expected to return the FULL template data.
       const response = await verifyCertificate(idToVerify);
       setCertificate(response.data.certificate);
       setTemplate(response.data.template);
+      // --- THIS IS THE NEW FEATURE ---
+      setCompany(response.data.company);
+      // --- END OF NEW FEATURE ---
     } catch (err) {
       setError(
         err.response?.data?.msg ||
@@ -317,7 +323,6 @@ const VerifyCertificatePage = () => {
     if (paramId) {
       handleVerify(paramId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paramId]);
 
   const handleSubmit = (e) => {
@@ -395,6 +400,23 @@ const VerifyCertificatePage = () => {
                   .
                 </div>
               </Alert>
+
+              {/* --- THIS IS THE NEW FEATURE --- */}
+              {company && (
+                <Alert
+                  variant="info"
+                  className="d-flex align-items-center mb-4"
+                >
+                  <Building className="me-3 flex-shrink-0" size={24} />
+                  <div>
+                    <strong className="d-block">Issuing Organization</strong>
+                    This certificate was credibly issued by{" "}
+                    <strong>{company.name}</strong>.
+                  </div>
+                </Alert>
+              )}
+              {/* --- END OF NEW FEATURE --- */}
+
               <div
                 className="shadow-lg"
                 style={{

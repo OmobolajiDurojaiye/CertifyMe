@@ -1,7 +1,8 @@
+# certificates.py
 from flask import Blueprint, request, jsonify, render_template_string, Response, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from datetime import datetime
-from ..models import db, Certificate, Template, User
+from datetime import datetime, timedelta
+from ..models import db, Certificate, Template, User, Company
 import csv
 from io import StringIO, BytesIO
 import qrcode
@@ -12,42 +13,117 @@ from ..extensions import mail
 from flask_mail import Message
 import uuid
 from ..pdf_templates import get_classic_pdf_template, get_modern_pdf_template
+import re
 
 certificate_bp = Blueprint('certificates', __name__)
 
+
+# -------------------------
+# Helper utilities
+# -------------------------
 def parse_flexible_date(date_string):
-    formats_to_try = ['%Y-%m-%d', '%m/%d/%Y', '%m-%d-%Y', '%d-%b-%Y']
+    """
+    Robust date parser that tries many common formats and a few heuristics.
+    Returns a date object or raises ValueError.
+    """
+    if not date_string or not str(date_string).strip():
+        raise ValueError("Empty date string")
+
+    s = str(date_string).strip()
+
+    # Natural language helpers
+    low = s.lower()
+    if low in ("today", "now"):
+        return datetime.utcnow().date()
+    if low == "yesterday":
+        return (datetime.utcnow() - timedelta(days=1)).date()
+    if low == "tomorrow":
+        return (datetime.utcnow() + timedelta(days=1)).date()
+
+    # Try a list of common formats (both month-first and day-first)
+    formats_to_try = [
+        "%Y-%m-%d",     # 2025-10-09
+        "%d-%m-%Y",     # 09-10-2025
+        "%m-%d-%Y",     # 10-09-2025
+        "%d/%m/%Y",     # 09/10/2025
+        "%m/%d/%Y",     # 10/09/2025
+        "%d-%b-%Y",     # 09-Oct-2025
+        "%d %b %Y",     # 09 Oct 2025
+        "%d %B %Y",     # 09 October 2025
+        "%b %d %Y",     # Oct 09 2025
+        "%B %d %Y",     # October 09 2025
+        "%m/%d/%y",     # 9/11/25
+        "%d/%m/%y",     # 11/9/25
+        "%d.%m.%Y",     # 09.10.2025
+        "%m.%d.%Y",     # 10.09.2025
+    ]
+
+    # Clean common separators to single spaces (helps "11 Sept, 2025" etc.)
+    s_clean = re.sub(r'[,\s]+', ' ', s).strip()
+
+    # Try direct formats on original and cleaned forms
     for fmt in formats_to_try:
-        try: return datetime.strptime(date_string, fmt).date()
-        except ValueError: continue
-    raise ValueError(f"Date '{date_string}' could not be parsed.")
+        try:
+            return datetime.strptime(s, fmt).date()
+        except ValueError:
+            pass
+        try:
+            return datetime.strptime(s_clean, fmt).date()
+        except ValueError:
+            pass
+
+    # As a last resort: attempt to parse things like '11/9' by assuming current year
+    m = re.match(r'^\s*(\d{1,2})[\/\-\.\s](\d{1,2})\s*$', s)
+    if m:
+        a, b = int(m.group(1)), int(m.group(2))
+        year = datetime.utcnow().year
+        # Heuristic: if first > 12, treat as day-first; otherwise prefer day-first for Nigeria (DD/MM)
+        dayfirst = current_app.config.get('DATE_DAYFIRST', True)
+        if dayfirst:
+            try:
+                return datetime(year=year, month=b, day=a).date()
+            except ValueError:
+                try:
+                    return datetime(year=year, month=a, day=b).date()
+                except ValueError:
+                    pass
+        else:
+            try:
+                return datetime(year=year, month=a, day=b).date()
+            except ValueError:
+                try:
+                    return datetime(year=year, month=b, day=a).date()
+                except ValueError:
+                    pass
+
+    raise ValueError(f"Invalid or unrecognized date format: '{date_string}'")
+
 
 def get_image_as_base64(image_path):
-    if not image_path: return None
+    if not image_path:
+        return None
     try:
-        # Image paths from the visual editor might already be full paths
         if image_path.startswith('/uploads/'):
              full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(image_path))
-        else: # Fallback for old system
+        else:
              full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(image_path))
 
         if os.path.exists(full_path):
-            with open(full_path, "rb") as image_file: return base64.b64encode(image_file.read()).decode('utf-8')
-    except Exception as e: current_app.logger.error(f"Error encoding image {image_path}: {e}")
+            with open(full_path, "rb") as image_file:
+                return base64.b64encode(image_file.read()).decode('utf-8')
+    except Exception as e:
+        current_app.logger.error(f"Error encoding image {image_path}: {e}")
     return None
 
-# --- THIS IS THE NEW FEATURE (ENHANCED) ---
+
 def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
-    """Generates a PDF for a template created with the visual editor."""
     layout_data = template.layout_data or {}
     elements = layout_data.get('elements', [])
     background = layout_data.get('background', {})
-    # Read canvas dimensions, defaulting to A4 Landscape for backward compatibility
     canvas_config = layout_data.get('canvas', {'width': 842, 'height': 595})
     page_width = canvas_config.get('width', 842)
     page_height = canvas_config.get('height', 595)
 
-    # Data to replace placeholders
     dynamic_data = {
         "{{recipient_name}}": certificate.recipient_name,
         "{{course_title}}": certificate.course_title,
@@ -56,8 +132,7 @@ def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
         "{{verification_id}}": certificate.verification_id,
         "{{signature}}": certificate.signature or certificate.issuer_name
     }
-    
-    # Generate QR code
+
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
     qr.add_data(verification_url)
@@ -83,11 +158,10 @@ def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
 
         if el_type == 'text' or el_type == 'placeholder':
             text = el.get('text', '')
-            # Replace placeholders
             for placeholder, value in dynamic_data.items():
                  if placeholder in text:
                     text = text.replace(placeholder, str(value))
-            
+
             style += (
                 f'font-family: {el.get("fontFamily", "sans-serif")}; '
                 f'font-size: {el.get("fontSize", 16)}px; '
@@ -96,10 +170,10 @@ def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
                 f'font-style: {"italic" if "italic" in el.get("fontStyle", "") else "normal"}; '
                 f'font-weight: {"bold" if "bold" in el.get("fontStyle", "") else "normal"}; '
                 'line-height: 1.2; '
-                'word-wrap: break-word; ' # Enable text wrapping
+                'word-wrap: break-word; '
             )
             content = text.replace('\\n', '<br>').replace('\n', '<br>')
-        
+
         elif el_type == 'image':
             src = el.get('src')
             if src:
@@ -113,7 +187,7 @@ def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
                 f'border: {el.get("strokeWidth", 0)}px solid {el.get("stroke", "transparent")}; '
                 f'border-radius: {el.get("cornerRadius", 0)}px; '
              )
-        
+
         html_elements.append(f'<div style="{style}">{content}</div>')
 
     background_style = ''
@@ -149,7 +223,7 @@ def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
     </body>
     </html>
     """
-    
+
     pdf_buffer = BytesIO()
     try:
         HTML(string=html_template, base_url=os.path.dirname(__file__)).write_pdf(pdf_buffer)
@@ -158,18 +232,15 @@ def _generate_visual_certificate_pdf_in_memory(certificate, template, issuer):
     except Exception as e:
         current_app.logger.error(f"Visual PDF generation error for cert {certificate.id}: {e}")
         raise
-# --- END OF NEW FEATURE ---
+
 
 def _generate_certificate_pdf_in_memory(certificate):
     template = Template.query.get_or_404(certificate.template_id)
     issuer = User.query.get_or_404(certificate.user_id)
-    
-    # --- THIS IS THE FIX ---
-    # Route to the correct PDF generator based on the template's layout style.
+
     if template.layout_style == 'visual':
         return _generate_visual_certificate_pdf_in_memory(certificate, template, issuer)
-    # --- END OF FIX ---
-    
+
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
     qr.add_data(verification_url)
@@ -180,7 +251,7 @@ def _generate_certificate_pdf_in_memory(certificate):
     logo_base64 = get_image_as_base64(template.logo_url)
     background_base64 = get_image_as_base64(template.background_url)
     signature_image_base64 = get_image_as_base64(issuer.signature_image_url)
-    
+
     context = {
         "recipient_name": certificate.recipient_name,
         "course_title": certificate.course_title,
@@ -203,7 +274,7 @@ def _generate_certificate_pdf_in_memory(certificate):
 
     html_template = {'classic': get_classic_pdf_template(), 'modern': get_modern_pdf_template()}.get(template.layout_style)
     html_content = render_template_string(html_template, **context)
-    
+
     pdf_buffer = BytesIO()
     try:
         HTML(string=html_content).write_pdf(pdf_buffer)
@@ -213,20 +284,150 @@ def _generate_certificate_pdf_in_memory(certificate):
         current_app.logger.error(f"PDF generation error for cert {certificate.id}: {e}")
         raise
 
-def allowed_file(filename): return filename.lower().endswith('.csv')
 
+def allowed_file(filename):
+    return filename.lower().endswith('.csv')
+
+
+def _normalize_email(email):
+    """
+    Basic email normalization and light auto-fixes.
+    - lowercases
+    - trims spaces
+    - if email looks like 'user@gmail' -> 'user@gmail.com'
+    - does not try heavy guessing (keep it safe)
+    """
+    if not email:
+        return ""
+    e = email.strip().lower()
+    # common providers that might be missing .com/.ng
+    providers = ["gmail", "yahoo", "outlook", "hotmail", "icloud"]
+    if '@' in e:
+        user_part, domain = e.split('@', 1)
+        if '.' not in domain:
+            for p in providers:
+                if domain.startswith(p):
+                    domain = domain + ".com"
+                    e = f"{user_part}@{domain}"
+                    break
+    else:
+        # if there's no @ but looks like 'user.gmail.com' or 'user@gmail'
+        if '.' in e and any(p in e for p in providers):
+            # attempt to insert @ before provider
+            for p in providers:
+                if f".{p}" in e:
+                    parts = e.split(f".{p}", 1)
+                    e = f"{parts[0]}@{p}{('.' + parts[1]) if parts[1] else '.com'}"
+                    break
+    return e
+
+
+def _detect_csv_dialect(sample_text):
+    """
+    Use csv.Sniffer to detect delimiter. Fallback to comma.
+    """
+    try:
+        sniffer = csv.Sniffer()
+        dialect = sniffer.sniff(sample_text, delimiters=[',', ';', '\t', '|'])
+        return dialect
+    except Exception:
+        return csv.get_dialect('excel')  # default comma dialect
+
+
+# Smart header mapping: common synonyms mapped to standard field names
+_HEADER_SYNONYMS = {
+    "student_name": "recipient_name",
+    "name": "recipient_name",
+    "full_name": "recipient_name",
+    "recipient": "recipient_name",
+    "email": "recipient_email",
+    "mail": "recipient_email",
+    "e-mail": "recipient_email",
+    "course": "course_title",
+    "program": "course_title",
+    "class": "course_title",
+    "issued_by": "issuer_name",
+    "issuer": "issuer_name",
+    "date": "issue_date",
+    "issued_on": "issue_date",
+    "sign": "signature",
+    "sig": "signature",
+    "signature_text": "signature",
+}
+
+def _send_issuer_notification_email(issuer, subject, summary_html):
+    """
+    Sends an email to the issuer (the account owner / company account) for summary notifications.
+    """
+    try:
+        msg = Message(
+            subject=subject,
+            sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')),
+            recipients=[issuer.email],
+            html=summary_html
+        )
+        mail.send(msg)
+        current_app.logger.info(f"Issuer notification sent to {issuer.email}")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send issuer notification to {issuer.email}: {e}")
+
+
+def _create_issuer_summary_email(issuer_name, count, cert_list, action_type="created"):
+    """
+    Builds the HTML summary content for issuer notification emails.
+    """
+    rows_html = "".join([
+        f"<tr><td>{i+1}</td><td>{c['recipient_name']}</td><td>{c['course_title']}</td><td>{c['verification_id']}</td></tr>"
+        for i, c in enumerate(cert_list)
+    ])
+
+    dashboard_url = f"{current_app.config['FRONTEND_URL']}/dashboard"
+
+    html = f"""
+    <html>
+    <body style="font-family:Arial, sans-serif; background:#f8f9fa; padding:20px;">
+        <div style="max-width:600px;margin:auto;background:white;padding:30px;border-radius:8px;">
+            <h2 style="color:#2563EB;">CertifyMe — Certificates {action_type.title()}</h2>
+            <p>Dear <b>{issuer_name}</b>,</p>
+            <p>This is to confirm that <b>{count}</b> certificate{'s' if count > 1 else ''} have been successfully {action_type}.</p>
+
+            <table width="100%" border="1" cellspacing="0" cellpadding="6" style="border-collapse:collapse; margin-top:20px;">
+                <thead style="background:#2563EB;color:white;">
+                    <tr>
+                        <th>#</th><th>Recipient</th><th>Course Title</th><th>Verification ID</th>
+                    </tr>
+                </thead>
+                <tbody>{rows_html}</tbody>
+            </table>
+
+            <p style="margin-top:20px;">You can view all your certificates anytime on your dashboard.</p>
+            <a href="{dashboard_url}" style="display:inline-block;background:#2563EB;color:white;padding:12px 20px;border-radius:5px;text-decoration:none;margin-top:10px;">Go to Dashboard</a>
+            <p style="margin-top:30px;font-size:13px;color:#888;">This message was automatically generated by CertifyMe to confirm your action.</p>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+
+
+# -------------------------
+# API routes
+# -------------------------
 @certificate_bp.route('/<int:cert_id>/pdf', methods=['GET'])
 @jwt_required()
 def get_certificate_pdf(cert_id):
     user_id = int(get_jwt_identity())
     certificate = Certificate.query.get_or_404(cert_id)
-    if certificate.user_id != user_id: return jsonify({"msg": "Permission denied"}), 403
-    
+    if certificate.user_id != user_id:
+        return jsonify({"msg": "Permission denied"}), 403
+
     try:
         pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
         return Response(pdf_buffer, mimetype='application/pdf', headers={'Content-Disposition': f'attachment; filename=certificate_{certificate.verification_id}.pdf'})
     except Exception as e:
         return jsonify({"msg": "Failed to generate PDF"}), 500
+
 
 def _create_email_message(certificate, pdf_buffer):
     verification_url = f"{current_app.config['FRONTEND_URL']}/verify/{certificate.verification_id}"
@@ -283,6 +484,7 @@ def _create_email_message(certificate, pdf_buffer):
     msg.attach(f"certificate_{certificate.verification_id}.pdf", "application/pdf", pdf_buffer.getvalue())
     return msg
 
+
 @certificate_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_certificate():
@@ -307,10 +509,11 @@ def create_certificate():
 
         certificate = Certificate(
             user_id=user_id,
+            company_id=user.company_id,
             template_id=template.id,
             group_id=data.get('group_id'),
             recipient_name=data['recipient_name'],
-            recipient_email=data['recipient_email'],
+            recipient_email=_normalize_email(data['recipient_email']),
             course_title=data['course_title'],
             issuer_name=data['issuer_name'],
             issue_date=issue_date,
@@ -328,7 +531,24 @@ def create_certificate():
             mail.send(msg)
             certificate.sent_at = datetime.utcnow()
             db.session.commit()
-            current_app.logger.info(f"Certificate {certificate.id} created and emailed to {certificate.recipient_email}")
+
+            # ✅ Send issuer confirmation email
+            issuer_summary = [{
+                "recipient_name": certificate.recipient_name,
+                "course_title": certificate.course_title,
+                "verification_id": certificate.verification_id
+            }]
+            summary_html = _create_issuer_summary_email(
+                user.name,
+                1,
+                issuer_summary,
+                action_type="created and sent"
+            )
+            _send_issuer_notification_email(user, "Certificate Created & Sent — CertifyMe", summary_html)
+
+            current_app.logger.info(
+                f"Certificate {certificate.id} created, emailed to {certificate.recipient_email}, issuer notified."
+            )
         except Exception as e:
             current_app.logger.error(f"Email sending error for cert {certificate.id}: {e}")
             db.session.rollback()
@@ -345,20 +565,23 @@ def create_certificate():
         current_app.logger.error(f"Error creating certificate: {e}")
         return jsonify({"msg": "Failed to create certificate"}), 500
 
+
+
 @certificate_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_certificates():
     user_id = int(get_jwt_identity())
     certificates = Certificate.query.filter_by(user_id=user_id).all()
-    
+
     return jsonify([{
-        'id': cert.id, 'recipient_name': cert.recipient_name, 
+        'id': cert.id, 'recipient_name': cert.recipient_name,
         'recipient_email': cert.recipient_email, 'course_title': cert.course_title,
         'issue_date': cert.issue_date.isoformat(), 'status': cert.status,
         'verification_id': cert.verification_id, 'sent_at': cert.sent_at.isoformat() if cert.sent_at else None,
         'template_id': cert.template_id, 'group_id': cert.group_id,
         'extra_fields': cert.extra_fields
     } for cert in certificates]), 200
+
 
 @certificate_bp.route('/<int:cert_id>', methods=['GET'])
 @jwt_required()
@@ -367,99 +590,162 @@ def get_certificate(cert_id):
     certificate = Certificate.query.get_or_404(cert_id)
     if certificate.user_id != user_id:
         return jsonify({"msg": "Permission denied"}), 403
-    
+
     template = Template.query.get_or_404(certificate.template_id)
     cert_data = {
-        'id': certificate.id, 'recipient_name': certificate.recipient_name, 
-        'recipient_email': certificate.recipient_email, 'course_title': certificate.course_title, 
-        'issue_date': certificate.issue_date.isoformat(), 'issuer_name': certificate.issuer_name, 
-        'signature': certificate.signature, 'verification_id': certificate.verification_id, 
+        'id': certificate.id, 'recipient_name': certificate.recipient_name,
+        'recipient_email': certificate.recipient_email, 'course_title': certificate.course_title,
+        'issue_date': certificate.issue_date.isoformat(), 'issuer_name': certificate.issuer_name,
+        'signature': certificate.signature, 'verification_id': certificate.verification_id,
         'status': certificate.status, 'extra_fields': certificate.extra_fields
     }
     template_data = {
-        'id': template.id, 'title': template.title, 'logo_url': template.logo_url, 
-        'background_url': template.background_url, 'primary_color': template.primary_color, 
-        'secondary_color': template.secondary_color, 'body_font_color': template.body_font_color, 
-        'font_family': template.font_family, 'layout_style': template.layout_style, 
+        'id': template.id, 'title': template.title, 'logo_url': template.logo_url,
+        'background_url': template.background_url, 'primary_color': template.primary_color,
+        'secondary_color': template.secondary_color, 'body_font_color': template.body_font_color,
+        'font_family': template.font_family, 'layout_style': template.layout_style,
         'is_public': template.is_public, 'custom_text': template.custom_text
     }
     return jsonify({ "certificate": cert_data, "template": template_data }), 200
 
+
 @certificate_bp.route('/bulk', methods=['POST'])
 @jwt_required()
 def bulk_create_certificates():
+    """
+    Smart Bulk Create v2 + Issuer notification
+    """
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
-    if 'file' not in request.files: return jsonify({"msg": "No file part"}), 400
-    
+    if 'file' not in request.files:
+        return jsonify({"msg": "No file part"}), 400
+
     file = request.files['file']
-    if not file or not allowed_file(file.filename): return jsonify({"msg": "Invalid file type, must be CSV"}), 400
-    
+    if not file or not allowed_file(file.filename):
+        return jsonify({"msg": "Invalid file type, must be CSV"}), 400
+
     template_id = request.form.get('template_id')
     group_id = request.form.get('group_id')
-    if not template_id or not group_id: return jsonify({"msg": "Template ID and Group ID are required"}), 400
-    
+    if not template_id or not group_id:
+        return jsonify({"msg": "Template ID and Group ID are required"}), 400
+
     template = Template.query.get(template_id)
-    if not template or (not template.is_public and template.user_id != user_id): return jsonify({"msg": "Template not found or permission denied"}), 404
-    
+    if not template or (not template.is_public and template.user_id != user_id):
+        return jsonify({"msg": "Template not found or permission denied"}), 404
+
     try:
-        csv_text = file.read().decode('utf-8-sig')
-        csv_data = StringIO(csv_text)
-        reader = csv.DictReader(csv_data)
-        
-        if reader.fieldnames:
-            reader.fieldnames = [h.lower().strip().replace(' ', '_') for h in reader.fieldnames]
+        raw = file.read()
+        try:
+            csv_text = raw.decode('utf-8-sig')
+        except Exception:
+            csv_text = raw.decode('latin-1')
 
-        standard_headers = {'recipient_name', 'recipient_email', 'course_title', 'issuer_name', 'issue_date', 'signature'}
-        required_headers = {'recipient_name', 'recipient_email', 'course_title', 'issuer_name', 'issue_date'}
-        
-        all_headers = set(reader.fieldnames or [])
-        if not required_headers.issubset(all_headers):
-            missing = required_headers - all_headers
-            return jsonify({"msg": f"CSV is missing required columns: {', '.join(missing)}"}), 400
+        sample = csv_text[:4096]
+        dialect = _detect_csv_dialect(sample)
+        reader = csv.DictReader(StringIO(csv_text), dialect=dialect)
 
-        extra_headers = list(all_headers - standard_headers)
-        
-        created, errors, certs_to_add = 0, [], []
-        for i, row in enumerate(reader):
-            row_num = i + 2 # Account for header row
-            if user.cert_quota <= 0:
-                errors.append({"row": row_num, "msg": "Insufficient certificate quota remaining"})
+        if not reader.fieldnames:
+            return jsonify({"msg": "CSV headers missing or unreadable"}), 400
+
+        # Normalize and map headers
+        headers = []
+        for h in reader.fieldnames:
+            if not h or not str(h).strip():
                 continue
-            try:
-                for field in required_headers:
-                    if not row.get(field, '').strip():
-                        raise KeyError(f"'{field}' column cannot be empty.")
-                
-                issue_date = parse_flexible_date(row['issue_date'])
-                extra_fields_data = {header: row[header] for header in extra_headers if row.get(header)}
+            normalized = str(h).strip().lower().replace(' ', '_')
+            mapped = _HEADER_SYNONYMS.get(normalized, normalized)
+            headers.append(mapped)
+        reader.fieldnames = headers
 
-                new_cert = Certificate(
-                    user_id=user_id, 
-                    template_id=template.id, 
-                    group_id=group_id, 
-                    recipient_name=row['recipient_name'], 
-                    recipient_email=row['recipient_email'], 
-                    course_title=row['course_title'], 
-                    issuer_name=row['issuer_name'], 
-                    issue_date=issue_date, 
-                    signature=row.get('signature'),
-                    extra_fields=extra_fields_data
+        required_headers = {'recipient_name', 'recipient_email', 'course_title', 'issue_date'}
+        missing = required_headers - set(headers)
+        if missing:
+            return jsonify({"msg": f"CSV missing required columns: {', '.join(missing)}"}), 400
+
+        created_count = 0
+        certs_to_add = []
+        errors = []
+        quota_left = user.cert_quota
+
+        for idx, row_raw in enumerate(reader, start=2):
+            row = {k.strip().lower().replace(' ', '_'): (v.strip() if isinstance(v, str) else v)
+                   for k, v in row_raw.items() if k}
+
+            if not any(row.values()):
+                continue
+
+            if quota_left <= 0:
+                errors.append({"row": idx, "msg": "Skipped — quota exhausted"})
+                continue
+
+            try:
+                recipient_name = row.get('recipient_name') or ""
+                recipient_email = _normalize_email(row.get('recipient_email') or "")
+                course_title = row.get('course_title') or ""
+                issue_date_raw = row.get('issue_date') or ""
+                issuer_name = row.get('issuer_name') or user.name
+
+                if not all([recipient_name, recipient_email, course_title, issue_date_raw]):
+                    raise ValueError("Missing required fields")
+
+                issue_date = parse_flexible_date(issue_date_raw)
+                signature = row.get('signature') or issuer_name
+
+                cert = Certificate(
+                    user_id=user_id,
+                    company_id=user.company_id,
+                    template_id=template.id,
+                    group_id=group_id,
+                    recipient_name=recipient_name,
+                    recipient_email=recipient_email,
+                    course_title=course_title,
+                    issuer_name=issuer_name,
+                    issue_date=issue_date,
+                    signature=signature,
+                    verification_id=str(uuid.uuid4())
                 )
-                certs_to_add.append(new_cert)
-                user.cert_quota -= 1
-                created += 1
-            except (ValueError, KeyError) as e:
-                errors.append({"row": row_num, "msg": f"Invalid data: {str(e)}"})
-        
-        db.session.bulk_save_objects(certs_to_add)
-        db.session.commit()
-        
-        if errors: return jsonify({"msg": f"Processed with {len(errors)} errors.", "created": created, "errors": errors}), 207
-        return jsonify({"msg": f"Successfully created {created} certificates"}), 201
+
+                certs_to_add.append(cert)
+                created_count += 1
+                quota_left -= 1
+
+            except Exception as e:
+                errors.append({"row": idx, "msg": str(e)})
+
+        if certs_to_add:
+            db.session.bulk_save_objects(certs_to_add)
+            user.cert_quota = quota_left
+            db.session.commit()
+
+            # ✅ Send issuer confirmation email
+            created_list = [{
+                "recipient_name": c.recipient_name,
+                "course_title": c.course_title,
+                "verification_id": c.verification_id
+            } for c in certs_to_add]
+            summary_html = _create_issuer_summary_email(
+                user.name,
+                len(created_list),
+                created_list,
+                action_type="created"
+            )
+            _send_issuer_notification_email(user, "Certificates Created — CertifyMe", summary_html)
+
+        summary = {
+            "msg": "Bulk processing completed",
+            "created": created_count,
+            "errors_count": len(errors),
+            "errors": errors
+        }
+
+        status_code = 201 if created_count and not errors else 207 if errors else 200
+        return jsonify(summary), status_code
+
     except Exception as e:
-        current_app.logger.error(f"CSV Error: {e}")
-        return jsonify({"msg": f"Failed to process CSV file: {str(e)}"}), 500
+        current_app.logger.error(f"Bulk create error: {e}")
+        db.session.rollback()
+        return jsonify({"msg": f"Bulk create failed: {str(e)}"}), 500
+
 
 @certificate_bp.route('/bulk-template', methods=['GET'])
 @jwt_required()
@@ -471,6 +757,7 @@ def download_bulk_template():
     output.seek(0)
     return Response(output, mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=certifyme_bulk_template.csv"})
 
+
 @certificate_bp.route('/<int:cert_id>/send', methods=['POST'])
 @jwt_required()
 def send_certificate_email(cert_id):
@@ -478,7 +765,7 @@ def send_certificate_email(cert_id):
     certificate = Certificate.query.get_or_404(cert_id)
     if certificate.user_id != user_id:
         return jsonify({"msg": "Permission denied"}), 403
-    
+
     try:
         pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
         msg = _create_email_message(certificate, pdf_buffer)
@@ -491,10 +778,12 @@ def send_certificate_email(cert_id):
         current_app.logger.error(f"Email sending error for cert {certificate.id}: {e}")
         return jsonify({"msg": "Failed to send email"}), 500
 
+
 @certificate_bp.route('/bulk-send', methods=['POST'])
 @jwt_required()
 def send_bulk_emails():
     user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(user_id)
     data = request.get_json()
     certificate_ids = data.get('certificate_ids', [])
     if not certificate_ids:
@@ -504,9 +793,9 @@ def send_bulk_emails():
     for cert_id in certificate_ids:
         certificate = Certificate.query.get(cert_id)
         if not certificate or certificate.user_id != user_id:
-            errors.append({"certificate_id": cert_id, "msg": "Certificate not found or permission denied"})
+            errors.append({"certificate_id": cert_id, "msg": "Not found or permission denied"})
             continue
-        
+
         try:
             pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
             msg = _create_email_message(certificate, pdf_buffer)
@@ -515,11 +804,35 @@ def send_bulk_emails():
             sent += 1
         except Exception as e:
             errors.append({"certificate_id": cert_id, "msg": str(e)})
-    
+
     db.session.commit()
+
+    # ✅ Send issuer confirmation email
+    if sent > 0:
+        sent_certs = Certificate.query.filter(Certificate.id.in_(certificate_ids)).all()
+        cert_list = [{
+            "recipient_name": c.recipient_name,
+            "course_title": c.course_title,
+            "verification_id": c.verification_id
+        } for c in sent_certs]
+        summary_html = _create_issuer_summary_email(
+            user.name,
+            sent,
+            cert_list,
+            action_type="sent"
+        )
+        _send_issuer_notification_email(user, "Certificates Sent — CertifyMe", summary_html)
+
     if errors:
-        return jsonify({"msg": f"Sent {sent} emails with {len(errors)} errors", "sent": sent, "errors": errors}), 207
+        return jsonify({
+            "msg": f"Sent {sent} emails with {len(errors)} errors",
+            "sent": sent,
+            "errors": errors
+        }), 207
+
     return jsonify({"msg": f"Successfully sent {sent} emails"}), 200
+
+
 
 @certificate_bp.route('/<int:cert_id>', methods=['DELETE'])
 @jwt_required()
@@ -547,9 +860,13 @@ def verify_certificate(verification_id):
         return jsonify({"msg": "Certificate not found"}), 404
 
     template = Template.query.get_or_404(certificate.template_id)
-    # The issuer object is not needed by the frontend display component, so we can omit it.
-    
-    # Construct a comprehensive certificate object for the frontend
+
+    company_data = None
+    if certificate.company_id:
+        company = Company.query.get(certificate.company_id)
+        if company:
+            company_data = { "id": company.id, "name": company.name }
+
     certificate_data = {
         "id": certificate.id,
         "recipient_name": certificate.recipient_name,
@@ -559,29 +876,30 @@ def verify_certificate(verification_id):
         "issuer_name": certificate.issuer_name,
         "status": certificate.status,
         "verification_id": certificate.verification_id,
-        "signature": certificate.signature, # Added signature
+        "signature": certificate.signature,
         "extra_fields": certificate.extra_fields
     }
 
-    # Construct a comprehensive template object with ALL data the frontend might need
     template_data = {
         "id": template.id,
         "title": template.title,
         "layout_style": template.layout_style,
-        "layout_data": template.layout_data,          # CRITICAL: Added for visual templates
-        "logo_url": template.logo_url,                # Added for classic/modern templates
-        "background_url": template.background_url,    # Added for classic/modern templates
+        "layout_data": template.layout_data,
+        "logo_url": template.logo_url,
+        "background_url": template.background_url,
         "primary_color": template.primary_color,
         "secondary_color": template.secondary_color,
-        "body_font_color": template.body_font_color,  # Added for classic/modern templates
+        "body_font_color": template.body_font_color,
         "font_family": template.font_family,
         "custom_text": template.custom_text
     }
-    
+
     return jsonify({
         "certificate": certificate_data,
-        "template": template_data
+        "template": template_data,
+        "company": company_data
     }), 200
+
 
 @certificate_bp.route('/<int:cert_id>/status', methods=['PUT'])
 @jwt_required()
@@ -590,12 +908,12 @@ def update_certificate_status(cert_id):
     certificate = Certificate.query.get_or_404(cert_id)
     if certificate.user_id != user_id:
         return jsonify({"msg": "Permission denied"}), 403
-    
+
     data = request.get_json()
     status = data.get('status')
     if status not in ['valid', 'revoked']:
         return jsonify({"msg": "Invalid status"}), 400
-    
+
     certificate.status = status
     db.session.commit()
     current_app.logger.info(f"Certificate {certificate.id} status updated to {status}")

@@ -3,7 +3,7 @@ import uuid
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
-from ..models import User, db
+from ..models import User, db, Company, Certificate, Template
 
 users_bp = Blueprint('users', __name__)
 
@@ -20,6 +20,12 @@ def get_current_user():
     if not user:
         return jsonify({"msg": "User not found"}), 404
 
+    company_data = None
+    if user.company_id:
+        company = Company.query.get(user.company_id)
+        if company:
+            company_data = {"id": company.id, "name": company.name}
+
     return jsonify({
         "id": user.id,
         "name": user.name,
@@ -27,7 +33,8 @@ def get_current_user():
         "role": user.role,
         "cert_quota": user.cert_quota,
         "signature_image_url": user.signature_image_url,
-        "api_key": user.api_key  # --- SEND API KEY ---
+        "api_key": user.api_key,
+        "company": company_data
     }), 200
 
 
@@ -58,14 +65,47 @@ def upload_signature():
     else:
         return jsonify({"msg": "File type not allowed. Please use PNG, JPG, or JPEG."}), 400
 
+@users_bp.route('/me/switch-to-company', methods=['POST'])
+@jwt_required()
+def switch_to_company_account():
+    user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(user_id)
+    data = request.get_json()
+
+    if user.company_id:
+        return jsonify({"msg": "User already belongs to a company"}), 400
+
+    company_name = data.get('company_name', '').strip()
+    if not company_name:
+        return jsonify({"msg": "Company name is required"}), 400
+    
+    try:
+        new_company = Company(name=company_name, owner_id=user.id)
+        db.session.add(new_company)
+        db.session.flush()
+
+        user.company_id = new_company.id
+        
+        Certificate.query.filter_by(user_id=user.id, company_id=None).update({"company_id": new_company.id})
+        Template.query.filter_by(user_id=user.id, company_id=None).update({"company_id": new_company.id})
+        
+        db.session.commit()
+
+        return jsonify({
+            "msg": "Successfully switched to a company account.",
+            "company": {"id": new_company.id, "name": new_company.name}
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error switching to company account: {e}")
+        return jsonify({"msg": "An error occurred while creating the company account."}), 500
+
 @users_bp.route('/me/api-key', methods=['POST'])
 @jwt_required()
 def generate_api_key():
-    """Generates or regenerates an API key for the current user."""
     user_id = int(get_jwt_identity())
     user = User.query.get_or_404(user_id)
 
-    # Generate a new, secure, unique API key
     new_api_key = uuid.uuid4().hex + uuid.uuid4().hex
     user.api_key = new_api_key
     db.session.commit()

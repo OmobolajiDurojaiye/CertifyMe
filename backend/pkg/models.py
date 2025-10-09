@@ -32,6 +32,27 @@ class Admin(db.Model):
         self.verification_code = str(random.randint(100000, 999999))
         self.verification_expiry = datetime.utcnow() + timedelta(minutes=15)
 
+class Company(db.Model):
+    __tablename__ = 'companies'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    unique_id = db.Column(db.String(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()))
+    owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # --- THIS IS THE FIX ---
+    # This relationship finds ALL users who are members of this company.
+    # We explicitly tell it to use the foreign key located on the User model.
+    users = db.relationship('User', backref='company', lazy=True, foreign_keys='User.company_id')
+    
+    # This relationship finds the single User who is the owner.
+    # We explicitly tell it to use the 'owner_id' foreign key from this model.
+    owner = db.relationship('User', backref=db.backref('owned_company', uselist=False), foreign_keys=[owner_id])
+    # --- END OF FIX ---
+    
+    templates = db.relationship('Template', backref='company', lazy=True)
+    certificates = db.relationship('Certificate', backref='company', lazy=True)
+
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -42,9 +63,8 @@ class User(db.Model):
     cert_quota = db.Column(db.Integer, default=10, nullable=False)
     subscription_expiry = db.Column(db.DateTime, nullable=True)
     signature_image_url = db.Column(db.Text, nullable=True)
-    # --- THIS IS THE NEW FEATURE ---
     api_key = db.Column(db.String(64), unique=True, nullable=True, index=True)
-    # --- END OF NEW FEATURE ---
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     templates = db.relationship('Template', backref='user', lazy=True)
@@ -68,7 +88,6 @@ class SupportMessage(db.Model):
     __tablename__ = 'support_messages'
     id = db.Column(db.Integer, primary_key=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('support_tickets.id'), nullable=False)
-    # A message can be from a user OR an admin, so both are nullable
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True)
     content = db.Column(db.Text, nullable=False)
@@ -82,6 +101,7 @@ class Template(db.Model):
     __tablename__ = 'templates'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) 
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
     title = db.Column(db.String(150), nullable=False)
     background_url = db.Column(db.Text)
     logo_url = db.Column(db.Text)
@@ -113,6 +133,7 @@ class Certificate(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     template_id = db.Column(db.Integer, db.ForeignKey('templates.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
     recipient_name = db.Column(db.String(150), nullable=False)
     recipient_email = db.Column(db.String(120), nullable=False)
     course_title = db.Column(db.String(150), nullable=False)
