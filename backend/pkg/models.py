@@ -40,16 +40,11 @@ class Company(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # --- THIS IS THE FIX ---
-    # This relationship finds ALL users who are members of this company.
-    # We explicitly tell it to use the foreign key located on the User model.
+    # Explicitly defined relationships to resolve ambiguity
     users = db.relationship('User', backref='company', lazy=True, foreign_keys='User.company_id')
-    
-    # This relationship finds the single User who is the owner.
-    # We explicitly tell it to use the 'owner_id' foreign key from this model.
     owner = db.relationship('User', backref=db.backref('owned_company', uselist=False), foreign_keys=[owner_id])
-    # --- END OF FIX ---
     
+    # Relationships with ondelete='SET NULL' to preserve records if company is deleted
     templates = db.relationship('Template', backref='company', lazy=True)
     certificates = db.relationship('Certificate', backref='company', lazy=True)
 
@@ -64,14 +59,19 @@ class User(db.Model):
     subscription_expiry = db.Column(db.DateTime, nullable=True)
     signature_image_url = db.Column(db.Text, nullable=True)
     api_key = db.Column(db.String(64), unique=True, nullable=True, index=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    templates = db.relationship('Template', backref='user', lazy=True)
+    last_login = db.Column(db.DateTime, nullable=True)
+
+    # Relationships that should be deleted if the user is deleted
+    templates = db.relationship('Template', backref='user', lazy=True, cascade="all, delete-orphan")
+    groups = db.relationship('Group', backref='user', lazy=True, cascade="all, delete-orphan")
+    support_tickets = db.relationship('SupportTicket', backref='user', lazy=True, cascade="all, delete-orphan")
+    
+    # Relationships where user_id should be nullified to preserve records
     certificates = db.relationship('Certificate', backref='issuer', lazy=True)
     payments = db.relationship('Payment', backref='user', lazy=True)
-    last_login = db.Column(db.DateTime, nullable=True)
-    support_tickets = db.relationship('SupportTicket', backref='user', lazy=True)
 
 
 class SupportTicket(db.Model):
@@ -100,8 +100,8 @@ class SupportMessage(db.Model):
 class Template(db.Model):
     __tablename__ = 'templates'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) 
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True) 
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL'), nullable=True)
     title = db.Column(db.String(150), nullable=False)
     background_url = db.Column(db.Text)
     logo_url = db.Column(db.Text)
@@ -130,10 +130,10 @@ class Group(db.Model):
 class Certificate(db.Model):
     __tablename__ = 'certificates'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     template_id = db.Column(db.Integer, db.ForeignKey('templates.id'), nullable=False)
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL'), nullable=True)
     recipient_name = db.Column(db.String(150), nullable=False)
     recipient_email = db.Column(db.String(120), nullable=False)
     course_title = db.Column(db.String(150), nullable=False)
@@ -149,7 +149,7 @@ class Certificate(db.Model):
 class Payment(db.Model):
     __tablename__ = 'payments'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     provider = db.Column(db.Enum('paystack', 'stripe', name='payment_providers'), nullable=False)
     plan = db.Column(db.Enum('starter', 'growth', 'pro', 'enterprise', name='payment_plans'), nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)

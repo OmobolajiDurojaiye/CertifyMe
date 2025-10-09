@@ -35,6 +35,9 @@ import AdminUserDetailsPage from "./pages/AdminUserDetailsPage";
 import AdminPaymentDetailsPage from "./pages/AdminPaymentDetailsPage";
 import AdminSupportPage from "./pages/AdminSupportPage";
 import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage";
+import AdminCompaniesPage from "./pages/AdminCompaniesPage"; // NEW
+import AdminCompanyDetailsPage from "./pages/AdminCompanyDetailsPage"; // NEW
+import AdminMessagingPage from "./pages/AdminMessagingPage"; // NEW
 
 import DocsPage from "./pages/DocsPage";
 
@@ -77,6 +80,14 @@ function App() {
             path="support/:ticketId"
             element={<AdminSupportTicketDetailsPage />}
           />
+          {/* --- NEW ADMIN ROUTES --- */}
+          <Route path="companies" element={<AdminCompaniesPage />} />
+          <Route
+            path="companies/:companyId"
+            element={<AdminCompanyDetailsPage />}
+          />
+          <Route path="messaging" element={<AdminMessagingPage />} />
+          {/* --- END NEW ADMIN ROUTES --- */}
         </Route>
       </Route>
 

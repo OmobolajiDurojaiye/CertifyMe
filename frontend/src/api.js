@@ -23,14 +23,10 @@ export const loginUser = (credentials) =>
   apiClient.post("/auth/login", credentials);
 export const signupUser = (userData) =>
   apiClient.post("/auth/register", userData);
-
-// --- NEW PASSWORD RESET API Calls ---
 export const requestPasswordReset = (email) =>
   apiClient.post("/auth/forgot-password", { email });
-
 export const resetPassword = (token, password) =>
   apiClient.post("/auth/reset-password", { token, password });
-// --- END OF NEW FEATURE ---
 
 // --- ADMIN API Calls ---
 export const adminLogin = (credentials) =>
@@ -57,14 +53,30 @@ export const getAdminUserDetails = (userId) =>
   apiClient.get(`/admin/users/${userId}`);
 export const adjustUserQuota = (userId, adjustment, reason) =>
   apiClient.post(`/admin/users/${userId}/adjust-quota`, { adjustment, reason });
-export const getAdminUserPayments = (userId) =>
-  apiClient.get(`/admin/users/${userId}/payments`);
 export const suspendAdminUser = (userId) =>
   apiClient.post(`/admin/users/${userId}/suspend`);
 export const unsuspendAdminUser = (userId) =>
   apiClient.post(`/admin/users/${userId}/unsuspend`);
 export const updateAdminUserPlan = (userId, plan) =>
   apiClient.put(`/admin/users/${userId}/plan`, { plan });
+export const deleteAdminUser = (userId) =>
+  apiClient.delete(`/admin/users/${userId}/delete`);
+
+// Admin Company Management
+export const getAdminCompanies = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return apiClient.get(`/admin/companies?${query}`);
+};
+export const getAdminCompanyDetails = (companyId) =>
+  apiClient.get(`/admin/companies/${companyId}`);
+export const deleteAdminCompany = (companyId) =>
+  apiClient.delete(`/admin/companies/${companyId}/delete`);
+
+// Admin Messaging
+export const getEmailRecipients = () =>
+  apiClient.get("/admin/messaging/recipients");
+export const sendAdminBulkEmail = (emailData) =>
+  apiClient.post("/admin/messaging/send-email", emailData);
 
 // Admin Payments
 export const getAdminTransactions = (params = {}) => {
@@ -98,13 +110,9 @@ export const getAdminDashboardStats = async () => {
   return response.data;
 };
 
-// --- THIS IS THE NEW FEATURE ---
-// New function to get the count of open tickets
+// Admin Support Tickets
 export const getOpenTicketsCount = () =>
   apiClient.get("/admin/support/tickets/open-count");
-// --- END OF NEW FEATURE ---
-
-// For Admins
 export const getAdminSupportTickets = (params = {}) => {
   const query = new URLSearchParams(params).toString();
   return apiClient.get(`/admin/support/tickets?${query}`);
@@ -124,7 +132,7 @@ export const adminReplyToTicket = (ticketId, message, file) => {
 export const updateTicketStatus = (ticketId, status) =>
   apiClient.put(`/admin/support/tickets/${ticketId}/status`, { status });
 
-// For Users
+// User Support Tickets
 export const createUserTicket = (subject, message, file) => {
   const formData = new FormData();
   formData.append("subject", subject);
@@ -162,12 +170,10 @@ export const updateTemplate = (templateId, formData) =>
   apiClient.put(`/templates/${templateId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-// --- THIS IS THE NEW FEATURE ---
 export const deleteTemplate = (templateId) =>
   apiClient.delete(`/templates/${templateId}`);
-// --- END OF NEW FEATURE ---
 
-// API calls for the visual template editor
+// Visual Template Editor
 export const createVisualTemplate = (templateData) =>
   apiClient.post("/templates/visual/", templateData);
 export const getVisualTemplate = (templateId) =>
@@ -175,6 +181,7 @@ export const getVisualTemplate = (templateId) =>
 export const updateVisualTemplate = (templateId, templateData) =>
   apiClient.put(`/templates/visual/${templateId}`, templateData);
 
+// Certificates
 export const getCertificates = () => apiClient.get("/certificates/");
 export const createCertificate = (certData) =>
   apiClient.post("/certificates/", certData);
@@ -194,6 +201,7 @@ export const bulkCreateCertificates = (formData) =>
 export const updateCertificateStatus = (certId, status) =>
   apiClient.put(`/certificates/${certId}/status`, { status });
 
+// Emailing Certificates
 export const sendCertificateEmail = (certId) =>
   apiClient.post(`/certificates/${certId}/send`);
 export const sendBulkEmails = (certificateIds) =>
@@ -205,49 +213,48 @@ export const getCertificatePDF = (certId) =>
     responseType: "blob",
   });
 
+// User Profile & Settings
 export const getCurrentUser = () => apiClient.get("/users/me");
-export const initializePayment = (plan) =>
-  apiClient.post("/payments/initialize", { plan });
-
-export const getUserAnalytics = () => apiClient.get("/analytics/dashboard");
-
 export const uploadUserSignature = (formData) =>
   apiClient.post("/users/me/signature", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-
 export const switchToCompany = (companyName) =>
   apiClient.post("/users/me/switch-to-company", {
     company_name: companyName,
   });
-
 export const generateApiKey = () => apiClient.post("/users/me/api-key");
 
+// Payments
+export const initializePayment = (plan) =>
+  apiClient.post("/payments/initialize", { plan });
+
+// User Analytics
+export const getUserAnalytics = () => apiClient.get("/analytics/dashboard");
+
+// Groups
 export const getGroups = (page = 1) => apiClient.get(`/groups/?page=${page}`);
 export const createGroup = (name) => apiClient.post("/groups/", { name });
 export const getGroupDetails = (groupId) => apiClient.get(`/groups/${groupId}`);
 export const deleteGroup = (groupId) => apiClient.delete(`/groups/${groupId}`);
 export const sendGroupBulkEmail = (groupId) =>
   apiClient.post(`/groups/${groupId}/send-bulk-email`);
-export const downloadBulkTemplate = () =>
-  apiClient.get("/certificates/bulk-template", { responseType: "blob" });
-
 export const downloadGroupBulkPDF = (groupId) =>
   apiClient.get(`/groups/${groupId}/download-bulk-pdf`, {
     responseType: "blob",
   });
 
-// New upload for editor images
+// Misc
+export const downloadBulkTemplate = () =>
+  apiClient.get("/certificates/bulk-template", { responseType: "blob" });
 export const uploadEditorImage = (formData) =>
   apiClient.post("/uploads/editor-images", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-
 export const createCustomTemplate = (formData) =>
   apiClient.post("/templates/upload-custom", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-
 export const updateCustomTemplate = (templateId, formData) =>
   apiClient.put(`/templates/upload-custom/${templateId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },

@@ -106,3 +106,23 @@ def send_password_reset_email(user, reset_url):
     except Exception as e:
         current_app.logger.error(f"Failed to send password reset email: {e}")
         raise
+
+def send_bulk_email(recipients, subject, html_body):
+    """
+    Sends an email to a list of recipients.
+    Uses mail.connect() for efficiency with multiple emails.
+    """
+    try:
+        with mail.connect() as conn:
+            for recipient_email in recipients:
+                msg = Message(
+                    subject=subject,
+                    sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')),
+                    recipients=[recipient_email],
+                    html=html_body
+                )
+                conn.send(msg)
+        current_app.logger.info(f"Successfully sent bulk email to {len(recipients)} recipients.")
+    except Exception as e:
+        current_app.logger.error(f"Failed during bulk email sending: {e}")
+        raise

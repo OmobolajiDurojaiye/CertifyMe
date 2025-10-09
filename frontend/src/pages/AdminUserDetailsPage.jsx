@@ -11,8 +11,7 @@ import {
   Table,
   Button,
   Form,
-  InputGroup,
-  Modal, // Import Modal
+  Modal,
 } from "react-bootstrap";
 import { ArrowLeft } from "react-bootstrap-icons";
 import {
@@ -30,7 +29,6 @@ function AdminUserDetailsPage() {
     amount: "",
     reason: "",
   });
-  // State for the confirmation modal
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   useEffect(() => {
@@ -63,7 +61,7 @@ function AdminUserDetailsPage() {
       alert("A reason for the adjustment is required.");
       return;
     }
-    setShowConfirmModal(true); // Show confirmation modal instead of direct submission
+    setShowConfirmModal(true);
   };
 
   const confirmQuotaAdjustment = async () => {
@@ -88,7 +86,7 @@ function AdminUserDetailsPage() {
     if (window.confirm("Are you sure you want to revoke this certificate?")) {
       try {
         await revokeAdminCertificate(certId);
-        fetchUserDetails(); // Refresh the certificate list
+        fetchUserDetails();
       } catch (err) {
         alert("Failed to revoke certificate.");
       }
@@ -129,6 +127,14 @@ function AdminUserDetailsPage() {
                 <strong>Role:</strong>{" "}
                 <Badge bg="info">{user.role.toUpperCase()}</Badge>
               </ListGroup.Item>
+              {user.company && (
+                <ListGroup.Item>
+                  <strong>Company:</strong>{" "}
+                  <Link to={`/admin/companies/${user.company.id}`}>
+                    {user.company.name}
+                  </Link>
+                </ListGroup.Item>
+              )}
               <ListGroup.Item>
                 <strong>Certificate Quota:</strong>{" "}
                 <span className="fw-bold">{user.cert_quota}</span>
@@ -291,7 +297,6 @@ function AdminUserDetailsPage() {
         </Col>
       </Row>
 
-      {/* Confirmation Modal for Quota Adjustment */}
       <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Action</Modal.Title>

@@ -5,11 +5,12 @@ import {
   Speedometer2,
   PeopleFill,
   BoxArrowRight,
-  PaletteFill,
+  Building,
   CashStack,
   FileEarmarkText,
   BarChartFill,
-  ChatDotsFill, // --- NEW ICON ---
+  ChatDotsFill,
+  EnvelopeFill,
 } from "react-bootstrap-icons";
 
 function AdminSidebar() {
@@ -44,6 +45,13 @@ function AdminSidebar() {
               <span>User Management</span>
             </NavLink>
           </Nav.Item>
+          {/* --- NEW: Company Management --- */}
+          <Nav.Item as="li">
+            <NavLink to="/admin/companies" className="nav-link">
+              <Building />
+              <span>Companies</span>
+            </NavLink>
+          </Nav.Item>
           <Nav.Item as="li">
             <NavLink to="/admin/payments" className="nav-link">
               <CashStack />
@@ -62,14 +70,19 @@ function AdminSidebar() {
               <span>Analytics</span>
             </NavLink>
           </Nav.Item>
-          {/* --- THIS IS THE NEW FEATURE --- */}
           <Nav.Item as="li">
             <NavLink to="/admin/support" className="nav-link">
               <ChatDotsFill />
               <span>Support Tickets</span>
             </NavLink>
           </Nav.Item>
-          {/* --- END OF NEW FEATURE --- */}
+          {/* --- NEW: Messaging --- */}
+          <Nav.Item as="li">
+            <NavLink to="/admin/messaging" className="nav-link">
+              <EnvelopeFill />
+              <span>Messaging</span>
+            </NavLink>
+          </Nav.Item>
         </Nav>
       </div>
       <Nav className="flex-column" as="ul">

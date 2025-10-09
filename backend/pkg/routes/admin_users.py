@@ -1,22 +1,17 @@
 from flask import Blueprint, jsonify, request, current_app
 from flask_jwt_extended import jwt_required, get_jwt, current_user
 from datetime import datetime, timedelta
-from ..models import User, Payment, Admin, db, AdminActionLog, Certificate
+from ..models import User, Payment, Admin, db, AdminActionLog, Certificate, Company
 from sqlalchemy import or_
 
 admin_users_bp = Blueprint('admin_users', __name__)
 
-# --- THIS IS THE FIX ---
-# The URL now correctly includes '/users' to match the frontend request.
 @admin_users_bp.route('/users/me', methods=['GET'])
-# --- END OF FIX ---
 @jwt_required()
 def get_current_admin():
     """
     Fetches the profile of the currently logged-in admin.
     """
-    # The user_lookup_loader in __init__.py handles loading the admin object.
-    # We just need to verify it's the correct type.
     if not isinstance(current_user, Admin):
         return jsonify({"msg": "Administration rights required"}), 403
 
@@ -44,7 +39,7 @@ def get_users():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
 
-    query = User.query
+    query = User.query.outerjoin(Company, User.company_id == Company.id)
     if search:
         query = query.filter(or_(User.name.ilike(f'%{search}%'), User.email.ilike(f'%{search}%')))
     if role:
@@ -67,10 +62,11 @@ def get_users():
         'name': u.name,
         'email': u.email,
         'role': u.role,
-        'cert_quota': u.cert_quota, # Add quota to the list view
+        'cert_quota': u.cert_quota,
         'signup_date': u.created_at.isoformat(),
         'last_login': u.last_login.isoformat() if u.last_login else None,
-        'subscription_expiry': u.subscription_expiry.isoformat() if u.subscription_expiry else None
+        'subscription_expiry': u.subscription_expiry.isoformat() if u.subscription_expiry else None,
+        'company_name': u.company.name if u.company else 'N/A'
     } for u in users.items]
 
     return jsonify({
@@ -79,7 +75,6 @@ def get_users():
         'pages': users.pages
     }), 200
 
-# --- NEW: Endpoint for detailed user view ---
 @admin_users_bp.route('/users/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user_details(user_id):
@@ -87,8 +82,6 @@ def get_user_details(user_id):
         return jsonify({"msg": "Admin access required"}), 403
 
     user = User.query.get_or_404(user_id)
-
-    # User's certificates
     certs = Certificate.query.filter_by(user_id=user.id).order_by(Certificate.created_at.desc()).all()
     cert_list = [{
         'id': c.id,
@@ -99,7 +92,6 @@ def get_user_details(user_id):
         'verification_id': c.verification_id
     } for c in certs]
 
-    # User's payments (reusing existing logic from get_user_payments)
     payments = Payment.query.filter_by(user_id=user.id).order_by(Payment.created_at.desc()).all()
     payment_list = [{
         'id': p.id,
@@ -119,7 +111,8 @@ def get_user_details(user_id):
         'cert_quota': user.cert_quota,
         'signup_date': user.created_at.isoformat(),
         'last_login': user.last_login.isoformat() if user.last_login else None,
-        'subscription_expiry': user.subscription_expiry.isoformat() if user.subscription_expiry else None
+        'subscription_expiry': user.subscription_expiry.isoformat() if user.subscription_expiry else None,
+        'company': {'id': user.company.id, 'name': user.company.name} if user.company else None
     }
 
     return jsonify({
@@ -128,7 +121,6 @@ def get_user_details(user_id):
         'payments': payment_list
     }), 200
 
-# --- NEW: Endpoint for adjusting certificate quota ---
 @admin_users_bp.route('/users/<int:user_id>/adjust-quota', methods=['POST'])
 @jwt_required()
 def adjust_user_quota(user_id):
@@ -144,13 +136,11 @@ def adjust_user_quota(user_id):
 
     user = User.query.get_or_404(user_id)
     
-    # Ensure quota doesn't go below zero
     if user.cert_quota + adjustment < 0:
         return jsonify({"msg": "Cannot adjust quota below zero"}), 400
         
     user.cert_quota += adjustment
 
-    # Log the admin action
     log_entry = AdminActionLog(
         admin_id=current_user.id,
         action=f"Adjusted quota by {adjustment}. Reason: {reason}",
@@ -165,24 +155,32 @@ def adjust_user_quota(user_id):
         "new_quota": user.cert_quota
     }), 200
 
-@admin_users_bp.route('/users/<int:user_id>/payments', methods=['GET'])
+@admin_users_bp.route('/users/<int:user_id>/delete', methods=['DELETE'])
 @jwt_required()
-def get_user_payments(user_id):
-    if not get_jwt().get("is_admin"):
+def delete_user(user_id):
+    if not isinstance(current_user, Admin):
         return jsonify({"msg": "Admin access required"}), 403
 
-    payments = Payment.query.filter_by(user_id=user_id).order_by(Payment.created_at.desc()).all()
-    payment_list = [{
-        'id': p.id,
-        'plan': p.plan,
-        'amount': float(p.amount),
-        'currency': p.currency,
-        'status': p.status,
-        'date': p.created_at.isoformat(),
-        'provider': p.provider
-    } for p in payments]
+    user = User.query.get_or_404(user_id)
 
-    return jsonify({'payments': payment_list}), 200
+    # Prevent deleting a user who owns a company
+    if user.owned_company:
+        return jsonify({"msg": f"Cannot delete user. They own the company '{user.owned_company.name}'. Please delete the company first or transfer ownership."}), 400
+
+    # Nullify FKs on associated records
+    Payment.query.filter_by(user_id=user.id).update({'user_id': None})
+    Certificate.query.filter_by(user_id=user.id).update({'user_id': None})
+    
+    # Cascade deletion will handle Templates, Groups, SupportTickets
+    db.session.delete(user)
+    
+    # Log the action
+    log = AdminActionLog(admin_id=current_user.id, action=f"Deleted user: {user.email} (ID: {user.id})", target_type='user', target_id=user.id)
+    db.session.add(log)
+    
+    db.session.commit()
+
+    return jsonify({"msg": "User has been deleted successfully."}), 200
 
 @admin_users_bp.route('/users/<int:user_id>/suspend', methods=['POST'])
 @jwt_required()
@@ -191,7 +189,7 @@ def suspend_user(user_id):
         return jsonify({"msg": "Admin access required"}), 403
 
     user = User.query.get_or_404(user_id)
-    user.role = 'suspended'  # Or set a suspended flag
+    user.role = 'suspended'
     db.session.commit()
     return jsonify({'msg': 'User suspended'}), 200
 
@@ -202,7 +200,7 @@ def unsuspend_user(user_id):
         return jsonify({"msg": "Admin access required"}), 403
 
     user = User.query.get_or_404(user_id)
-    user.role = 'free'  # Restore to free
+    user.role = 'free'
     db.session.commit()
     return jsonify({'msg': 'User unsuspended'}), 200
 
@@ -217,7 +215,7 @@ def update_user_plan(user_id):
     new_plan = data.get('plan')
     if new_plan in ['free', 'starter', 'growth', 'pro', 'enterprise']:
         user.role = new_plan
-        user.subscription_expiry = datetime.utcnow().replace(year=datetime.utcnow().year + 1)  # 1 year expiry
+        user.subscription_expiry = datetime.utcnow().replace(year=datetime.utcnow().year + 1)
         db.session.commit()
         return jsonify({'msg': 'Plan updated'}), 200
     return jsonify({'msg': 'Invalid plan'}), 400

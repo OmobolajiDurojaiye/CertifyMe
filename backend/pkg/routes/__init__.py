@@ -15,6 +15,8 @@ from .admin_payments import admin_payments_bp
 from .admin_certificates import admin_certificates_bp
 from .admin_analytics import admin_analytics_bp
 from .admin_support import admin_support_bp
+from .admin_companies import admin_companies_bp
+from .admin_messaging import admin_messaging_bp
 
 def register_blueprints(app):
     """
@@ -38,6 +40,8 @@ def register_blueprints(app):
     app.register_blueprint(admin_certificates_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_analytics_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_support_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_companies_bp, url_prefix='/api/admin')
+    app.register_blueprint(admin_messaging_bp, url_prefix='/api/admin')
 
     @app.route('/api/health')
     def health_check():

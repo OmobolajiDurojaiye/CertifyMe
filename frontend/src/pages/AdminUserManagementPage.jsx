@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Card,
   Table,
@@ -18,7 +18,7 @@ import {
   suspendAdminUser,
   unsuspendAdminUser,
   updateAdminUserPlan,
-  getAdminUserPayments,
+  deleteAdminUser,
 } from "../api";
 
 function AdminUserManagementPage() {
@@ -28,32 +28,15 @@ function AdminUserManagementPage() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  // State for new date filters
   const [dateFilter, setDateFilter] = useState({
     start_date: "",
     end_date: "",
-  });
-  const [paymentsModal, setPaymentsModal] = useState({
-    show: false,
-    userId: null,
-    payments: [],
   });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
-  // Re-fetch users when any filter or page changes
   useEffect(() => {
-    // Reset to page 1 if filters change, but not if only page changes
-    const isFilterChange =
-      search ||
-      roleFilter ||
-      statusFilter ||
-      dateFilter.start_date ||
-      dateFilter.end_date;
-    if (isFilterChange && page !== 1) {
-      // This check is to avoid a potential double-fetch, but for simplicity we can just fetch
-    }
     fetchUsers();
   }, [search, roleFilter, statusFilter, page, dateFilter]);
 
@@ -69,7 +52,6 @@ function AdminUserManagementPage() {
         start_date: dateFilter.start_date || null,
         end_date: dateFilter.end_date || null,
       };
-      // Filter out null values to keep URL clean
       const filteredParams = Object.fromEntries(
         Object.entries(params).filter(([_, v]) => v != null && v !== "")
       );
@@ -117,16 +99,23 @@ function AdminUserManagementPage() {
     }
   };
 
-  const showPayments = async (userId) => {
-    try {
-      const res = await getAdminUserPayments(userId);
-      setPaymentsModal({ show: true, userId, payments: res.data.payments });
-    } catch (err) {
-      alert("Failed to fetch payments");
+  const handleDelete = async (userId) => {
+    if (
+      window.confirm(
+        "DANGER: Are you sure you want to permanently delete this user? This action cannot be undone."
+      )
+    ) {
+      try {
+        const res = await deleteAdminUser(userId);
+        alert(res.data.msg);
+        fetchUsers();
+      } catch (err) {
+        alert(err.response?.data?.msg || "Failed to delete user.");
+      }
     }
   };
 
-  if (loading)
+  if (loading && users.length === 0)
     return (
       <div className="text-center p-5">
         <Spinner animation="border" />
@@ -197,7 +186,7 @@ function AdminUserManagementPage() {
                 <th>Name</th>
                 <th>Email</th>
                 <th>Role/Plan</th>
-                <th>Quota</th>
+                <th>Company</th>
                 <th>Signup Date</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -211,7 +200,7 @@ function AdminUserManagementPage() {
                   <td>
                     <Badge bg="primary">{user.role.toUpperCase()}</Badge>
                   </td>
-                  <td>{user.cert_quota}</td>
+                  <td>{user.company_name}</td>
                   <td>{new Date(user.signup_date).toLocaleDateString()}</td>
                   <td>
                     <Badge
@@ -237,12 +226,15 @@ function AdminUserManagementPage() {
                         Actions
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
-                        <Dropdown.Item onClick={() => showPayments(user.id)}>
-                          View Payments
+                        <Dropdown.Item
+                          className="text-danger"
+                          onClick={() => handleDelete(user.id)}
+                        >
+                          Delete User
                         </Dropdown.Item>
                         {user.role !== "suspended" ? (
                           <Dropdown.Item
-                            className="text-danger"
+                            className="text-warning"
                             onClick={() => handleSuspend(user.id)}
                           >
                             Suspend User
@@ -291,56 +283,6 @@ function AdminUserManagementPage() {
           </div>
         </Card.Body>
       </Card>
-
-      {/* Payments Modal (triggered from the dropdown) */}
-      <Modal
-        show={paymentsModal.show}
-        onHide={() =>
-          setPaymentsModal({ show: false, userId: null, payments: [] })
-        }
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Payment History</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Table striped bordered hover>
-            <thead>
-              <tr>
-                <th>Plan</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Provider</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paymentsModal.payments.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.plan}</td>
-                  <td>
-                    {p.amount} {p.currency}
-                  </td>
-                  <td>
-                    <Badge
-                      bg={
-                        p.status === "paid"
-                          ? "success"
-                          : p.status === "failed"
-                          ? "danger"
-                          : "warning"
-                      }
-                    >
-                      {p.status}
-                    </Badge>
-                  </td>
-                  <td>{new Date(p.date).toLocaleDateString()}</td>
-                  <td>{p.provider}</td>
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </Modal.Body>
-      </Modal>
     </div>
   );
 }
