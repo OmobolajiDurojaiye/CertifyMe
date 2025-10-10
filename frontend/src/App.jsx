@@ -20,6 +20,7 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import UploadTemplatePage from "./pages/UploadTemplatePage";
+import OpenLedgerPage from "./pages/OpenLedgerPage";
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -57,7 +58,7 @@ function App() {
         path="/verify/:verificationId"
         element={<VerifyCertificatePage />}
       />
-
+      <Route path="/search" element={<OpenLedgerPage />} />
       <Route path="/docs" element={<DocsPage />} />
 
       {/* Admin Routes */}

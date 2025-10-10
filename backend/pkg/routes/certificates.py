@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify, render_template_string, Response,
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
 from ..models import db, Certificate, Template, User, Company
+from sqlalchemy import func, case
 import csv
 from io import StringIO, BytesIO
 import qrcode
@@ -918,3 +919,100 @@ def update_certificate_status(cert_id):
     db.session.commit()
     current_app.logger.info(f"Certificate {certificate.id} status updated to {status}")
     return jsonify({"msg": f"Certificate status updated to {status}"}), 200
+
+@certificate_bp.route('/advanced-search', methods=['GET'])
+def advanced_search_certificates():
+
+    try:
+        # --- Get parameters ---
+        page = request.args.get('page', 1, type=int)
+        per_page = 9
+
+        # Filter parameters
+        recipient_name = request.args.get('recipient', '').strip()
+        # Changed from 'company' to 'issuer' to be more generic
+        issuer_name_filter = request.args.get('issuer', '').strip()
+        course_title = request.args.get('course', '').strip()
+        start_date_str = request.args.get('start_date', '').strip()
+        end_date_str = request.args.get('end_date', '').strip()
+
+        # Sorting parameters
+        sort_by = request.args.get('sort_by', 'issue_date')
+        sort_order = request.args.get('sort_order', 'desc')
+
+        # --- Build Query ---
+        # The COALESCE function is key here. It returns the first non-null value.
+        # So, it will be Company.name if it exists, otherwise it will be User.name.
+        issuer_name_column = func.coalesce(Company.name, User.name).label('issuer_name')
+
+        # The CASE statement determines the issuer type for the frontend.
+        issuer_type_column = case(
+            (Company.id != None, 'company'),
+            else_='individual'
+        ).label('issuer_type')
+
+        base_query = db.session.query(
+            Certificate.recipient_name,
+            Certificate.course_title,
+            Certificate.issue_date,
+            Certificate.verification_id,
+            issuer_name_column,
+            issuer_type_column
+        ).join(User, Certificate.user_id == User.id) \
+         .join(Company, Certificate.company_id == Company.id, isouter=True) # <-- LEFT JOIN HERE
+
+        # Apply filters dynamically
+        if len(recipient_name) >= 3:
+            base_query = base_query.filter(func.lower(Certificate.recipient_name).like(f"%{recipient_name.lower()}%"))
+        if len(issuer_name_filter) >= 2:
+            # Filter on the coalesced issuer name column
+            base_query = base_query.filter(func.lower(issuer_name_column).like(f"%{issuer_name_filter.lower()}%"))
+        if len(course_title) >= 3:
+            base_query = base_query.filter(func.lower(Certificate.course_title).like(f"%{course_title.lower()}%"))
+
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                base_query = base_query.filter(Certificate.issue_date.between(start_date, end_date))
+            except ValueError:
+                return jsonify({"msg": "Invalid date format. Please use YYYY-MM-DD."}), 400
+
+        # Apply sorting
+        sort_column = Certificate.issue_date
+        if sort_by == 'recipient_name':
+            sort_column = func.lower(Certificate.recipient_name)
+        
+        if sort_order == 'asc':
+            base_query = base_query.order_by(sort_column.asc())
+        else:
+            base_query = base_query.order_by(sort_column.desc())
+
+        paginated_results = base_query.paginate(page=page, per_page=per_page, error_out=False)
+
+        results = [{
+            "recipient_name": cert.recipient_name,
+            "course_title": cert.course_title,
+            "issue_date": cert.issue_date.isoformat(),
+            "verification_id": cert.verification_id,
+            "issuer_name": cert.issuer_name,
+            "issuer_type": cert.issuer_type # Send type to frontend
+        } for cert in paginated_results.items]
+
+        pagination_data = {
+            "total": paginated_results.total,
+            "pages": paginated_results.pages,
+            "page": paginated_results.page,
+            "has_next": paginated_results.has_next,
+            "has_prev": paginated_results.has_prev,
+            "per_page": per_page
+        }
+
+        return jsonify({
+            "results": results,
+            "pagination": pagination_data
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Advanced certificate search error: {e}")
+        return jsonify({"msg": "An error occurred during the search."}), 500

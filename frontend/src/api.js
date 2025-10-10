@@ -201,6 +201,19 @@ export const bulkCreateCertificates = (formData) =>
 export const updateCertificateStatus = (certId, status) =>
   apiClient.put(`/certificates/${certId}/status`, { status });
 
+export const advancedSearchCertificates = (params) => {
+  // Clean up params object by removing empty/null values
+  const cleanedParams = Object.entries(params).reduce((acc, [key, value]) => {
+    if (value !== null && value !== "" && value !== undefined) {
+      acc[key] = value;
+    }
+    return acc;
+  }, {});
+
+  const query = new URLSearchParams(cleanedParams).toString();
+  return apiClient.get(`/certificates/advanced-search?${query}`);
+};
+
 // Emailing Certificates
 export const sendCertificateEmail = (certId) =>
   apiClient.post(`/certificates/${certId}/send`);
