@@ -79,7 +79,7 @@ def send_password_reset_email(user, reset_url):
     <body>
         <div class="container">
             <div class="header">CertifyMe Password Reset Request</div>
-            <p>Hello {user.name or 'there'},</p>
+            <p>Hello {user.name or 'User'},</p>
             <p>We received a request to reset the password for your account. If you did not make this request, you can safely ignore this email.</p>
             <p>To reset your password, please click the button below. This link is valid for 15 minutes.</p>
             <div style="text-align: center;">
@@ -111,7 +111,7 @@ def send_bulk_email(users, subject, user_content, header_image_url=None):
     """
     Sends a personalized, professionally templated email to a list of user objects.
     - Personalizes content by replacing '{{ user_name }}' with the user's name.
-    - Includes an optional header image.
+    - Includes an optional header image with compact size and rounded corners.
     - Uses a robust, responsive HTML template.
     """
     social_links = {
@@ -142,13 +142,14 @@ def send_bulk_email(users, subject, user_content, header_image_url=None):
                         .footer {{ padding: 20px 40px; text-align: center; color: #6c757d; font-size: 12px; }}
                         .social-icons img {{ width: 24px; height: 24px; margin: 0 8px; }}
                         a {{ color: #2563EB; text-decoration: none; }}
+                        .header-image {{ max-width: 600px; width: 100%; height: auto; display: block; border-radius: 8px; }}
                     </style>
                 </head>
                 <body>
                     <center class="wrapper">
                         <table class="main" width="100%">
                             <!-- HEADER IMAGE (OPTIONAL) -->
-                            {f'<tr><td><img src="{header_image_url}" alt="Header" style="width: 100%; max-width: 600px; height: auto; display: block; border-top-left-radius: 8px; border-top-right-radius: 8px;"></td></tr>' if header_image_url else ''}
+                            {f'<tr><td><img src="{header_image_url}" alt="Header" class="header-image"></td></tr>' if header_image_url else ''}
                             
                             <!-- MAIN CONTENT -->
                             <tr>
