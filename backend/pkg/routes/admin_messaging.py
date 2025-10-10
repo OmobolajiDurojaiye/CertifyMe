@@ -16,23 +16,28 @@ def handle_send_email():
     subject = data.get('subject')
     html_body = data.get('body')
     recipient_ids = data.get('recipients') 
+    header_image_url = data.get('header_image_url')
 
     if not all([subject, html_body, recipient_ids]):
         return jsonify({"msg": "Subject, body, and recipients are required"}), 400
 
     # --- THIS IS THE FIX ---
-    # Convert the frozenset to a list before concatenating
+    # Sanitize the HTML to prevent XSS but allow a wide range of formatting tags and styles
+    # from the rich text editor.
+    
+    # Convert the default frozenset of tags to a list so we can add to it.
     allowed_tags = list(bleach.sanitizer.ALLOWED_TAGS) + [
         'p', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'b', 'i', 'u', 'a', 'img', 
-        'div', 'span', 'strong', 'em', 'ol', 'ul', 'li', 'blockquote', 'pre'
+        'div', 'span', 'strong', 'em', 'ol', 'ul', 'li', 'blockquote', 'pre',
+        'sub', 'sup', 'hr'
     ]
     
-    # Allow style attributes for basic formatting
+    # Allow attributes needed for links, images, and crucially, inline styles.
     allowed_attrs = {
         **bleach.sanitizer.ALLOWED_ATTRIBUTES,
-        'a': ['href', 'title'],
+        'a': ['href', 'title', 'target'],
         'img': ['src', 'alt', 'style', 'width', 'height'],
-        '*': ['style'] # Allow style attribute on any tag
+        '*': ['style'] # Allow style attribute on any tag for formatting like text-align.
     }
     
     clean_html = bleach.clean(html_body, tags=allowed_tags, attributes=allowed_attrs)
@@ -48,11 +53,9 @@ def handle_send_email():
     if not users:
         return jsonify({"msg": "No valid (non-suspended) recipients found"}), 400
 
-    recipient_emails = [user.email for user in users]
-
     try:
-        send_bulk_email(recipient_emails, subject, clean_html)
-        return jsonify({"msg": f"Email successfully sent to {len(recipient_emails)} users."}), 200
+        send_bulk_email(users, subject, clean_html, header_image_url=header_image_url)
+        return jsonify({"msg": f"Email successfully sent to {len(users)} users."}), 200
     except Exception as e:
         return jsonify({"msg": f"An error occurred while sending emails: {str(e)}"}), 500
 

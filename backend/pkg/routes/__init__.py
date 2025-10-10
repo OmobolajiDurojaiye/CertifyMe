@@ -8,6 +8,9 @@ from .support import support_bp
 from .api_v1 import api_v1_bp
 from .analytics import analytics_bp
 
+#Standalones
+from .uploads import uploads_bp
+
 # Admin blueprints
 from .admin_auth import admin_auth_bp
 from .admin_users import admin_users_bp
@@ -42,6 +45,9 @@ def register_blueprints(app):
     app.register_blueprint(admin_support_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_companies_bp, url_prefix='/api/admin')
     app.register_blueprint(admin_messaging_bp, url_prefix='/api/admin')
+
+    #Standalones
+    app.register_blueprint(uploads_bp, url_prefix='/api/uploads')
 
     @app.route('/api/health')
     def health_check():
