@@ -8,24 +8,13 @@ export default defineConfig({
     react(),
     sitemap({
       hostname: "https://certifyme.com.ng",
-      // Exclude protected/dynamic routes that are not useful for SEO
-      exclude: [
-        "/dashboard",
-        "/admin",
-        "/reset-password/*",
-        "/verify/*",
-        "/edit/*",
-        "/view/*",
-        "/support/*",
-      ],
-      // Manually define routes with their priorities for better SEO control
+      // We will manually define the exact routes you want.
       routes: [
         { url: "/", priority: 1.0 },
-        { url: "/verify", priority: 0.9 },
-        { url: "/login", priority: 0.8 },
-        { url: "/signup", priority: 0.8 },
+        { url: "/signup", priority: 0.9 },
+        { url: "/dashboard/create", priority: 0.8 },
+        { url: "/dashboard/bulk-create", priority: 0.8 },
         { url: "/docs", priority: 0.7 },
-        { url: "/forgot-password", priority: 0.6 },
       ],
     }),
   ],
