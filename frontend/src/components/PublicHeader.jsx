@@ -39,8 +39,14 @@ const PublicHeader = ({
         </Link>
       </div>
       <div className="nav-right">
-        <Link to="/docs" className="signin-link">
-          API Docs
+        <a href="/#pricing" className="signin-link">
+          Pricing
+        </a>
+        <Link to="/search" className="signin-link">
+          Ledger
+        </Link>
+        <Link to="/verify" className="signin-link">
+          Verify
         </Link>
         <Link to="/login" className="signin-link">
           Log In

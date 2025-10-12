@@ -6,29 +6,9 @@ import { SERVER_BASE_URL } from "../config";
 import QRCode from "react-qr-code";
 import { CheckCircle, XCircle, Search, Building } from "lucide-react";
 import KonvaPreview from "../components/KonvaPreview";
+import PublicHeader from "../components/PublicHeader";
+import PublicFooter from "../components/PublicFooter";
 import "../styles/VerifyPage.css";
-
-// A minimal header just for this page
-const VerifyHeader = () => (
-  <header className="verify-header">
-    <Container>
-      <Link to="/" className="navbar-brand">
-        <span>CertifyMe</span>
-      </Link>
-    </Container>
-  </header>
-);
-
-// A minimal footer just for this page
-const VerifyFooter = () => (
-  <footer className="verify-footer">
-    <Container>
-      <small>
-        &copy; {new Date().getFullYear()} CertifyMe. All rights reserved.
-      </small>
-    </Container>
-  </footer>
-);
 
 // The certificate display component
 const CertificateDisplay = ({ certificate, template }) => {
@@ -282,9 +262,7 @@ const VerifyCertificatePage = () => {
   const [verificationId, setVerificationId] = useState(paramId || "");
   const [certificate, setCertificate] = useState(null);
   const [template, setTemplate] = useState(null);
-  // --- THIS IS THE NEW FEATURE ---
   const [company, setCompany] = useState(null);
-  // --- END OF NEW FEATURE ---
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(!!paramId);
   const navigate = useNavigate();
@@ -297,18 +275,14 @@ const VerifyCertificatePage = () => {
     setError("");
     setCertificate(null);
     setTemplate(null);
-    // --- THIS IS THE NEW FEATURE ---
     setCompany(null);
-    // --- END OF NEW FEATURE ---
     setLoading(true);
     navigate(`/verify/${idToVerify}`, { replace: true });
     try {
       const response = await verifyCertificate(idToVerify);
       setCertificate(response.data.certificate);
       setTemplate(response.data.template);
-      // --- THIS IS THE NEW FEATURE ---
       setCompany(response.data.company);
-      // --- END OF NEW FEATURE ---
     } catch (err) {
       setError(
         err.response?.data?.msg ||
@@ -332,9 +306,9 @@ const VerifyCertificatePage = () => {
 
   return (
     <div className="verify-page-wrapper">
-      <VerifyHeader />
+      <PublicHeader />
       <main className="verify-main">
-        <Container className="py-5">
+        <Container>
           <div className="text-center mb-5">
             <h1 className="fw-bold">Credential Verification</h1>
             <p className="lead text-muted">
@@ -401,7 +375,6 @@ const VerifyCertificatePage = () => {
                 </div>
               </Alert>
 
-              {/* --- THIS IS THE NEW FEATURE --- */}
               {company && (
                 <Alert
                   variant="info"
@@ -415,7 +388,6 @@ const VerifyCertificatePage = () => {
                   </div>
                 </Alert>
               )}
-              {/* --- END OF NEW FEATURE --- */}
 
               <div
                 className="shadow-lg"
@@ -434,7 +406,7 @@ const VerifyCertificatePage = () => {
           )}
         </Container>
       </main>
-      <VerifyFooter />
+      <PublicFooter />
     </div>
   );
 };

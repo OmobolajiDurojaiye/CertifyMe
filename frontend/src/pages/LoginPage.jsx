@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
 import { Eye, EyeSlash } from "react-bootstrap-icons";
 import { loginUser } from "../api";
@@ -11,6 +11,8 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const plan = searchParams.get("plan");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,7 +30,19 @@ function LoginPage() {
     try {
       const response = await loginUser(formData);
       localStorage.setItem("token", response.data.access_token);
-      navigate("/dashboard");
+
+      // If a plan was passed from signup, navigate to settings to trigger payment
+      if (plan) {
+        navigate("/dashboard/settings", {
+          state: {
+            defaultTab: "billing",
+            planToPurchase: plan,
+          },
+        });
+      } else {
+        // Otherwise, go to the regular dashboard
+        navigate("/dashboard");
+      }
     } catch (err) {
       setError(err.response?.data?.msg || "Login failed. Please try again.");
     } finally {
@@ -44,12 +58,13 @@ function LoginPage() {
           <p>The smartest way to issue and manage your digital credentials.</p>
         </div>
         <div className="auth-form-container">
-          <img
-            src="/images/certbadge.png"
-            alt="CertifyMe Logo"
-            className="auth-logo mx-auto d-block"
-            style={{ maxHeight: "35px" }}
-          />
+          <Link to="/">
+            <img
+              src="/images/certbadge.png"
+              alt="CertifyMe Logo"
+              className="auth-logo"
+            />
+          </Link>
           <h3>Sign In</h3>
           {error && <Alert variant="danger">{error}</Alert>}
           <Form onSubmit={handleSubmit}>

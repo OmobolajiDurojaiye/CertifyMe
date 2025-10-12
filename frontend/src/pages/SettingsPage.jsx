@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Tab,
   Nav,
@@ -220,6 +220,14 @@ const ApiAccessLock = () => (
   </Card>
 );
 
+const roleOrder = {
+  free: 0,
+  starter: 1,
+  growth: 2,
+  pro: 3,
+  enterprise: 4,
+};
+
 function SettingsPage() {
   const { user, loading: loadingUserContext } = useUser();
   const [localUser, setLocalUser] = useState(null);
@@ -259,15 +267,65 @@ function SettingsPage() {
     }
   };
 
+  const handleUpgrade = useCallback(
+    async (plan) => {
+      setProcessingPlan(plan);
+      try {
+        const res = await apiInitializePayment(plan);
+        setPaystackConfig({
+          ...res.data,
+          currency: res.data.currency || "NGN",
+        });
+      } catch (error) {
+        toast.error(
+          error.response?.data?.msg || "Failed to initialize payment."
+        );
+        setProcessingPlan(null);
+      }
+    },
+    [setProcessingPlan, setPaystackConfig]
+  );
+
   useEffect(() => {
     fetchUser();
-  }, [navigate, location.search]);
+  }, [navigate]);
+
+  useEffect(() => {
+    const planToPurchase = location.state?.planToPurchase;
+    if (planToPurchase && !loading && localUser) {
+      const planOrder = roleOrder[planToPurchase];
+      const currentOrder = roleOrder[localUser.role] ?? 0;
+
+      if (planOrder < currentOrder) {
+        toast.error(
+          `You cannot downgrade. Your current plan is ${localUser.role}.`
+        );
+        navigate(location.pathname, { replace: true, state: {} });
+        return;
+      }
+
+      toast.success(
+        `Redirecting to payment for ${
+          planToPurchase.charAt(0).toUpperCase() + planToPurchase.slice(1)
+        } plan...`
+      );
+      handleUpgrade(planToPurchase);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [
+    location.state,
+    loading,
+    localUser,
+    handleUpgrade,
+    navigate,
+    location.pathname,
+  ]);
 
   useEffect(() => {
     if (paystackConfig) {
       initializePayment({
         onSuccess: () => {
-          toast.success("Payment successful!");
+          toast.success("Payment successful! Refreshing your account...");
           setTimeout(() => window.location.reload(), 1500);
         },
         onClose: () => {
@@ -277,17 +335,6 @@ function SettingsPage() {
       });
     }
   }, [paystackConfig, initializePayment]);
-
-  const handleUpgrade = async (plan) => {
-    setProcessingPlan(plan);
-    try {
-      const res = await apiInitializePayment(plan);
-      setPaystackConfig({ ...res.data, currency: res.data.currency || "NGN" });
-    } catch (error) {
-      toast.error(error.response?.data?.msg || "Failed to initialize payment.");
-      setProcessingPlan(null);
-    }
-  };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -344,7 +391,6 @@ function SettingsPage() {
     try {
       const res = await switchToCompany(newCompanyName);
       toast.success(res.data.msg);
-      // Reload the page to get fresh user context data
       window.location.reload();
     } catch (error) {
       toast.error(

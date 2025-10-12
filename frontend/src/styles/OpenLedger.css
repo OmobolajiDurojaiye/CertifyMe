@@ -16,6 +16,9 @@
 
 .ledger-main {
   flex-grow: 1;
+  /* Add padding to create space for the fixed header and before the footer */
+  padding-top: 120px;
+  padding-bottom: 60px;
 }
 
 .filter-sidebar {
@@ -24,7 +27,7 @@
   padding: 1.5rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   position: sticky;
-  top: 2rem;
+  top: 100px; /* ADJUSTED: To stick below the fixed public header */
 }
 
 .credential-card {
@@ -128,4 +131,18 @@
   padding: 3rem;
   text-align: center;
   min-height: 400px;
+}
+
+/* Pagination Styles */
+.pagination .page-item.active .page-link {
+  background-color: var(--ledger-primary);
+  border-color: var(--ledger-primary);
+}
+
+.pagination .page-link {
+  color: var(--ledger-primary);
+}
+
+.pagination .page-link:hover {
+  color: #1e4ead; /* A darker shade of primary blue */
 }

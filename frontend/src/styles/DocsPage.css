@@ -1,24 +1,16 @@
-/* --- All styles are scoped to the .docs-page-wrapper class --- */
-
-/* General Docs Page Body Styling */
 .docs-page-wrapper {
-  background-color: #ffffff; /* Set a background for the docs page */
+  background-color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
-
-/* 
-  --- REMOVED STYLES ---
-  The following styles have been removed because the PublicHeader component
-  now provides its own header from LandingPage.css:
-  - .docs-page-wrapper .docs-header
-  - .docs-page-wrapper .docs-logo-link
-  - .docs-page-wrapper .docs-header-button
-  - .docs-page-wrapper .docs-header-button:hover
-*/
 
 .docs-page-wrapper .docs-container {
   display: flex;
   max-width: 1400px;
   margin: 0 auto;
+  flex-grow: 1; /* Make the container fill available space */
+  width: 100%;
 }
 
 .docs-page-wrapper .docs-sidebar {
@@ -26,7 +18,7 @@
   flex-shrink: 0;
   padding: 2rem 1rem;
   position: sticky;
-  /* --- FIX: Adjust top position to account for the height of the new fixed header --- */
+  /* Adjust top position to account for the height of the new fixed header */
   top: 80px;
   height: calc(100vh - 80px);
   overflow-y: auto;
@@ -54,7 +46,8 @@
 
 .docs-page-wrapper .docs-content {
   flex-grow: 1;
-  padding: 2.5rem 3rem;
+  /* --- FIX: Add space for the fixed header (~80px) plus original padding --- */
+  padding: calc(80px + 2.5rem) 3rem 2.5rem;
   line-height: 1.7;
 }
 
@@ -257,7 +250,8 @@
   }
 
   .docs-page-wrapper .docs-content {
-    padding: 1.5rem; /* Reduce padding on mobile */
+    /* --- FIX: Adjust mobile padding for the fixed header too --- */
+    padding: calc(80px + 1.5rem) 1.5rem 1.5rem;
   }
 
   .docs-page-wrapper .docs-content h1 {

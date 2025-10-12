@@ -5,66 +5,9 @@
   background-color: #f8f9fa; /* A clean, light gray background */
 }
 
-.verify-header {
-  padding: 1rem;
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.verify-header .navbar-brand {
-  color: #111827 !important;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-}
-
 .verify-main {
   flex-grow: 1;
-}
-
-.verify-footer {
-  padding: 1.5rem;
-  text-align: center;
-  font-size: 0.9rem;
-  color: #6b7280;
-  background-color: white;
-  border-top: 1px solid #e5e7eb;
-}
-
-/* ---  STYLES FOR OPEN LEDGER PAGE --- */
-
-.search-results-container {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.search-result-item {
-  transition: all 0.2s ease-in-out;
-}
-
-.search-result-item:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08) !important;
-  border-color: var(--bs-primary) !important;
-}
-
-.border-dashed {
-  border: 2px dashed #e0e0e0;
-  background-color: #f8f9fa;
-}
-
-.pagination .page-item.active .page-link {
-  background-color: #2563eb;
-  border-color: #2563eb;
-}
-
-.pagination .page-link {
-  color: #2563eb;
-}
-
-.pagination .page-link:hover {
-  color: #1e4ead;
+  /* Add padding to create space for the fixed header and before the footer */
+  padding-top: 120px;
+  padding-bottom: 60px;
 }

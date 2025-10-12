@@ -21,28 +21,10 @@ import {
   X,
 } from "lucide-react";
 import DatePicker from "react-datepicker";
+import PublicHeader from "../components/PublicHeader";
+import PublicFooter from "../components/PublicFooter";
 import "react-datepicker/dist/react-datepicker.css";
 import "../styles/OpenLedger.css";
-
-// Header and Footer components (can be in a separate file if reused)
-const LedgerHeader = () => (
-  <header className="py-3 border-bottom bg-white">
-    <Container>
-      <Link to="/" className="navbar-brand fs-4 fw-bold">
-        CertifyMe
-      </Link>
-    </Container>
-  </header>
-);
-const LedgerFooter = () => (
-  <footer className="py-4 mt-auto border-top">
-    <Container>
-      <small>
-        &copy; {new Date().getFullYear()} CertifyMe. All rights reserved.
-      </small>
-    </Container>
-  </footer>
-);
 
 // --- Reusable Components for this page ---
 
@@ -119,7 +101,7 @@ const OpenLedgerPage = () => {
       ? new Date(searchParams.get("start_date"))
       : null,
     endDate: searchParams.get("end_date")
-      ? new Date(searchParams.get("end_date"))
+      ? new Date(search_params.get("end_date"))
       : null,
     sort_by: searchParams.get("sort_by") || "issue_date",
     sort_order: searchParams.get("sort_order") || "desc",
@@ -226,8 +208,8 @@ const OpenLedgerPage = () => {
 
   return (
     <div className="ledger-page-wrapper">
-      <LedgerHeader />
-      <main className="ledger-main py-5">
+      <PublicHeader />
+      <main className="ledger-main">
         <Container>
           <Row>
             <Col lg={3}>
@@ -355,7 +337,7 @@ const OpenLedgerPage = () => {
           </Row>
         </Container>
       </main>
-      <LedgerFooter />
+      <PublicFooter />
     </div>
   );
 };

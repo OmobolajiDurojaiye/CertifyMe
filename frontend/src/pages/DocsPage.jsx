@@ -1,12 +1,11 @@
-import React, { useState } from "react"; // --- NEW: Import useState ---
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
 import CodeBlock from "../components/CodeBlock";
 import "../styles/DocsPage.css";
 import { Toaster } from "react-hot-toast";
 import PublicHeader from "../components/PublicHeader";
+import PublicFooter from "../components/PublicFooter"; // Import the footer
 
 function DocsPage() {
-  // --- NEW: State to manage the mobile sidebar's visibility ---
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -17,7 +16,6 @@ function DocsPage() {
     setIsSidebarOpen(false);
   };
 
-  // ... (all the const variables like curlExample, jsExample remain the same)
   const curlExample = `curl -X POST 'https://certifyme.pythonanywhere.com/api/v1/certificates' \\
 -H 'Content-Type: application/json' \\
 -H 'X-API-Key: your_secret_api_key_here' \\
@@ -113,23 +111,19 @@ if __name__ == "__main__":
     <div className="docs-page-wrapper">
       <Toaster position="top-center" />
 
-      {/* --- NEW: Pass the props to show and handle the mobile menu button --- */}
       <PublicHeader
         theme="light"
         showMenuButton={true}
         onMenuClick={toggleSidebar}
       />
 
-      {/* --- NEW: Add an overlay to dim the background when the sidebar is open --- */}
       {isSidebarOpen && (
         <div className="docs-overlay" onClick={closeSidebar}></div>
       )}
 
       <div className="docs-container">
-        {/* --- NEW: Dynamically add 'mobile-open' class to the sidebar --- */}
         <aside className={`docs-sidebar ${isSidebarOpen ? "mobile-open" : ""}`}>
           <nav>
-            {/* --- NEW: Add onClick handler to close sidebar after navigation --- */}
             <ul onClick={closeSidebar}>
               <li>
                 <a href="#getting-started">Getting Started</a>
@@ -152,7 +146,6 @@ if __name__ == "__main__":
           </nav>
         </aside>
         <main className="docs-content">
-          {/* ... (rest of the page content remains exactly the same) ... */}
           <section id="getting-started">
             <h1>CertifyMe API Documentation (v1)</h1>
             <p>
@@ -394,6 +387,7 @@ if __name__ == "__main__":
           </section>
         </main>
       </div>
+      <PublicFooter />
     </div>
   );
 }

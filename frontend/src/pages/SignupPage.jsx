@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
 import { Eye, EyeSlash } from "react-bootstrap-icons";
 import { signupUser } from "../api";
@@ -17,6 +17,8 @@ function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const plan = searchParams.get("plan");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -45,7 +47,9 @@ function SignupPage() {
 
     try {
       await signupUser(payload);
-      navigate("/login");
+      // Redirect to login, carrying the plan param along
+      const loginUrl = plan ? `/login?plan=${plan}` : "/login";
+      navigate(loginUrl);
     } catch (err) {
       setError(err.response?.data?.msg || "Signup failed. Please try again.");
     } finally {
@@ -64,37 +68,45 @@ function SignupPage() {
           </p>
         </div>
         <div className="auth-form-container">
-          <img
-            src="/images/certbadge.png"
-            alt="CertifyMe Logo"
-            className="auth-logo mx-auto d-block"
-            style={{ maxHeight: "35px" }}
-          />
+          <Link to="/">
+            <img
+              src="/images/certbadge.png"
+              alt="CertifyMe Logo"
+              className="auth-logo"
+            />
+          </Link>
           <h3>Create an Account</h3>
           {error && <Alert variant="danger">{error}</Alert>}
+          {plan && (
+            <Alert variant="info">
+              You've selected the{" "}
+              <strong>{plan.charAt(0).toUpperCase() + plan.slice(1)}</strong>{" "}
+              plan. Complete your registration to proceed to payment.
+            </Alert>
+          )}
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Account Type</Form.Label>
-              <div className="d-flex">
-                <Form.Check
+              <div className="account-type-toggle">
+                <input
                   type="radio"
-                  label="Individual"
                   name="account_type"
                   id="individual"
                   value="individual"
                   checked={formData.account_type === "individual"}
                   onChange={handleChange}
-                  className="me-3"
                 />
-                <Form.Check
+                <label htmlFor="individual">Individual</label>
+
+                <input
                   type="radio"
-                  label="Company / Institution"
                   name="account_type"
                   id="company"
                   value="company"
                   checked={formData.account_type === "company"}
                   onChange={handleChange}
                 />
+                <label htmlFor="company">Company</label>
               </div>
             </Form.Group>
 

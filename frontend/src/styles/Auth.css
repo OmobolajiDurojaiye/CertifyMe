@@ -10,7 +10,7 @@
 
 .auth-wrapper {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 4fr 5fr;
   max-width: 960px;
   width: 100%;
   margin: 2rem;
@@ -34,14 +34,20 @@
 .auth-panel {
   padding: 3rem 2.5rem;
   color: white;
-  background-image: linear-gradient(145deg, #14b8a6 0%, #2563eb 100%);
+  background-color: #111827;
+  background-image: radial-gradient(
+      circle at 10% 20%,
+      rgba(59, 130, 246, 0.3),
+      transparent 40%
+    ),
+    radial-gradient(circle at 90% 80%, rgba(20, 184, 166, 0.2), transparent 40%);
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
 .auth-panel h2 {
-  font-size: 2.5rem;
+  font-size: 2.25rem;
   font-weight: 700;
   color: white;
   line-height: 1.2;
@@ -64,19 +70,26 @@
 .auth-logo {
   max-height: 35px;
   margin-bottom: 2rem;
+  align-self: flex-start;
 }
 
 .auth-form-container h3 {
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 2rem;
+  font-size: 1.75rem;
+}
+
+.auth-form-container .form-label {
+  font-weight: 500;
+  color: #475569;
 }
 
 .auth-form-container .form-control {
   background-color: #f8f9fc;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem !important;
-  padding: 1rem !important;
+  padding: 0.9rem 1rem !important;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -90,15 +103,17 @@
   background-color: #2563eb;
   border: none;
   color: white;
-  font-weight: bold;
-  padding: 1rem;
+  font-weight: 600;
+  padding: 0.9rem;
   border-radius: 0.75rem;
   transition: all 0.3s ease;
+  font-size: 1rem;
 }
 
 .btn-auth:hover {
   background-color: #1e40af;
   transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
 }
 
 .auth-switch-link {
@@ -125,19 +140,42 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%; /* Match input height */
 }
 
-.password-toggle-btn:hover {
-  color: #2563eb;
-}
-
-/* Ensure the password input has padding to avoid overlap with the icon */
 .auth-form-container .form-control.password-input {
-  padding-right: 3rem !important; /* Space for the icon */
+  padding-right: 3rem !important;
 }
 
-/* Responsive adjustments for smaller screens */
+/* Custom Radio Toggle for Signup Page */
+.account-type-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.account-type-toggle input[type="radio"] {
+  display: none;
+}
+
+.account-type-toggle label {
+  text-align: center;
+  padding: 0.75rem;
+  font-weight: 500;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  background-color: #f8f9fc;
+}
+
+.account-type-toggle input[type="radio"]:checked + label {
+  background-color: #2563eb;
+  color: white;
+  font-weight: 600;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
   .auth-wrapper {
     grid-template-columns: 1fr;
@@ -152,43 +190,5 @@
   .auth-logo {
     max-height: 30px;
     margin-bottom: 1.5rem;
-  }
-  .auth-form-container h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  .form-control {
-    padding: 0.75rem !important;
-    font-size: 0.95rem;
-  }
-  .form-control.password-input {
-    padding-right: 2.5rem !important; /* Adjusted for mobile */
-  }
-  .btn-auth {
-    padding: 0.75rem;
-    font-size: 0.95rem;
-  }
-  .password-toggle-btn {
-    right: 0.75rem;
-    padding: 0.4rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .auth-form-container {
-    padding: 1.5rem 1rem;
-  }
-  .auth-logo {
-    max-height: 25px;
-  }
-  .auth-form-container h3 {
-    font-size: 1.25rem;
-  }
-  .form-control.password-input {
-    padding-right: 2.25rem !important;
-  }
-  .password-toggle-btn {
-    right: 0.5rem;
-    padding: 0.3rem;
   }
 }
