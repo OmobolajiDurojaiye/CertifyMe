@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
-
+import { THEME } from "../theme";
 // --- Sub-components for Landing Page Sections ---
 
 const Partners = () => (
@@ -232,16 +232,13 @@ function LandingPage() {
       <main className="chrono-main-content">
         <div className="hero-content">
           <div className="hero-graphic">
-            <img
-              src="/images/hero-graphic.png"
-              alt="Certificate Seal and Shield"
-            />
+            <img src={THEME.APP_LOGO} alt={THEME.APP_NAME} />
           </div>
           <h1 className="hero-headline">
             Generate Certificates in Seconds — Fast, Easy & Professional.
           </h1>
           <p className="hero-subheadline">
-            CertifyMe lets you create branded templates, upload a CSV of
+            {THEME.APP_NAME} lets you create branded templates, upload a CSV of
             recipients, auto-generate secure PDFs, and deliver them in bulk—all
             without fakeable docs or bloated tools. Start issuing in minutes.
           </p>
@@ -250,11 +247,11 @@ function LandingPage() {
           </Link>
         </div>
 
-        <Partners />
-        <Stats />
-        <Testimonials />
+        {/* <Partners /> */}
+        {/* <Stats /> */}
+        {/* <Testimonials /> */}
 
-        <section id="pricing" className="pricing-section">
+        {/*<section id="pricing" className="pricing-section">
           <h2 className="section-title">Flexible Plans for Every Scale</h2>
           <p className="section-subtitle">
             Choose a plan that fits your needs. No subscriptions, just
@@ -367,9 +364,9 @@ function LandingPage() {
               </Link>
             </div>
           </div>
-        </section>
+        </section>*/}
 
-        <ApiDocsCTA />
+        {/* <ApiDocsCTA /> */}
       </main>
 
       <PublicFooter />

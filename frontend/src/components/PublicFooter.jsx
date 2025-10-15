@@ -1,7 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Twitter, Linkedin, Github } from "lucide-react";
-import "../styles/LandingPage.css"; // Styles are co-located for simplicity
+import "../styles/LandingPage.css";
+import { THEME } from "../theme";
 
 const PublicFooter = () => {
   return (
@@ -10,11 +11,11 @@ const PublicFooter = () => {
         <div className="footer-column footer-brand">
           <div className="footer-logo">
             <img
-              src="/images/certbadge.png"
-              alt="CertifyMe Logo"
+              src={THEME.APP_LOGO}
+              alt={THEME.APP_NAME}
               className="logo-icon"
             />
-            <span className="logo-text">CertifyMe</span>
+            <span className="logo-text">{THEME.APP_NAME}</span>
           </div>
           <p className="footer-tagline">
             Secure, verifiable credentials made simple.
@@ -97,7 +98,9 @@ const PublicFooter = () => {
       </div>
       <div className="footer-bottom">
         <small>
-          &copy; {new Date().getFullYear()} CertifyMe. All rights reserved.
+          &copy; {new Date().getFullYear()} {THEME.APP_NAME} under exclusive
+          license with <a href="https://www.certifyme.com.ng/">CertifyMe</a>.
+          All rights reserved.
         </small>
       </div>
     </footer>

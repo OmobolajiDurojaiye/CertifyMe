@@ -4,6 +4,7 @@ import { Form, Button, Alert, Spinner } from "react-bootstrap";
 import { Eye, EyeSlash } from "react-bootstrap-icons";
 import { loginUser } from "../api";
 import "../styles/Auth.css";
+import { THEME } from "../theme";
 
 function LoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -54,14 +55,14 @@ function LoginPage() {
     <div className="auth-container">
       <div className="auth-wrapper">
         <div className="auth-panel">
-          <h2>Welcome Back to CertifyMe</h2>
+          <h2>Welcome Back to {THEME.APP_NAME}</h2>
           <p>The smartest way to issue and manage your digital credentials.</p>
         </div>
         <div className="auth-form-container">
           <Link to="/">
             <img
-              src="/images/certbadge.png"
-              alt="CertifyMe Logo"
+              src={THEME.APP_LOGO}
+              alt={THEME.APP_NAME}
               className="auth-logo"
             />
           </Link>

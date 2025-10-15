@@ -5,7 +5,8 @@ import { Outlet } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import BottomNav from "../components/BottomNav";
 import useWindowSize from "../hooks/useWindowSize";
-import { UserProvider } from "../context/UserContext"; // <-- MAKE SURE THIS IS IMPORTED
+import { UserProvider } from "../context/UserContext";
+import { THEME } from "../theme";
 
 function DashboardLayout() {
   const { width } = useWindowSize();

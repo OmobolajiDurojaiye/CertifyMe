@@ -4,6 +4,7 @@ import { Form, Button, Alert, Spinner } from "react-bootstrap";
 import { Eye, EyeSlash } from "react-bootstrap-icons";
 import { signupUser } from "../api";
 import "../styles/Auth.css";
+import { THEME } from "../theme";
 
 function SignupPage() {
   const [formData, setFormData] = useState({
@@ -70,8 +71,8 @@ function SignupPage() {
         <div className="auth-form-container">
           <Link to="/">
             <img
-              src="/images/certbadge.png"
-              alt="CertifyMe Logo"
+              src={THEME.APP_LOGO}
+              alt={THEME.APP_NAME}
               className="auth-logo"
             />
           </Link>

@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Menu } from "lucide-react";
 import "../styles/LandingPage.css";
+import { THEME } from "../theme";
 
 const PublicHeader = ({
   theme = "dark",
@@ -30,12 +31,12 @@ const PublicHeader = ({
           }}
         >
           <img
-            src="/images/certbadge.png"
-            alt="CertifyMe Logo"
+            src={THEME.APP_LOGO}
+            alt={THEME.APP_NAME}
             height="28"
             className="logo-icon"
           />
-          <span className="logo-text">CertifyMe</span>
+          <span className="logo-text">{THEME.APP_NAME}</span>
         </Link>
       </div>
       <div className="nav-right">
