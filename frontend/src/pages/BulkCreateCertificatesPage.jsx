@@ -33,7 +33,9 @@ const CertificatePreview = ({ template, formData }) => {
   if (!formData || !formData.recipient_name) {
     return (
       <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3 p-4">
-        <p className="text-muted mb-0">Upload a CSV to see a preview.</p>
+        <p className="text-muted mb-0">
+          Upload a CSV/Excel file to see a preview.
+        </p>
       </div>
     );
   }
@@ -323,37 +325,39 @@ const BulkCreateCertificatesPage = () => {
         complete: (result) => {
           if (result.errors.length > 0) {
             setError(
-              "There was an error parsing the CSV file. Please ensure it's correctly formatted."
+              "There was an error parsing the file for preview. Please ensure it's correctly formatted."
             );
             setCsvData([]);
             return;
           }
           if (result.data.length === 0) {
-            setError(
-              "CSV file appears to be empty or headers could not be read."
-            );
+            setError("File appears to be empty or headers could not be read.");
             setCsvData([]);
             return;
           }
+          // --- THIS IS THE FIX ---
           const requiredHeaders = [
             "recipient_name",
-            "recipient_email",
             "course_title",
-            "issuer_name",
             "issue_date",
           ];
-          const headers = Object.keys(result.data[0]).map((h) =>
+          const fileHeaders = Object.keys(result.data[0]).map((h) =>
             h.toLowerCase().trim().replace(/\s+/g, "_")
           );
-          if (!requiredHeaders.every((h) => headers.includes(h))) {
-            setError(`CSV must include columns: ${requiredHeaders.join(", ")}`);
+          const missingHeaders = requiredHeaders.filter(
+            (h) => !fileHeaders.includes(h)
+          );
+
+          if (missingHeaders.length > 0) {
+            setError(`File must include columns: ${missingHeaders.join(", ")}`);
             setCsvData([]);
             return;
           }
+          // --- END OF FIX ---
           setCsvData(result.data);
         },
         error: () => {
-          setError("Failed to parse CSV file.");
+          setError("Failed to parse file for preview.");
           setCsvData([]);
         },
       });
@@ -380,9 +384,7 @@ const BulkCreateCertificatesPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedTemplateId || !csvFile || !selectedGroupId) {
-      setError(
-        "Please select a template, a group, and upload a valid CSV file."
-      );
+      setError("Please select a template, a group, and upload a valid file.");
       return;
     }
     setSubmitting(true);
@@ -395,11 +397,10 @@ const BulkCreateCertificatesPage = () => {
     try {
       const response = await bulkCreateCertificates(formData);
       setSuccess(`${response.data.msg}. Redirecting to dashboard...`);
+      toast.success(response.data.msg);
       setTimeout(() => navigate("/dashboard"), 3000);
     } catch (err) {
-      // --- THIS IS THE FIX ---
       if (err.response && err.response.status === 207) {
-        // Handle Multi-Status response with detailed errors
         const { msg, errors } = err.response.data;
         const errorDetails = errors
           .map((e) => `Row ${e.row}: ${e.msg}`)
@@ -408,17 +409,15 @@ const BulkCreateCertificatesPage = () => {
           <>
             <strong>{msg}</strong>
             <br />
-            Please check the following issues in your CSV file:
+            Please check the following issues in your file:
             <pre className="mt-2 bg-light p-2 rounded small">
               {errorDetails}
             </pre>
           </>
         );
       } else {
-        // Handle other types of errors
         setError(err.response?.data?.msg || "An unexpected error occurred.");
       }
-      // --- END OF FIX ---
     } finally {
       setSubmitting(false);
     }
@@ -524,18 +523,21 @@ const BulkCreateCertificatesPage = () => {
             </Form.Group>
             <Form.Group>
               <Form.Label className="font-semibold">
-                3. Upload CSV File
+                3. Upload Spreadsheet File
               </Form.Label>
+              {/* --- THIS IS THE FIX --- */}
               <Form.Control
                 type="file"
-                accept=".csv"
+                accept=".csv,.xlsx,.xls,.ods"
                 onChange={handleFileChange}
                 required
               />
               <Form.Text>
-                Columns must include: recipient_name, recipient_email,
-                course_title, issuer_name, issue_date
+                Required columns: recipient_name, course_title, issue_date.
+                <br />
+                Optional: recipient_email, issuer_name, signature.
               </Form.Text>
+              {/* --- END OF FIX --- */}
               <div className="mt-2">
                 <Button
                   variant="link"

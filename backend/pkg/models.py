@@ -114,10 +114,7 @@ class Template(db.Model):
     })
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # --- THIS IS THE FIX ---
-    # If a Template is deleted, all Certificates using it will also be deleted.
     certificates = db.relationship('Certificate', backref='template', lazy=True, cascade="all, delete-orphan")
-    # --- END OF FIX ---
 
 class Group(db.Model):
     __tablename__ = 'groups'
@@ -131,15 +128,13 @@ class Certificate(db.Model):
     __tablename__ = 'certificates'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
-    # --- THIS IS THE FIX ---
-    # The ForeignKey needs ondelete='CASCADE' at the database level for this to be robust.
-    # The relationship on the Template side will handle the SQLAlchemy ORM part.
     template_id = db.Column(db.Integer, db.ForeignKey('templates.id', ondelete='CASCADE'), nullable=False)
-    # --- END OF FIX ---
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL'), nullable=True)
     recipient_name = db.Column(db.String(150), nullable=False)
-    recipient_email = db.Column(db.String(120), nullable=False)
+    # --- THIS IS THE FIX ---
+    recipient_email = db.Column(db.String(120), nullable=True) # Changed from nullable=False
+    # --- END OF FIX ---
     course_title = db.Column(db.String(150), nullable=False)
     issuer_name = db.Column(db.String(150), nullable=True) 
     issue_date = db.Column(db.Date, nullable=False)

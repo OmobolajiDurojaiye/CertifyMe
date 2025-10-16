@@ -15,6 +15,7 @@ from flask_mail import Message
 import uuid
 from ..pdf_templates import get_classic_pdf_template, get_modern_pdf_template
 import re
+import pandas as pd
 
 certificate_bp = Blueprint('certificates', __name__)
 
@@ -287,7 +288,9 @@ def _generate_certificate_pdf_in_memory(certificate):
 
 
 def allowed_file(filename):
-    return filename.lower().endswith('.csv')
+    """Checks if the uploaded file is of an allowed spreadsheet type."""
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'csv', 'xlsx', 'xls', 'ods'}
 
 
 def _normalize_email(email):
@@ -493,8 +496,9 @@ def create_certificate():
     user = User.query.get_or_404(user_id)
     data = request.get_json()
 
-    required_fields = ['template_id', 'recipient_name', 'recipient_email', 'course_title', 'issuer_name', 'issue_date']
-    if not all(field in data for field in required_fields):
+    # recipient_email is now optional
+    required_fields = ['template_id', 'recipient_name', 'course_title', 'issuer_name', 'issue_date']
+    if not all(field in data and data[field] for field in required_fields):
         return jsonify({"msg": "Missing required fields"}), 400
 
     template = Template.query.get(data['template_id'])
@@ -507,6 +511,10 @@ def create_certificate():
     try:
         issue_date = parse_flexible_date(data['issue_date'])
         extra_fields = data.get('extra_fields', {})
+        
+        recipient_email = data.get('recipient_email')
+        if recipient_email:
+            recipient_email = _normalize_email(recipient_email)
 
         certificate = Certificate(
             user_id=user_id,
@@ -514,7 +522,7 @@ def create_certificate():
             template_id=template.id,
             group_id=data.get('group_id'),
             recipient_name=data['recipient_name'],
-            recipient_email=_normalize_email(data['recipient_email']),
+            recipient_email=recipient_email, # Can be None
             course_title=data['course_title'],
             issuer_name=data['issuer_name'],
             issue_date=issue_date,
@@ -526,46 +534,38 @@ def create_certificate():
         db.session.add(certificate)
         db.session.commit()
 
-        try:
-            pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
-            msg = _create_email_message(certificate, pdf_buffer)
-            mail.send(msg)
-            certificate.sent_at = datetime.utcnow()
-            db.session.commit()
+        email_sent = False
+        email_error = None
 
-            # ✅ Send issuer confirmation email
-            issuer_summary = [{
-                "recipient_name": certificate.recipient_name,
-                "course_title": certificate.course_title,
-                "verification_id": certificate.verification_id
-            }]
-            summary_html = _create_issuer_summary_email(
-                user.name,
-                1,
-                issuer_summary,
-                action_type="created and sent"
-            )
-            _send_issuer_notification_email(user, "Certificate Created & Sent — CertifyMe", summary_html)
+        if certificate.recipient_email:
+            try:
+                pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
+                msg = _create_email_message(certificate, pdf_buffer)
+                mail.send(msg)
+                certificate.sent_at = datetime.utcnow()
+                db.session.commit()
+                email_sent = True
+                
+                issuer_summary = [{"recipient_name": certificate.recipient_name, "course_title": certificate.course_title, "verification_id": certificate.verification_id}]
+                summary_html = _create_issuer_summary_email(user.name, 1, issuer_summary, action_type="created and sent")
+                _send_issuer_notification_email(user, "Certificate Created & Sent — CertifyMe", summary_html)
+                current_app.logger.info(f"Certificate {certificate.id} created, emailed to {certificate.recipient_email}, issuer notified.")
+            except Exception as e:
+                email_error = str(e)
+                current_app.logger.error(f"Email sending error for cert {certificate.id}: {e}")
+        
+        if email_error:
+            return jsonify({"msg": "Certificate created, but failed to send email.", "error": email_error, "certificate_id": certificate.id, "verification_id": certificate.verification_id}), 201
 
-            current_app.logger.info(
-                f"Certificate {certificate.id} created, emailed to {certificate.recipient_email}, issuer notified."
-            )
-        except Exception as e:
-            current_app.logger.error(f"Email sending error for cert {certificate.id}: {e}")
-            db.session.rollback()
-            return jsonify({"msg": "Certificate created but failed to send email"}), 201
+        response_msg = "Certificate created" + (" and emailed successfully" if email_sent else " successfully (no recipient email provided)")
+        return jsonify({"msg": response_msg, "certificate_id": certificate.id, "verification_id": certificate.verification_id}), 201
 
-        return jsonify({
-            "msg": "Certificate created and emailed",
-            "certificate_id": certificate.id,
-            "verification_id": certificate.verification_id
-        }), 201
     except ValueError as e:
         return jsonify({"msg": f"Invalid date format: {str(e)}"}), 400
     except Exception as e:
         current_app.logger.error(f"Error creating certificate: {e}")
+        db.session.rollback()
         return jsonify({"msg": "Failed to create certificate"}), 500
-
 
 
 @certificate_bp.route('/', methods=['GET'])
@@ -614,16 +614,15 @@ def get_certificate(cert_id):
 @jwt_required()
 def bulk_create_certificates():
     """
-    Smart Bulk Create v2 + Issuer notification
+    Smart Bulk Create: Supports CSV, XLSX, XLS. Optional email/signature.
     """
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
-    if 'file' not in request.files:
-        return jsonify({"msg": "No file part"}), 400
+    if 'file' not in request.files: return jsonify({"msg": "No file part"}), 400
 
     file = request.files['file']
     if not file or not allowed_file(file.filename):
-        return jsonify({"msg": "Invalid file type, must be CSV"}), 400
+        return jsonify({"msg": "Invalid file type. Please use CSV, XLSX, or XLS."}), 400
 
     template_id = request.form.get('template_id')
     group_id = request.form.get('group_id')
@@ -635,117 +634,66 @@ def bulk_create_certificates():
         return jsonify({"msg": "Template not found or permission denied"}), 404
 
     try:
-        raw = file.read()
         try:
-            csv_text = raw.decode('utf-8-sig')
-        except Exception:
-            csv_text = raw.decode('latin-1')
+            df = pd.read_excel(file) if file.filename.lower().endswith(('.xlsx', '.xls', '.ods')) else pd.read_csv(file)
+        except Exception as e:
+            current_app.logger.error(f"Pandas parsing error: {e}")
+            return jsonify({"msg": f"Error reading file. Please ensure it is a valid CSV or Excel file."}), 400
 
-        sample = csv_text[:4096]
-        dialect = _detect_csv_dialect(sample)
-        reader = csv.DictReader(StringIO(csv_text), dialect=dialect)
+        if df.empty: return jsonify({"msg": "The uploaded file is empty or unreadable."}), 400
 
-        if not reader.fieldnames:
-            return jsonify({"msg": "CSV headers missing or unreadable"}), 400
+        df.columns = [str(c).strip().lower().replace(' ', '_') for c in df.columns]
+        df = df.rename(columns=_HEADER_SYNONYMS)
 
-        # Normalize and map headers
-        headers = []
-        for h in reader.fieldnames:
-            if not h or not str(h).strip():
-                continue
-            normalized = str(h).strip().lower().replace(' ', '_')
-            mapped = _HEADER_SYNONYMS.get(normalized, normalized)
-            headers.append(mapped)
-        reader.fieldnames = headers
-
-        required_headers = {'recipient_name', 'recipient_email', 'course_title', 'issue_date'}
-        missing = required_headers - set(headers)
+        required_headers = {'recipient_name', 'course_title', 'issue_date'}
+        missing = required_headers - set(df.columns)
         if missing:
-            return jsonify({"msg": f"CSV missing required columns: {', '.join(missing)}"}), 400
+            return jsonify({"msg": f"File missing required columns: {', '.join(missing)}"}), 400
 
-        created_count = 0
-        certs_to_add = []
-        errors = []
-        quota_left = user.cert_quota
+        certs_to_add, errors, quota_left = [], [], user.cert_quota
+        df = df.where(pd.notnull(df), None)
 
-        for idx, row_raw in enumerate(reader, start=2):
-            row = {k.strip().lower().replace(' ', '_'): (v.strip() if isinstance(v, str) else v)
-                   for k, v in row_raw.items() if k}
-
-            if not any(row.values()):
-                continue
-
+        for idx, row in df.iterrows():
+            row_num = idx + 2 
+            if row.isnull().all(): continue
             if quota_left <= 0:
-                errors.append({"row": idx, "msg": "Skipped — quota exhausted"})
+                errors.append({"row": row_num, "msg": "Skipped — quota exhausted"})
                 continue
-
             try:
-                recipient_name = row.get('recipient_name') or ""
-                recipient_email = _normalize_email(row.get('recipient_email') or "")
-                course_title = row.get('course_title') or ""
-                issue_date_raw = row.get('issue_date') or ""
-                issuer_name = row.get('issuer_name') or user.name
+                recipient_name, course_title, issue_date_raw = row.get('recipient_name'), row.get('course_title'), row.get('issue_date')
+                if not all([recipient_name, course_title, issue_date_raw]):
+                    errors.append({"row": row_num, "msg": "Missing required data (recipient_name, course_title, or issue_date)."})
+                    continue
 
-                if not all([recipient_name, recipient_email, course_title, issue_date_raw]):
-                    raise ValueError("Missing required fields")
-
-                issue_date = parse_flexible_date(issue_date_raw)
-                signature = row.get('signature') or issuer_name
-
+                recipient_email = _normalize_email(row.get('recipient_email')) if row.get('recipient_email') else None
                 cert = Certificate(
-                    user_id=user_id,
-                    company_id=user.company_id,
-                    template_id=template.id,
-                    group_id=group_id,
-                    recipient_name=recipient_name,
-                    recipient_email=recipient_email,
-                    course_title=course_title,
-                    issuer_name=issuer_name,
-                    issue_date=issue_date,
-                    signature=signature,
+                    user_id=user_id, company_id=user.company_id, template_id=template.id, group_id=group_id,
+                    recipient_name=str(recipient_name), recipient_email=recipient_email,
+                    course_title=str(course_title), issuer_name=str(row.get('issuer_name') or user.name),
+                    issue_date=parse_flexible_date(issue_date_raw), signature=str(row.get('signature')) if row.get('signature') else None,
                     verification_id=str(uuid.uuid4())
                 )
-
                 certs_to_add.append(cert)
-                created_count += 1
                 quota_left -= 1
-
-            except Exception as e:
-                errors.append({"row": idx, "msg": str(e)})
+            except ValueError as e: errors.append({"row": row_num, "msg": f"Date error: {e}"})
+            except Exception as e: errors.append({"row": row_num, "msg": str(e)})
 
         if certs_to_add:
             db.session.bulk_save_objects(certs_to_add)
             user.cert_quota = quota_left
             db.session.commit()
-
-            # ✅ Send issuer confirmation email
-            created_list = [{
-                "recipient_name": c.recipient_name,
-                "course_title": c.course_title,
-                "verification_id": c.verification_id
-            } for c in certs_to_add]
-            summary_html = _create_issuer_summary_email(
-                user.name,
-                len(created_list),
-                created_list,
-                action_type="created"
-            )
+            created_list = [{"recipient_name": c.recipient_name, "course_title": c.course_title, "verification_id": c.verification_id} for c in certs_to_add]
+            summary_html = _create_issuer_summary_email(user.name, len(created_list), created_list, action_type="created")
             _send_issuer_notification_email(user, "Certificates Created — CertifyMe", summary_html)
 
-        summary = {
-            "msg": "Bulk processing completed",
-            "created": created_count,
-            "errors_count": len(errors),
-            "errors": errors
-        }
-
-        status_code = 201 if created_count and not errors else 207 if errors else 200
+        summary = {"msg": "Bulk processing completed", "created": len(certs_to_add), "errors_count": len(errors), "errors": errors}
+        status_code = 201 if certs_to_add and not errors else 207 if errors else 200
         return jsonify(summary), status_code
 
     except Exception as e:
         current_app.logger.error(f"Bulk create error: {e}")
         db.session.rollback()
-        return jsonify({"msg": f"Bulk create failed: {str(e)}"}), 500
+        return jsonify({"msg": f"An unexpected error occurred during bulk creation."}), 500
 
 
 @certificate_bp.route('/bulk-template', methods=['GET'])
@@ -755,6 +703,8 @@ def download_bulk_template():
     writer = csv.writer(output)
     headers = ['recipient_name', 'recipient_email', 'course_title', 'issuer_name', 'issue_date', 'signature']
     writer.writerow(headers)
+    writer.writerow(['Jane Doe', 'jane.doe@example.com', 'Introduction to Python', 'CertifyMe University', '2024-10-22', 'Dr. Smith'])
+    writer.writerow(['John Smith', '', 'Advanced Web Development', 'CertifyMe University', '2024-11-15', ''])
     output.seek(0)
     return Response(output, mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=certifyme_bulk_template.csv"})
 
@@ -764,19 +714,17 @@ def download_bulk_template():
 def send_certificate_email(cert_id):
     user_id = int(get_jwt_identity())
     certificate = Certificate.query.get_or_404(cert_id)
-    if certificate.user_id != user_id:
-        return jsonify({"msg": "Permission denied"}), 403
-
+    if certificate.user_id != user_id: return jsonify({"msg": "Permission denied"}), 403
+    if not certificate.recipient_email: return jsonify({"msg": "No recipient email address on file for this certificate."}), 400
     try:
         pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
         msg = _create_email_message(certificate, pdf_buffer)
         mail.send(msg)
         certificate.sent_at = datetime.utcnow()
         db.session.commit()
-        current_app.logger.info(f"Certificate {certificate.id} emailed to {certificate.recipient_email}")
         return jsonify({"msg": "Certificate emailed successfully"}), 200
     except Exception as e:
-        current_app.logger.error(f"Email sending error for cert {certificate.id}: {e}")
+        current_app.logger.error(f"Email sending error for cert {cert_id}: {e}")
         return jsonify({"msg": "Failed to send email"}), 500
 
 
@@ -787,50 +735,26 @@ def send_bulk_emails():
     user = User.query.get_or_404(user_id)
     data = request.get_json()
     certificate_ids = data.get('certificate_ids', [])
-    if not certificate_ids:
-        return jsonify({"msg": "No certificate IDs provided"}), 400
-
+    if not certificate_ids: return jsonify({"msg": "No certificate IDs provided"}), 400
     sent, errors = 0, []
-    for cert_id in certificate_ids:
-        certificate = Certificate.query.get(cert_id)
-        if not certificate or certificate.user_id != user_id:
-            errors.append({"certificate_id": cert_id, "msg": "Not found or permission denied"})
+    certs_to_send = Certificate.query.filter(Certificate.id.in_(certificate_ids), Certificate.user_id == user_id).all()
+    for cert in certs_to_send:
+        if not cert.recipient_email:
+            errors.append({"certificate_id": cert.id, "msg": "No email address"})
             continue
-
         try:
-            pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
-            msg = _create_email_message(certificate, pdf_buffer)
+            pdf_buffer = _generate_certificate_pdf_in_memory(cert)
+            msg = _create_email_message(cert, pdf_buffer)
             mail.send(msg)
-            certificate.sent_at = datetime.utcnow()
+            cert.sent_at = datetime.utcnow()
             sent += 1
-        except Exception as e:
-            errors.append({"certificate_id": cert_id, "msg": str(e)})
-
+        except Exception as e: errors.append({"certificate_id": cert.id, "msg": str(e)})
     db.session.commit()
-
-    # ✅ Send issuer confirmation email
     if sent > 0:
-        sent_certs = Certificate.query.filter(Certificate.id.in_(certificate_ids)).all()
-        cert_list = [{
-            "recipient_name": c.recipient_name,
-            "course_title": c.course_title,
-            "verification_id": c.verification_id
-        } for c in sent_certs]
-        summary_html = _create_issuer_summary_email(
-            user.name,
-            sent,
-            cert_list,
-            action_type="sent"
-        )
+        cert_list = [{"recipient_name": c.recipient_name, "course_title": c.course_title, "verification_id": c.verification_id} for c in certs_to_send if c.sent_at]
+        summary_html = _create_issuer_summary_email(user.name, sent, cert_list, action_type="sent")
         _send_issuer_notification_email(user, "Certificates Sent — CertifyMe", summary_html)
-
-    if errors:
-        return jsonify({
-            "msg": f"Sent {sent} emails with {len(errors)} errors",
-            "sent": sent,
-            "errors": errors
-        }), 207
-
+    if errors: return jsonify({"msg": f"Sent {sent} emails with {len(errors)} errors", "sent": sent, "errors": errors}), 207
     return jsonify({"msg": f"Successfully sent {sent} emails"}), 200
 
 

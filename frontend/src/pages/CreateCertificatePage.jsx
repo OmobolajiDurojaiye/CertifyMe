@@ -397,16 +397,14 @@ const CreateCertificatePage = () => {
       } else {
         response = await createCertificate(formData);
       }
-      setSuccess(
-        isEditMode
-          ? "Certificate updated successfully!"
-          : "Certificate created successfully!"
-      );
+      setSuccess(response.data.msg);
+      toast.success(response.data.msg);
       setTimeout(() => navigate("/dashboard"), 2000);
     } catch (err) {
-      setError(
-        err.response?.data?.msg || "An error occurred. Please try again."
-      );
+      const errorMsg =
+        err.response?.data?.msg || "An error occurred. Please try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -484,15 +482,16 @@ const CreateCertificatePage = () => {
                 value={formData.recipient_name}
                 onChange={handleChange}
               />
+              {/* --- THIS IS THE FIX --- */}
               <FormInput
                 name="recipient_email"
-                label="Recipient Email"
+                label="Recipient Email (Optional)"
                 placeholder="jane.doe@example.com"
                 type="email"
-                required
                 value={formData.recipient_email}
                 onChange={handleChange}
               />
+              {/* --- END OF FIX --- */}
               <FormInput
                 name="course_title"
                 label="Course / Event Title"
@@ -519,7 +518,7 @@ const CreateCertificatePage = () => {
               />
               <FormInput
                 name="signature"
-                label="Signature (e.g., Issuer's Name)"
+                label="Signature (Optional)"
                 placeholder="e.g., Dr. John Smith"
                 value={formData.signature}
                 onChange={handleChange}
