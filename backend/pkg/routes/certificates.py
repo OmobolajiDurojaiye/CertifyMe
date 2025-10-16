@@ -25,80 +25,77 @@ certificate_bp = Blueprint('certificates', __name__)
 # -------------------------
 def parse_flexible_date(date_string):
     """
-    Robust date parser that tries many common formats and a few heuristics.
-    Returns a date object or raises ValueError.
+    An extremely robust date parser that handles a wide variety of formats,
+    cleans input, and uses heuristics to determine the correct date.
     """
-    if not date_string or not str(date_string).strip():
-        raise ValueError("Empty date string")
+    # 1. Handle non-string inputs and empty values immediately
+    if not date_string:
+        raise ValueError("Date cannot be empty.")
+    
+    # Directly handle datetime or pandas Timestamp objects for efficiency
+    if isinstance(date_string, (datetime, pd.Timestamp)):
+        return date_string.date()
 
     s = str(date_string).strip()
+    if not s:
+        raise ValueError("Date cannot be empty.")
 
-    # Natural language helpers
-    low = s.lower()
-    if low in ("today", "now"):
+    # 2. Pre-processing: Clean and normalize the string
+    s_lower = s.lower()
+    
+    # Handle natural language keywords
+    if s_lower in ("today", "now"):
         return datetime.utcnow().date()
-    if low == "yesterday":
+    if s_lower == "yesterday":
         return (datetime.utcnow() - timedelta(days=1)).date()
-    if low == "tomorrow":
+    if s_lower == "tomorrow":
         return (datetime.utcnow() + timedelta(days=1)).date()
 
-    # Try a list of common formats (both month-first and day-first)
+    # Remove ordinal suffixes (st, nd, rd, th)
+    s = re.sub(r'(\d+)(st|nd|rd|th)', r'\1', s, flags=re.IGNORECASE)
+    # Standardize separators to spaces, remove commas
+    s = re.sub(r'[\\/.,-]+', ' ', s)
+    # Remove extra whitespace
+    s = re.sub(r'\s+', ' ', s).strip()
+
+    # 3. Main Parsing: Try a list of common formats
     formats_to_try = [
-        "%Y-%m-%d",     # 2025-10-09
-        "%d-%m-%Y",     # 09-10-2025
-        "%m-%d-%Y",     # 10-09-2025
-        "%d/%m/%Y",     # 09/10/2025
-        "%m/%d/%Y",     # 10/09/2025
-        "%d-%b-%Y",     # 09-Oct-2025
-        "%d %b %Y",     # 09 Oct 2025
-        "%d %B %Y",     # 09 October 2025
-        "%b %d %Y",     # Oct 09 2025
-        "%B %d %Y",     # October 09 2025
-        "%m/%d/%y",     # 9/11/25
-        "%d/%m/%y",     # 11/9/25
-        "%d.%m.%Y",     # 09.10.2025
-        "%m.%d.%Y",     # 10.09.2025
+        # ISO format is most common and reliable
+        "%Y %m %d", 
+        # Day-first formats
+        "%d %m %Y", "%d %b %Y", "%d %B %Y",
+        # Month-first formats
+        "%m %d %Y", "%b %d %Y", "%B %d %Y",
+        # Two-digit years
+        "%d %m %y", "%m %d %y", "%b %d %y",
     ]
-
-    # Clean common separators to single spaces (helps "11 Sept, 2025" etc.)
-    s_clean = re.sub(r'[,\s]+', ' ', s).strip()
-
-    # Try direct formats on original and cleaned forms
+    
     for fmt in formats_to_try:
         try:
             return datetime.strptime(s, fmt).date()
         except ValueError:
             pass
-        try:
-            return datetime.strptime(s_clean, fmt).date()
-        except ValueError:
-            pass
 
-    # As a last resort: attempt to parse things like '11/9' by assuming current year
-    m = re.match(r'^\s*(\d{1,2})[\/\-\.\s](\d{1,2})\s*$', s)
-    if m:
-        a, b = int(m.group(1)), int(m.group(2))
+    # 4. Fallback Heuristics: Try to guess if year is missing
+    # Catches formats like '15 oct' or '10 15'
+    try:
+        # Assume current year if format matches a day-month pattern
         year = datetime.utcnow().year
-        # Heuristic: if first > 12, treat as day-first; otherwise prefer day-first for Nigeria (DD/MM)
-        dayfirst = current_app.config.get('DATE_DAYFIRST', True)
-        if dayfirst:
-            try:
-                return datetime(year=year, month=b, day=a).date()
-            except ValueError:
-                try:
-                    return datetime(year=year, month=a, day=b).date()
-                except ValueError:
-                    pass
-        else:
-            try:
-                return datetime(year=year, month=a, day=b).date()
-            except ValueError:
-                try:
-                    return datetime(year=year, month=b, day=a).date()
-                except ValueError:
-                    pass
+        # Try parsing with current year added
+        date_with_year = datetime.strptime(f"{s} {year}", "%d %b %Y").date()
+        return date_with_year
+    except ValueError:
+        pass
+        
+    try:
+        year = datetime.utcnow().year
+        date_with_year = datetime.strptime(f"{s} {year}", "%b %d %Y").date()
+        return date_with_year
+    except ValueError:
+        pass
 
-    raise ValueError(f"Invalid or unrecognized date format: '{date_string}'")
+    # 5. Final attempt: If all else fails, raise a comprehensive error
+    raise ValueError(f"Could not parse date. Unrecognized format: '{date_string}'")
 
 
 def get_image_as_base64(image_path):
@@ -296,14 +293,16 @@ def allowed_file(filename):
 def _normalize_email(email):
     """
     Basic email normalization and light auto-fixes.
-    - lowercases
-    - trims spaces
-    - if email looks like 'user@gmail' -> 'user@gmail.com'
-    - does not try heavy guessing (keep it safe)
+    Safely handles non-string inputs from pandas.
     """
-    if not email:
+    # --- THIS IS THE FIX ---
+    # Handles None, "", etc. and prevents errors with float/NaN values
+    if not email or pd.isna(email):
         return ""
-    e = email.strip().lower()
+    # Convert to string to safely call string methods
+    e = str(email).strip().lower()
+    # --- END OF FIX ---
+
     # common providers that might be missing .com/.ng
     providers = ["gmail", "yahoo", "outlook", "hotmail", "icloud"]
     if '@' in e:
@@ -651,7 +650,10 @@ def bulk_create_certificates():
             return jsonify({"msg": f"File missing required columns: {', '.join(missing)}"}), 400
 
         certs_to_add, errors, quota_left = [], [], user.cert_quota
-        df = df.where(pd.notnull(df), None)
+        
+        # --- THIS IS THE FIX ---
+        # Replace NaN with None for easier processing in Python
+        df = df.where(pd.notna(df), None)
 
         for idx, row in df.iterrows():
             row_num = idx + 2 
@@ -664,19 +666,29 @@ def bulk_create_certificates():
                 if not all([recipient_name, course_title, issue_date_raw]):
                     errors.append({"row": row_num, "msg": "Missing required data (recipient_name, course_title, or issue_date)."})
                     continue
+                
+                # These checks are now more robust with `None` instead of `NaN`
+                recipient_email_raw = row.get('recipient_email')
+                recipient_email = _normalize_email(recipient_email_raw) if recipient_email_raw else None
+                
+                issuer_name_raw = row.get('issuer_name')
+                issuer_name = str(issuer_name_raw) if issuer_name_raw else user.name
+                
+                signature_raw = row.get('signature')
+                signature = str(signature_raw) if signature_raw else None
 
-                recipient_email = _normalize_email(row.get('recipient_email')) if row.get('recipient_email') else None
                 cert = Certificate(
                     user_id=user_id, company_id=user.company_id, template_id=template.id, group_id=group_id,
                     recipient_name=str(recipient_name), recipient_email=recipient_email,
-                    course_title=str(course_title), issuer_name=str(row.get('issuer_name') or user.name),
-                    issue_date=parse_flexible_date(issue_date_raw), signature=str(row.get('signature')) if row.get('signature') else None,
+                    course_title=str(course_title), issuer_name=issuer_name,
+                    issue_date=parse_flexible_date(issue_date_raw), signature=signature,
                     verification_id=str(uuid.uuid4())
                 )
                 certs_to_add.append(cert)
                 quota_left -= 1
             except ValueError as e: errors.append({"row": row_num, "msg": f"Date error: {e}"})
             except Exception as e: errors.append({"row": row_num, "msg": str(e)})
+        # --- END OF FIX ---
 
         if certs_to_add:
             db.session.bulk_save_objects(certs_to_add)

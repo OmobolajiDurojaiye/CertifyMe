@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Form, Button, Alert, Spinner, Table, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import Papa from "papaparse";
+import Papa from "papaparse"; // We need this again
 import QRCode from "react-qr-code";
 import {
   Maximize2,
@@ -30,14 +30,17 @@ const CertificatePreview = ({ template, formData }) => {
       </div>
     );
   }
+
+  // Use placeholder data if no file data is available for preview
   if (!formData || !formData.recipient_name) {
-    return (
-      <div className="d-flex align-items-center justify-content-center h-100 bg-light rounded-3 p-4">
-        <p className="text-muted mb-0">
-          Upload a CSV/Excel file to see a preview.
-        </p>
-      </div>
-    );
+    formData = {
+      recipient_name: "Recipient Name (from file)",
+      course_title: "Course Title (from file)",
+      issue_date: "Date (from file)",
+      issuer_name: "Issuer Name (from file)",
+      signature: "Signature (from file)",
+      verification_id: "pending",
+    };
   }
 
   if (template.layout_style === "visual") {
@@ -276,8 +279,10 @@ const BulkCreateCertificatesPage = () => {
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState(null);
-  const [csvFile, setCsvFile] = useState(null);
-  const [csvData, setCsvData] = useState([]);
+  const [file, setFile] = useState(null);
+  // --- THIS IS THE FIX (Part 1) ---
+  const [previewData, setPreviewData] = useState([]); // State for the preview table
+  // --- END OF FIX ---
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -313,56 +318,37 @@ const BulkCreateCertificatesPage = () => {
     setSelectedTemplate(templates.find((t) => t.id == templateId));
   };
 
+  // --- THIS IS THE FIX (Part 2) ---
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
+    const selectedFile = e.target.files[0];
     setError("");
     setSuccess("");
-    if (file) {
-      setCsvFile(file);
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (result) => {
-          if (result.errors.length > 0) {
-            setError(
-              "There was an error parsing the file for preview. Please ensure it's correctly formatted."
-            );
-            setCsvData([]);
-            return;
-          }
-          if (result.data.length === 0) {
-            setError("File appears to be empty or headers could not be read.");
-            setCsvData([]);
-            return;
-          }
-          // --- THIS IS THE FIX ---
-          const requiredHeaders = [
-            "recipient_name",
-            "course_title",
-            "issue_date",
-          ];
-          const fileHeaders = Object.keys(result.data[0]).map((h) =>
-            h.toLowerCase().trim().replace(/\s+/g, "_")
-          );
-          const missingHeaders = requiredHeaders.filter(
-            (h) => !fileHeaders.includes(h)
-          );
+    setPreviewData([]); // Clear previous preview on new file selection
 
-          if (missingHeaders.length > 0) {
-            setError(`File must include columns: ${missingHeaders.join(", ")}`);
-            setCsvData([]);
-            return;
-          }
-          // --- END OF FIX ---
-          setCsvData(result.data);
-        },
-        error: () => {
-          setError("Failed to parse file for preview.");
-          setCsvData([]);
-        },
-      });
+    if (selectedFile) {
+      setFile(selectedFile);
+      // Only try to parse and preview if it's a CSV file
+      if (selectedFile.name.toLowerCase().endsWith(".csv")) {
+        Papa.parse(selectedFile, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (result) => {
+            if (result.errors.length > 0) {
+              setError(
+                "Could not parse CSV for preview. You can still proceed with creation."
+              );
+              return;
+            }
+            setPreviewData(result.data);
+          },
+          error: () => {
+            setError("Failed to parse CSV file for preview.");
+          },
+        });
+      }
     }
   };
+  // --- END OF FIX ---
 
   const handleCreateGroup = async () => {
     if (!newGroupName.trim())
@@ -383,7 +369,7 @@ const BulkCreateCertificatesPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedTemplateId || !csvFile || !selectedGroupId) {
+    if (!selectedTemplateId || !file || !selectedGroupId) {
       setError("Please select a template, a group, and upload a valid file.");
       return;
     }
@@ -393,21 +379,23 @@ const BulkCreateCertificatesPage = () => {
     const formData = new FormData();
     formData.append("template_id", selectedTemplateId);
     formData.append("group_id", selectedGroupId);
-    formData.append("file", csvFile);
+    formData.append("file", file);
     try {
       const response = await bulkCreateCertificates(formData);
-      setSuccess(`${response.data.msg}. Redirecting to dashboard...`);
-      toast.success(response.data.msg);
-      setTimeout(() => navigate("/dashboard"), 3000);
-    } catch (err) {
-      if (err.response && err.response.status === 207) {
-        const { msg, errors } = err.response.data;
+
+      if (response.status === 207) {
+        const { msg, created, errors } = response.data;
         const errorDetails = errors
-          .map((e) => `Row ${e.row}: ${e.msg}`)
+          .map((err) => `Row ${err.row}: ${err.msg}`)
           .join("\n");
+        const summaryMsg =
+          created > 0
+            ? `${msg}. Created ${created} certificates with some errors.`
+            : `${msg}. No certificates were created due to errors.`;
+
         setError(
           <>
-            <strong>{msg}</strong>
+            <strong>{summaryMsg}</strong>
             <br />
             Please check the following issues in your file:
             <pre className="mt-2 bg-light p-2 rounded small">
@@ -416,8 +404,16 @@ const BulkCreateCertificatesPage = () => {
           </>
         );
       } else {
-        setError(err.response?.data?.msg || "An unexpected error occurred.");
+        const successMsg =
+          response.data.created > 0
+            ? `${response.data.created} certificates created successfully! Redirecting...`
+            : `Bulk processing completed. Redirecting...`;
+        setSuccess(successMsg);
+        toast.success(successMsg);
+        setTimeout(() => navigate("/dashboard"), 3000);
       }
+    } catch (err) {
+      setError(err.response?.data?.msg || "An unexpected error occurred.");
     } finally {
       setSubmitting(false);
     }
@@ -525,7 +521,6 @@ const BulkCreateCertificatesPage = () => {
               <Form.Label className="font-semibold">
                 3. Upload Spreadsheet File
               </Form.Label>
-              {/* --- THIS IS THE FIX --- */}
               <Form.Control
                 type="file"
                 accept=".csv,.xlsx,.xls,.ods"
@@ -537,7 +532,6 @@ const BulkCreateCertificatesPage = () => {
                 <br />
                 Optional: recipient_email, issuer_name, signature.
               </Form.Text>
-              {/* --- END OF FIX --- */}
               <div className="mt-2">
                 <Button
                   variant="link"
@@ -555,10 +549,7 @@ const BulkCreateCertificatesPage = () => {
               type="submit"
               className="w-100 py-3 font-semibold"
               disabled={
-                submitting ||
-                !selectedTemplateId ||
-                !selectedGroupId ||
-                csvData.length === 0
+                submitting || !selectedTemplateId || !selectedGroupId || !file
               }
             >
               {submitting ? (
@@ -569,7 +560,7 @@ const BulkCreateCertificatesPage = () => {
               ) : (
                 <>
                   <Upload className="me-2" />
-                  Create {csvData.length > 0 ? csvData.length : ""} Certificates
+                  Create Certificates
                 </>
               )}
             </Button>
@@ -580,7 +571,7 @@ const BulkCreateCertificatesPage = () => {
             <h3 className="text-xl font-bold text-gray-800">
               Live Preview (from first record)
             </h3>
-            {selectedTemplate && csvData.length > 0 && (
+            {selectedTemplate && (
               <Button
                 variant="outline-secondary"
                 size="sm"
@@ -593,25 +584,26 @@ const BulkCreateCertificatesPage = () => {
           <div className="w-full aspect-[1.414/1]">
             <CertificatePreview
               template={selectedTemplate}
-              formData={csvData[0]}
+              formData={previewData[0]} // Use the first row of previewData
             />
           </div>
-          {csvData.length > 0 && (
+          {/* --- THIS IS THE FIX (Part 3) --- */}
+          {previewData.length > 0 && (
             <div className="mt-4">
               <h4 className="font-bold mb-3">
-                Uploaded Data Preview (first 5 rows)
+                Uploaded Data Preview (first 5 rows of CSV)
               </h4>
               <div className="overflow-auto rounded-lg shadow">
                 <Table striped bordered hover responsive className="mb-0">
                   <thead className="table-dark">
                     <tr>
-                      {Object.keys(csvData[0]).map((key) => (
+                      {Object.keys(previewData[0]).map((key) => (
                         <th key={key}>{key}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {csvData.slice(0, 5).map((row, index) => (
+                    {previewData.slice(0, 5).map((row, index) => (
                       <tr key={index}>
                         {Object.values(row).map((val, i) => (
                           <td key={i}>{val}</td>
@@ -623,6 +615,7 @@ const BulkCreateCertificatesPage = () => {
               </div>
             </div>
           )}
+          {/* --- END OF FIX --- */}
         </div>
       </div>
       <Modal
@@ -634,7 +627,7 @@ const BulkCreateCertificatesPage = () => {
         <Modal.Body className="p-0">
           <CertificatePreview
             template={selectedTemplate}
-            formData={csvData[0]}
+            formData={previewData[0]} // Use the first row of previewData
           />
         </Modal.Body>
         <Button
