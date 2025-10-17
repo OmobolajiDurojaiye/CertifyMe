@@ -57,8 +57,8 @@ def initialize_payment():
     plan_details = PLANS[plan]
     plan_role_order = role_order[plan]
     current_order = role_order.get(user.role, 0)
-    if plan_role_order < current_order:
-        return jsonify({"msg": f"Cannot purchase lower tier than current {user.role}"}), 400
+    # if plan_role_order < current_order:
+    #     return jsonify({"msg": f"Cannot purchase lower tier than current {user.role}"}), 400
     
     amount_in_usd = plan_details['amount_usd']
     paystack_key = current_app.config.get('PAYSTACK_SECRET_KEY', '')
