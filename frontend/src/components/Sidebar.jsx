@@ -38,10 +38,7 @@ function Sidebar() {
       <div>
         <Link to="/dashboard" className="sidebar-logo">
           <Image src="/images/certbadge.png" width={32} />
-          <span>
-            <span className="green">Certify</span>
-            <span className="blue">Me</span>
-          </span>
+          <span>CertifyMe</span>
         </Link>
         <Nav className="flex-column" as="ul">
           <Nav.Item as="li">

@@ -1,4 +1,3 @@
-# certificates.py
 from flask import Blueprint, request, jsonify, render_template_string, Response, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime, timedelta
@@ -60,7 +59,6 @@ def parse_flexible_date(date_string):
 
     # 3. Main Parsing: Try a list of common formats
     formats_to_try = [
-        # ISO format is most common and reliable
         "%Y %m %d", 
         # Day-first formats
         "%d %m %Y", "%d %b %Y", "%d %B %Y",
@@ -295,13 +293,11 @@ def _normalize_email(email):
     Basic email normalization and light auto-fixes.
     Safely handles non-string inputs from pandas.
     """
-    # --- THIS IS THE FIX ---
     # Handles None, "", etc. and prevents errors with float/NaN values
     if not email or pd.isna(email):
         return ""
     # Convert to string to safely call string methods
     e = str(email).strip().lower()
-    # --- END OF FIX ---
 
     # common providers that might be missing .com/.ng
     providers = ["gmail", "yahoo", "outlook", "hotmail", "icloud"]
@@ -496,7 +492,7 @@ def create_certificate():
     data = request.get_json()
 
     # recipient_email is now optional
-    required_fields = ['template_id', 'recipient_name', 'course_title', 'issuer_name', 'issue_date']
+    required_fields = ['template_id', 'recipient_name', 'course_title', 'issue_date']
     if not all(field in data and data[field] for field in required_fields):
         return jsonify({"msg": "Missing required fields"}), 400
 
@@ -651,7 +647,6 @@ def bulk_create_certificates():
 
         certs_to_add, errors, quota_left = [], [], user.cert_quota
         
-        # --- THIS IS THE FIX ---
         # Replace NaN with None for easier processing in Python
         df = df.where(pd.notna(df), None)
 
@@ -688,7 +683,6 @@ def bulk_create_certificates():
                 quota_left -= 1
             except ValueError as e: errors.append({"row": row_num, "msg": f"Date error: {e}"})
             except Exception as e: errors.append({"row": row_num, "msg": str(e)})
-        # --- END OF FIX ---
 
         if certs_to_add:
             db.session.bulk_save_objects(certs_to_add)
