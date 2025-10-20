@@ -34,6 +34,7 @@ function Sidebar() {
 
   return (
     <div className="sidebar">
+      {/* --- TOP SECTION: Main Navigation --- */}
       <div>
         <Link to="/dashboard" className="sidebar-logo">
           <Image src="/images/certbadge.png" width={32} />
@@ -74,7 +75,6 @@ function Sidebar() {
               <span>Bulk Create</span>
             </NavLink>
           </Nav.Item>
-          {/* --- THIS IS THE REFINED CONDITIONAL LINK --- */}
           {user &&
             (user.role === "free" ? (
               <OverlayTrigger
@@ -82,7 +82,6 @@ function Sidebar() {
                 delay={{ show: 250, hide: 400 }}
                 overlay={renderTooltip}
               >
-                {/* We use a div here because NavLink would try to navigate */}
                 <div className="nav-link nav-link-upgrade">
                   <BarChartLine />
                   <span>Analytics</span>
@@ -97,7 +96,13 @@ function Sidebar() {
                 </NavLink>
               </Nav.Item>
             ))}
-          {/* --- END OF REFINED LINK --- */}
+        </Nav>
+      </div>
+
+      {/* --- BOTTOM SECTION: Settings, Support & Logout --- */}
+      <div>
+        <hr className="sidebar-divider" />
+        <Nav className="flex-column" as="ul">
           <Nav.Item as="li">
             <NavLink to="/dashboard/settings" className="nav-link">
               <Gear />
@@ -110,16 +115,14 @@ function Sidebar() {
               <span>Contact Support</span>
             </NavLink>
           </Nav.Item>
+          <Nav.Item as="li">
+            <Nav.Link href="#" onClick={handleLogout} className="nav-link">
+              <BoxArrowRight />
+              <span>Logout</span>
+            </Nav.Link>
+          </Nav.Item>
         </Nav>
       </div>
-      <Nav className="flex-column" as="ul">
-        <Nav.Item as="li">
-          <Nav.Link href="#" onClick={handleLogout} className="nav-link">
-            <BoxArrowRight />
-            <span>Logout</span>
-          </Nav.Link>
-        </Nav.Item>
-      </Nav>
     </div>
   );
 }

@@ -23,7 +23,6 @@ def save_support_image(file):
 @jwt_required()
 def create_ticket():
     user_id = int(get_jwt_identity())
-    # Handle multipart/form-data instead of JSON
     subject = request.form.get('subject')
     message = request.form.get('message')
     file = request.files.get('file')
@@ -66,10 +65,7 @@ def get_ticket_details(ticket_id):
         'messages': [{
             'id': m.id,
             'content': m.content,
-            # --- THIS IS THE FIX ---
-            # Construct the full, absolute URL for the image
             'image_url': f"{request.url_root.rstrip('/')}{m.image_url}" if m.image_url else None,
-            # --- END OF FIX ---
             'created_at': m.created_at.isoformat(),
             'sender_type': 'admin' if m.admin_id else 'user',
             'sender_name': m.sender_admin.name if m.admin_id else m.sender_user.name
@@ -108,7 +104,6 @@ def reply_to_ticket(ticket_id):
     
     return jsonify({"msg": "Reply sent successfully"}), 200
 
-# get_user_tickets route remains unchanged
 @support_bp.route('/tickets', methods=['GET'])
 @jwt_required()
 def get_user_tickets():
@@ -122,3 +117,18 @@ def get_user_tickets():
         'created_at': t.created_at.isoformat(),
         'updated_at': t.updated_at.isoformat()
     } for t in tickets]), 200
+
+@support_bp.route('/tickets/<int:ticket_id>', methods=['DELETE'])
+@jwt_required()
+def delete_ticket(ticket_id):
+    user_id = int(get_jwt_identity())
+    ticket = SupportTicket.query.get_or_404(ticket_id)
+
+    # Ensure the user deleting the ticket is the owner
+    if ticket.user_id != user_id:
+        return jsonify({"msg": "Unauthorized action"}), 403
+
+    db.session.delete(ticket)
+    db.session.commit()
+
+    return jsonify({"msg": "Ticket deleted successfully"}), 200

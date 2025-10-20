@@ -100,7 +100,7 @@ const Testimonials = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       handleNext();
-    }, 7000); // Change slide every 7 seconds
+    }, 10000); //changes every 10 seconds
     return () => clearInterval(timer);
   }, [currentIndex]);
 

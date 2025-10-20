@@ -158,6 +158,9 @@ export const replyToTicket = (ticketId, message, file) => {
   });
 };
 
+export const deleteUserTicket = (ticketId) =>
+  apiClient.delete(`/support/tickets/${ticketId}`);
+
 // --- USER-FACING API Calls ---
 export const getTemplates = () => apiClient.get("/templates/");
 export const getTemplate = (templateId) =>

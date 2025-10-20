@@ -504,7 +504,6 @@ const CreateCertificatePage = () => {
                 name="issuer_name"
                 label="Issuer Name"
                 placeholder="e.g., ACME University"
-                required
                 value={formData.issuer_name}
                 onChange={handleChange}
               />

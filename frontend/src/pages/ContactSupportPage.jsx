@@ -7,12 +7,12 @@ import {
   ListGroup,
   Badge,
   Spinner,
-  Alert,
   Row,
   Col,
   InputGroup,
   Modal,
   Image,
+  Container,
 } from "react-bootstrap";
 import {
   PlusCircle,
@@ -20,15 +20,17 @@ import {
   SendFill,
   PersonCircle,
   Paperclip,
+  Trash,
 } from "react-bootstrap-icons";
 import {
   createUserTicket,
   getUserTickets,
   getUserTicketDetails,
   replyToTicket,
+  deleteUserTicket,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
-import "../styles/SupportPage.css"; // Corrected CSS import path
+import "../styles/TicketPage.css"; // --- IMPORT THE NEW STYLESHEET
 
 // Main component that decides whether to show the list or details
 function ContactSupportPage() {
@@ -45,7 +47,7 @@ function TicketList() {
   const [loading, setLoading] = useState(true);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [file, setFile] = useState(null); // State for the file
+  const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -66,14 +68,18 @@ function TicketList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!subject.trim() || !message.trim()) {
+      toast.error("Subject and message cannot be empty.");
+      return;
+    }
     setSubmitting(true);
     try {
-      await createUserTicket(subject, message, file); // Pass file to API
+      await createUserTicket(subject, message, file);
       toast.success("Support ticket created!");
       setSubject("");
       setMessage("");
-      setFile(null); // Reset file state
-      fetchTickets(); // Refresh list
+      setFile(null);
+      fetchTickets();
     } catch (err) {
       toast.error(
         err.response?.data?.msg || "Failed to create ticket. Please try again."
@@ -84,10 +90,33 @@ function TicketList() {
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files[0]) {
-      setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
     } else {
       setFile(null);
+    }
+    e.target.value = null;
+  };
+
+  const handleDelete = async (e, ticketId) => {
+    e.stopPropagation();
+    e.preventDefault();
+
+    if (
+      window.confirm(
+        "Are you sure you want to delete this ticket? This action cannot be undone."
+      )
+    ) {
+      try {
+        await deleteUserTicket(ticketId);
+        toast.success("Ticket deleted successfully!");
+        setTickets((prevTickets) =>
+          prevTickets.filter((ticket) => ticket.id !== ticketId)
+        );
+      } catch (err) {
+        toast.error("Failed to delete the ticket.");
+      }
     }
   };
 
@@ -101,21 +130,27 @@ function TicketList() {
   };
 
   return (
-    <>
+    <Container className="py-4">
       <Toaster position="top-center" />
-      <h2 className="fw-bold mb-4">Contact Support</h2>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="fw-bold mb-0 h2">My Support Tickets</h1>
+        <Button as={Link} to="/dashboard/support" variant="outline-secondary">
+          Back to Help Center
+        </Button>
+      </div>
+
       <Row>
-        <Col md={5}>
-          <Card className="shadow-sm border-0">
-            <Card.Header>
+        <Col lg={5}>
+          <Card className="border-0 shadow-sm mb-4">
+            <Card.Header className="bg-white border-0 pt-3 pb-0">
               <h5 className="mb-0 d-flex align-items-center">
-                <PlusCircle className="me-2" /> Create a New Ticket
+                <PlusCircle className="me-2 text-primary" /> Create a New Ticket
               </h5>
             </Card.Header>
             <Card.Body>
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Subject</Form.Label>
+                  <Form.Label className="small fw-bold">Subject</Form.Label>
                   <Form.Control
                     type="text"
                     placeholder="e.g., Issue with bulk upload"
@@ -125,7 +160,7 @@ function TicketList() {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label>Message</Form.Label>
+                  <Form.Label className="small fw-bold">Message</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={5}
@@ -136,7 +171,9 @@ function TicketList() {
                   />
                 </Form.Group>
                 <Form.Group className="mb-3">
-                  <Form.Label>Attachment (Optional)</Form.Label>
+                  <Form.Label className="small fw-bold">
+                    Attachment (Optional)
+                  </Form.Label>
                   <Form.Control
                     type="file"
                     onChange={handleFileChange}
@@ -148,6 +185,7 @@ function TicketList() {
                   type="submit"
                   variant="primary"
                   className="w-100"
+                  size="lg"
                   disabled={submitting}
                 >
                   {submitting ? (
@@ -160,9 +198,9 @@ function TicketList() {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={7}>
-          <Card className="shadow-sm border-0">
-            <Card.Header>
+        <Col lg={7}>
+          <Card className="border-0 shadow-sm">
+            <Card.Header className="bg-white border-0 pt-3">
               <h5 className="mb-0">Your Ticket History</h5>
             </Card.Header>
             <ListGroup variant="flush">
@@ -176,35 +214,49 @@ function TicketList() {
                     key={ticket.id}
                     action
                     as={Link}
-                    to={`/dashboard/support/${ticket.id}`}
-                    className="d-flex justify-content-between align-items-center"
+                    to={`/dashboard/support/tickets/${ticket.id}`}
+                    className="d-flex justify-content-between align-items-center p-3 ticket-list-item"
                   >
-                    <div>
+                    <div className="flex-grow-1 me-3">
                       <div className="fw-bold">{ticket.subject}</div>
                       <small className="text-muted">
                         Last updated:{" "}
-                        {new Date(ticket.updated_at).toLocaleString()}
+                        {new Date(ticket.updated_at).toLocaleDateString()}
                       </small>
                     </div>
-                    <Badge bg={getStatusBadge(ticket.status)}>
-                      {ticket.status.replace("_", " ").toUpperCase()}
-                    </Badge>
+                    <div className="d-flex align-items-center">
+                      <Badge
+                        pill
+                        bg={getStatusBadge(ticket.status)}
+                        className="me-3 px-2 py-1"
+                      >
+                        {ticket.status.replace("_", " ")}
+                      </Badge>
+                      <Button
+                        variant="light"
+                        size="sm"
+                        className="btn-delete"
+                        onClick={(e) => handleDelete(e, ticket.id)}
+                        title="Delete Ticket"
+                      >
+                        <Trash className="text-danger" />
+                      </Button>
+                    </div>
                   </ListGroup.Item>
                 ))
               ) : (
-                <ListGroup.Item className="text-center text-muted">
+                <Card.Body className="text-center text-muted p-5">
                   You have no support tickets.
-                </ListGroup.Item>
+                </Card.Body>
               )}
             </ListGroup>
           </Card>
         </Col>
       </Row>
-    </>
+    </Container>
   );
 }
 
-// Component to show the details of a single ticket and its conversation
 function TicketDetails() {
   const { ticketId } = useParams();
   const [ticket, setTicket] = useState(null);
@@ -212,14 +264,19 @@ function TicketDetails() {
   const [reply, setReply] = useState("");
   const [file, setFile] = useState(null);
   const [sending, setSending] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [modalImageUrl, setModalImageUrl] = useState("");
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
     fetchTicket();
   }, [ticketId]);
+
+  useEffect(scrollToBottom, [ticket]);
 
   const fetchTicket = async () => {
     setLoading(true);
@@ -228,7 +285,7 @@ function TicketDetails() {
       setTicket(res.data);
     } catch (err) {
       toast.error("Could not fetch ticket details.");
-      navigate("/dashboard/support");
+      navigate("/dashboard/support/tickets");
     } finally {
       setLoading(false);
     }
@@ -236,16 +293,17 @@ function TicketDetails() {
 
   const handleReply = async (e) => {
     e.preventDefault();
+    if (!reply.trim() && !file) {
+      toast.error("Reply cannot be empty.");
+      return;
+    }
     setSending(true);
     try {
       await replyToTicket(ticketId, reply, file);
-      toast.success("Reply sent!");
       setReply("");
       setFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      fetchTicket(); // Refresh messages
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      fetchTicket();
     } catch (err) {
       toast.error(err.response?.data?.msg || "Failed to send reply.");
     } finally {
@@ -254,104 +312,101 @@ function TicketDetails() {
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files[0]) {
-      setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      toast.success(`Attached: ${selectedFile.name}`);
     } else {
       setFile(null);
     }
-  };
-
-  const openImageModal = (imageUrl) => {
-    setModalImageUrl(imageUrl);
-    setShowImageModal(true);
+    e.target.value = null; // Reset input to allow re-selection
   };
 
   if (loading) {
     return (
-      <div className="text-center p-5">
-        <Spinner animation="border" />
-      </div>
+      <Container
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "80vh" }}
+      >
+        <Spinner animation="border" variant="primary" />
+      </Container>
     );
   }
 
   if (!ticket) return null;
 
   return (
-    <>
+    <Container className="py-4">
       <Toaster position="top-center" />
-      <Link to="/dashboard/support" className="btn btn-outline-secondary mb-3">
-        <ArrowLeft /> Back to Tickets
-      </Link>
-      <Card className="shadow-sm border-0">
-        <Card.Header>
-          <h4 className="mb-0">{ticket.subject}</h4>
+      <Card className="border-0 shadow-sm chat-container-card">
+        <Card.Header className="bg-white chat-header d-flex align-items-center justify-content-between p-3">
+          <h2 className="h5 mb-0 fw-bold">{ticket.subject}</h2>
+          <Button
+            as={Link}
+            to="/dashboard/support/tickets"
+            variant="outline-secondary"
+            size="sm"
+          >
+            <ArrowLeft /> Back to My Tickets
+          </Button>
         </Card.Header>
-        <Card.Body
-          style={{ height: "50vh", overflowY: "auto" }}
-          className="d-flex flex-column"
-        >
+        <Card.Body className="chat-body d-flex flex-column gap-3">
           {ticket.messages.map((msg) => (
             <div
               key={msg.id}
-              className={`d-flex mb-3 ${
-                msg.sender_type === "user" ? "justify-content-end" : ""
+              className={`d-flex flex-column chat-bubble ${
+                msg.sender_type === "user" ? "user" : "admin"
               }`}
             >
-              <div
-                className={`p-3 rounded-3 ${
-                  msg.sender_type === "user"
-                    ? "bg-primary text-white"
-                    : "bg-light text-dark"
-                }`}
-                style={{ maxWidth: "70%" }}
-              >
-                <div className="fw-bold d-flex align-items-center mb-1">
-                  <PersonCircle className="me-2" />
-                  {msg.sender_name}
-                </div>
-                <p className="mb-1" style={{ whiteSpace: "pre-wrap" }}>
-                  {msg.content}
-                </p>
-                {msg.image_url && (
-                  <Image
-                    src={msg.image_url}
-                    thumbnail
-                    className="mt-2 support-thumbnail"
-                    onClick={() => openImageModal(msg.image_url)}
-                  />
-                )}
-                <small className="opacity-75">
-                  {new Date(msg.created_at).toLocaleString()}
-                </small>
+              <div className="fw-bold d-flex align-items-center mb-1">
+                <PersonCircle className="me-2" />
+                <span>{msg.sender_name}</span>
               </div>
+              <p className="mb-1">{msg.content}</p>
+              {msg.image_url && (
+                <Image
+                  src={msg.image_url}
+                  thumbnail
+                  className="mt-2"
+                  style={{ maxWidth: "200px", cursor: "pointer" }}
+                />
+              )}
+              <small className="opacity-75 align-self-end mt-1">
+                {new Date(msg.created_at).toLocaleTimeString()}
+              </small>
             </div>
           ))}
+          <div ref={messagesEndRef} />
         </Card.Body>
-        <Card.Footer>
+        <Card.Footer className="chat-footer">
           <Form onSubmit={handleReply}>
             <InputGroup>
               <Form.Control
-                as="textarea"
-                rows={2}
                 placeholder="Type your reply..."
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 disabled={ticket.status === "closed"}
-                required
+                required={!file} // Required if no file is attached
               />
               <Button
-                variant="secondary"
+                variant="light"
                 onClick={() => fileInputRef.current.click()}
                 disabled={ticket.status === "closed"}
+                title="Attach file"
               >
-                <Paperclip />
+                <Paperclip size={20} />
               </Button>
               <Button
                 type="submit"
                 variant="primary"
                 disabled={sending || ticket.status === "closed"}
+                title="Send"
               >
-                {sending ? <Spinner as="span" size="sm" /> : <SendFill />}
+                {sending ? (
+                  <Spinner as="span" size="sm" />
+                ) : (
+                  <SendFill size={20} />
+                )}
               </Button>
             </InputGroup>
             <Form.Control
@@ -361,27 +416,10 @@ function TicketDetails() {
               accept="image/png, image/jpeg, image/gif"
               style={{ display: "none" }}
             />
-            {file && <Form.Text muted>Attachment: {file.name}</Form.Text>}
-            {ticket.status === "closed" && (
-              <Form.Text muted>
-                This ticket is closed. Replying will re-open it.
-              </Form.Text>
-            )}
           </Form>
         </Card.Footer>
       </Card>
-
-      <Modal
-        show={showImageModal}
-        onHide={() => setShowImageModal(false)}
-        centered
-        size="lg"
-      >
-        <Modal.Body className="p-0">
-          <Image src={modalImageUrl} fluid />
-        </Modal.Body>
-      </Modal>
-    </>
+    </Container>
   );
 }
 

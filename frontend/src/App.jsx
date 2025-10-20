@@ -21,6 +21,8 @@ import ResetPasswordPage from "./pages/ResetPasswordPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import UploadTemplatePage from "./pages/UploadTemplatePage";
 import OpenLedgerPage from "./pages/OpenLedgerPage";
+import SupportHubPage from "./pages/SupportHubPage";
+import HelpArticlePage from "./pages/HelpArticlePage";
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -36,9 +38,9 @@ import AdminUserDetailsPage from "./pages/AdminUserDetailsPage";
 import AdminPaymentDetailsPage from "./pages/AdminPaymentDetailsPage";
 import AdminSupportPage from "./pages/AdminSupportPage";
 import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage";
-import AdminCompaniesPage from "./pages/AdminCompaniesPage"; // NEW
-import AdminCompanyDetailsPage from "./pages/AdminCompanyDetailsPage"; // NEW
-import AdminMessagingPage from "./pages/AdminMessagingPage"; // NEW
+import AdminCompaniesPage from "./pages/AdminCompaniesPage";
+import AdminCompanyDetailsPage from "./pages/AdminCompanyDetailsPage";
+import AdminMessagingPage from "./pages/AdminMessagingPage";
 
 import DocsPage from "./pages/DocsPage";
 
@@ -81,14 +83,12 @@ function App() {
             path="support/:ticketId"
             element={<AdminSupportTicketDetailsPage />}
           />
-          {/* --- NEW ADMIN ROUTES --- */}
           <Route path="companies" element={<AdminCompaniesPage />} />
           <Route
             path="companies/:companyId"
             element={<AdminCompanyDetailsPage />}
           />
           <Route path="messaging" element={<AdminMessagingPage />} />
-          {/* --- END NEW ADMIN ROUTES --- */}
         </Route>
       </Route>
 
@@ -104,8 +104,16 @@ function App() {
           <Route path="view/:certId" element={<ViewCertificatePage />} />
           <Route path="bulk-create" element={<BulkCreateCertificatesPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          <Route path="support" element={<ContactSupportPage />} />
-          <Route path="support/:ticketId" element={<ContactSupportPage />} />
+
+          {/* --- RESTRUCTURED SUPPORT ROUTES --- */}
+          <Route path="support">
+            <Route index element={<SupportHubPage />} />
+            <Route path="articles/:slug" element={<HelpArticlePage />} />
+            <Route path="tickets" element={<ContactSupportPage />} />
+            <Route path="tickets/:ticketId" element={<ContactSupportPage />} />
+          </Route>
+          {/* --- END OF RESTRUCTURED ROUTES --- */}
+
           <Route path="upload-template" element={<UploadTemplatePage />} />
           <Route
             path="upload-template/:templateId"
