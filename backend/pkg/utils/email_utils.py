@@ -3,6 +3,50 @@ from flask import current_app
 from ..extensions import mail
 from datetime import datetime
 
+def send_verification_email(user, code):
+    """
+    Sends a 6-digit verification code to a new user for account activation.
+    """
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f4; }}
+            .container {{ max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }}
+            .header {{ font-size: 24px; color: #333; text-align: center; padding: 10px; }}
+            .code {{ font-size: 36px; font-weight: bold; color: #2563EB; text-align: center; margin: 20px 0; letter-spacing: 5px; }}
+            .footer {{ font-size: 12px; text-align: center; color: #888; margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">Welcome to CertifyMe!</div>
+            <p>Hello {user.name},</p>
+            <p>Thank you for signing up! To complete your registration and secure your account, please use the following verification code:</p>
+            <div class="code">{code}</div>
+            <p>This code is valid for the next 15 minutes. If you did not sign up for a CertifyMe account, you can safely ignore this email.</p>
+            <div class="footer">
+                This is an automated message from CertifyMe.
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    msg = Message(
+        subject="Your CertifyMe Verification Code",
+        sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')),
+        recipients=[user.email],
+        html=html_body
+    )
+    try:
+        mail.send(msg)
+        current_app.logger.info(f"Verification email sent to: {user.email}")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send verification email: {e}")
+        raise
+
+
 def send_admin_verification_email(admin_user):
     """
     Sends the 6-digit verification code to the pre-configured ADMIN_EMAIL

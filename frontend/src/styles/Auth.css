@@ -192,3 +192,52 @@
     margin-bottom: 1.5rem;
   }
 }
+
+.custom-alert {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.25rem;
+  border-radius: 0.5rem; /* 8px */
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+  font-weight: 500;
+}
+
+.custom-alert .alert-icon {
+  margin-right: 0.75rem;
+  flex-shrink: 0; /* Prevents icon from shrinking */
+}
+
+.custom-alert-danger {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.custom-alert-success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.custom-alert-warning {
+  background-color: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+/* Specific styling for the resend link inside the warning alert */
+.custom-alert-warning .resend-link {
+  font-weight: 600;
+  color: #92400e;
+  text-decoration: none;
+  margin-left: auto; /* Pushes it to the far right */
+  padding-left: 1rem;
+  background: none;
+  border: none;
+}
+
+.custom-alert-warning .resend-link:hover {
+  text-decoration: underline;
+}

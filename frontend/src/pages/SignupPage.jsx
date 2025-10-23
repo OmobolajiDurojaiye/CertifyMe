@@ -47,9 +47,8 @@ function SignupPage() {
 
     try {
       await signupUser(payload);
-      // Redirect to login, carrying the plan param along
-      const loginUrl = plan ? `/login?plan=${plan}` : "/login";
-      navigate(loginUrl);
+      // Redirect to verification page instead of login
+      navigate("/verify-email", { state: { email: payload.email } });
     } catch (err) {
       setError(err.response?.data?.msg || "Signup failed. Please try again.");
     } finally {

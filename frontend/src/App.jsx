@@ -23,6 +23,7 @@ import UploadTemplatePage from "./pages/UploadTemplatePage";
 import OpenLedgerPage from "./pages/OpenLedgerPage";
 import SupportHubPage from "./pages/SupportHubPage";
 import HelpArticlePage from "./pages/HelpArticlePage";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -53,6 +54,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       <Route path="/verify" element={<VerifyCertificatePage />} />

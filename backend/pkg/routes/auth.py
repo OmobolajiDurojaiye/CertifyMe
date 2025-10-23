@@ -5,7 +5,7 @@ from bcrypt import hashpw, gensalt, checkpw
 from datetime import datetime, timedelta
 from ..models import User, Company
 from ..extensions import db
-from ..utils.email_utils import send_password_reset_email
+from ..utils.email_utils import send_password_reset_email, send_verification_email
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -16,7 +16,10 @@ def register():
     if not all(key in data for key in required_fields):
         return jsonify({"msg": "Missing required fields"}), 400
 
-    if User.query.filter_by(email=data['email']).first():
+    email = data['email']
+    user = User.query.filter_by(email=email).first()
+
+    if user and user.is_verified:
         return jsonify({"msg": "Email already registered"}), 409
 
     account_type = data.get('account_type', 'individual')
@@ -27,32 +30,106 @@ def register():
 
     hashed_password = hashpw(data['password'].encode('utf-8'), gensalt())
     
-    new_user = User(
-        name=data['name'],
-        email=data['email'],
-        password_hash=hashed_password.decode('utf-8')
-    )
+    if user and not user.is_verified:
+        user.name = data['name']
+        user.password_hash = hashed_password.decode('utf-8')
+        user.set_verification_code()
+    else:
+        user = User(
+            name=data['name'],
+            email=email,
+            password_hash=hashed_password.decode('utf-8'),
+            is_verified=False # Explicitly set to False for new signups
+        )
+        user.set_verification_code()
+        db.session.add(user)
 
     if account_type == 'company':
         try:
-            db.session.add(new_user)
-            db.session.flush()
+            if not user.id:
+                db.session.flush()
 
-            new_company = Company(name=company_name, owner_id=new_user.id)
-            db.session.add(new_company)
-            db.session.flush()
-
-            new_user.company_id = new_company.id
-            db.session.commit()
+            company = Company.query.filter_by(owner_id=user.id).first()
+            if not company:
+                new_company = Company(name=company_name, owner_id=user.id)
+                db.session.add(new_company)
+                db.session.flush()
+                user.company_id = new_company.id
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Error during company registration: {e}")
+            current_app.logger.error(f"Error during company registration setup: {e}")
             return jsonify({"msg": "Failed to create company account"}), 500
-    else:
-        db.session.add(new_user)
+    
+    try:
+        send_verification_email(user, user.verification_code)
         db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Failed to send verification email or commit: {e}")
+        return jsonify({"msg": "An error occurred during registration."}), 500
 
-    return jsonify({"msg": "User created successfully"}), 201
+    return jsonify({
+        "msg": "Registration successful. Please check your email for a verification code."
+    }), 201
+
+
+@auth_bp.route('/verify-email', methods=['POST'])
+def verify_email():
+    data = request.get_json()
+    if not all(key in data for key in ['email', 'verification_code']):
+        return jsonify({"msg": "Missing email or verification code"}), 400
+
+    user = User.query.filter_by(email=data['email']).first()
+
+    if not user:
+        return jsonify({"msg": "User not found or registration incomplete."}), 404
+
+    if user.is_verified:
+        return jsonify({"msg": "Email is already verified."}), 400
+        
+    if user.verification_expiry < datetime.utcnow():
+        return jsonify({"msg": "Verification code has expired."}), 401
+
+    if user.verification_code != data['verification_code']:
+        return jsonify({"msg": "Invalid verification code."}), 401
+
+    user.is_verified = True
+    user.verification_code = None
+    user.verification_expiry = None
+    db.session.commit()
+
+    access_token = create_access_token(identity=str(user.id))
+    return jsonify({
+        "msg": "Email verified successfully. You are now logged in.",
+        "access_token": access_token
+    }), 200
+
+
+@auth_bp.route('/resend-verification', methods=['POST'])
+def resend_verification():
+    data = request.get_json()
+    email = data.get('email')
+    if not email:
+        return jsonify({"msg": "Email is required"}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        return jsonify({"msg": "User not found."}), 404
+        
+    if user.is_verified:
+        return jsonify({"msg": "This account is already verified."}), 200
+
+    try:
+        user.set_verification_code()
+        db.session.commit()
+        send_verification_email(user, user.verification_code)
+        return jsonify({"msg": "A new verification code has been sent to your email."}), 200
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error resending verification email: {e}")
+        return jsonify({"msg": "An error occurred while resending the code."}), 500
+
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -63,6 +140,13 @@ def login():
     user = User.query.filter_by(email=data['email']).first()
 
     if user and checkpw(data['password'].encode('utf-8'), user.password_hash.encode('utf-8')):
+        if not user.is_verified:
+            # Send a specific error for unverified users
+            return jsonify({
+                "msg": "Your account is not verified. Please check your email.",
+                "unverified": True
+            }), 403
+
         user.last_login = datetime.utcnow()
         db.session.commit()
         access_token = create_access_token(identity=str(user.id))

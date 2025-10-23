@@ -23,6 +23,10 @@ export const loginUser = (credentials) =>
   apiClient.post("/auth/login", credentials);
 export const signupUser = (userData) =>
   apiClient.post("/auth/register", userData);
+export const verifyEmail = (verificationData) =>
+  apiClient.post("/auth/verify-email", verificationData);
+export const resendVerificationEmail = (email) =>
+  apiClient.post("/auth/resend-verification", { email });
 export const requestPasswordReset = (email) =>
   apiClient.post("/auth/forgot-password", { email });
 export const resetPassword = (token, password) =>

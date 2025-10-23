@@ -61,6 +61,11 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
+    # --- THIS IS THE FIX ---
+    is_verified = db.Column(db.Boolean, default=True, nullable=False) # Changed default to True
+    # --- END OF FIX ---
+    verification_code = db.Column(db.String(6), nullable=True)
+    verification_expiry = db.Column(db.DateTime, nullable=True)
 
     templates = db.relationship('Template', backref='user', lazy=True, cascade="all, delete-orphan")
     groups = db.relationship('Group', backref='user', lazy=True, cascade="all, delete-orphan")
@@ -68,6 +73,11 @@ class User(db.Model):
     
     certificates = db.relationship('Certificate', backref='issuer', lazy=True)
     payments = db.relationship('Payment', backref='user', lazy=True)
+
+    def set_verification_code(self):
+        """Generates a 6-digit code and sets an expiry time."""
+        self.verification_code = str(random.randint(100000, 999999))
+        self.verification_expiry = datetime.utcnow() + timedelta(minutes=15)
 
 
 class SupportTicket(db.Model):
