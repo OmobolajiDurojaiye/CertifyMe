@@ -7,7 +7,7 @@ import {
   ExclamationTriangleFill,
   CheckCircleFill,
 } from "react-bootstrap-icons";
-import { loginUser, resendVerificationEmail } from "../api";
+import { loginUser, resendVerificationEmail } from "../api"; // Correct API function is already imported
 import "../styles/Auth.css";
 
 function LoginPage() {
@@ -15,7 +15,7 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showResend, setShowResend] = useState(false);
+  const [showVerificationPrompt, setShowVerificationPrompt] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
@@ -35,10 +35,12 @@ function LoginPage() {
     setSuccess("");
     setResendLoading(true);
     try {
+      // --- THIS IS THE FIX ---
+      // Call the correct, dedicated API endpoint for resending the code.
       const response = await resendVerificationEmail(formData.email);
+      // --- END OF FIX ---
       setSuccess(response.data.msg);
-      setShowResend(false); // Hide the resend prompt after success
-      setError(""); // Clear the related error
+      setShowVerificationPrompt(true); // Keep the prompt visible
     } catch (err) {
       setError(
         err.response?.data?.msg || "Failed to resend code. Please try again."
@@ -53,7 +55,7 @@ function LoginPage() {
     setError("");
     setSuccess("");
     setLoading(true);
-    setShowResend(false);
+    setShowVerificationPrompt(false);
 
     try {
       const response = await loginUser(formData);
@@ -72,11 +74,11 @@ function LoginPage() {
     } catch (err) {
       const errorData = err.response?.data;
       if (errorData?.unverified) {
-        // Show both the error and the actionable resend prompt
-        setError(errorData.msg || "Please verify your account to continue.");
-        setShowResend(true);
+        setError("");
+        setShowVerificationPrompt(true);
       } else {
         setError(errorData?.msg || "Login failed. Please try again.");
+        setShowVerificationPrompt(false);
       }
     } finally {
       setLoading(false);
@@ -100,34 +102,50 @@ function LoginPage() {
           </Link>
           <h3>Sign In</h3>
 
-          {/* --- NEW MODERN ALERTS --- */}
-          {error && (
+          {error && !showVerificationPrompt && (
             <div className="custom-alert custom-alert-danger">
               <ExclamationTriangleFill size={20} className="alert-icon" />
               <span>{error}</span>
             </div>
           )}
+
           {success && (
             <div className="custom-alert custom-alert-success">
               <CheckCircleFill size={20} className="alert-icon" />
               <span>{success}</span>
             </div>
           )}
-          {showResend && (
-            <div className="custom-alert custom-alert-warning">
+
+          {showVerificationPrompt && (
+            <div className="custom-alert custom-alert-warning verification-prompt">
               <ExclamationTriangleFill size={20} className="alert-icon" />
-              <span>Your account needs verification.</span>
-              <Button
-                variant="link"
-                className="resend-link p-0"
-                onClick={handleResendCode}
-                disabled={resendLoading}
-              >
-                {resendLoading ? "Sending..." : "Resend Code"}
-              </Button>
+              <div className="alert-content">
+                <span className="alert-title">
+                  Account Verification Required
+                </span>
+                <p className="alert-message">
+                  To sign in, please complete the verification step.
+                </p>
+                <div className="alert-actions">
+                  <Button
+                    variant="link"
+                    className="resend-link"
+                    onClick={handleResendCode}
+                    disabled={resendLoading}
+                  >
+                    {resendLoading ? "Sending..." : "Resend Code"}
+                  </Button>
+                  <Link
+                    to="/verify-email"
+                    state={{ email: formData.email }}
+                    className="verify-action-btn"
+                  >
+                    Enter Code
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
-          {/* --- END OF MODERN ALERTS --- */}
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3" controlId="email">

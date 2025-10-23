@@ -241,3 +241,101 @@
 .custom-alert-warning .resend-link:hover {
   text-decoration: underline;
 }
+
+.custom-alert {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1.25rem;
+  border-radius: 0.5rem; /* 8px */
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+  font-weight: 500;
+}
+
+.custom-alert .alert-icon {
+  margin-right: 0.75rem;
+  flex-shrink: 0; /* Prevents icon from shrinking */
+}
+
+.custom-alert-danger {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+.custom-alert-success {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.custom-alert-warning {
+  background-color: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+/* --- NEW STYLES FOR VERIFICATION PROMPT --- */
+.verification-prompt {
+  align-items: flex-start; /* Aligns icon to the top of the content box */
+  padding: 1rem;
+}
+
+.verification-prompt .alert-content {
+  flex-grow: 1;
+  margin-left: 0.25rem; /* Reduced margin slightly */
+}
+
+.verification-prompt .alert-title {
+  font-weight: 600;
+  display: block;
+  font-size: 0.95rem;
+  color: #78350f; /* Darker text for title */
+}
+
+.verification-prompt .alert-message {
+  margin: 0.25rem 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #92400e;
+}
+
+.verification-prompt .alert-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.verification-prompt .resend-link {
+  padding: 0;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #92400e;
+  text-decoration: none;
+  border: none;
+  background: none;
+}
+
+.verification-prompt .resend-link:hover {
+  text-decoration: underline;
+}
+
+.verification-prompt .verify-action-btn {
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  background-color: #f59e0b; /* A bright, actionable yellow/orange */
+  color: #422006;
+  text-decoration: none;
+  border: 1px solid #d97706;
+  transition: all 0.2s ease-in-out;
+}
+
+.verification-prompt .verify-action-btn:hover {
+  background-color: #d97706;
+  color: white;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

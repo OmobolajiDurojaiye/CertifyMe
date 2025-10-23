@@ -19,8 +19,27 @@ def register():
     email = data['email']
     user = User.query.filter_by(email=email).first()
 
-    if user and user.is_verified:
-        return jsonify({"msg": "Email already registered"}), 409
+    # --- THIS IS THE FIX ---
+    # Handle the three possible states for an email address
+    if user:
+        if user.is_verified:
+            # 1. Email is registered and verified: Block re-registration completely.
+            return jsonify({"msg": "An account with this email already exists."}), 409
+        else:
+            # 2. Email is registered but NOT verified: Resend the code and treat it as a success.
+            # This creates a seamless flow for the user.
+            try:
+                user.set_verification_code()
+                send_verification_email(user, user.verification_code)
+                db.session.commit()
+                # Return a success status so the frontend navigates to the verification page.
+                return jsonify({"msg": "Verification code resent. Please check your email."}), 200
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Error resending verification email during registration attempt: {e}")
+                return jsonify({"msg": "An error occurred. Please try again."}), 500
+    # 3. Email does not exist: Proceed with new user creation.
+    # --- END OF FIX ---
 
     account_type = data.get('account_type', 'individual')
     company_name = data.get('company_name', '').strip()
@@ -30,38 +49,29 @@ def register():
 
     hashed_password = hashpw(data['password'].encode('utf-8'), gensalt())
     
-    if user and not user.is_verified:
-        user.name = data['name']
-        user.password_hash = hashed_password.decode('utf-8')
-        user.set_verification_code()
-    else:
-        user = User(
-            name=data['name'],
-            email=email,
-            password_hash=hashed_password.decode('utf-8'),
-            is_verified=False # Explicitly set to False for new signups
-        )
-        user.set_verification_code()
-        db.session.add(user)
+    new_user = User(
+        name=data['name'],
+        email=email,
+        password_hash=hashed_password.decode('utf-8'),
+        is_verified=False
+    )
+    new_user.set_verification_code()
+    db.session.add(new_user)
 
     if account_type == 'company':
         try:
-            if not user.id:
-                db.session.flush()
-
-            company = Company.query.filter_by(owner_id=user.id).first()
-            if not company:
-                new_company = Company(name=company_name, owner_id=user.id)
-                db.session.add(new_company)
-                db.session.flush()
-                user.company_id = new_company.id
+            db.session.flush()
+            new_company = Company(name=company_name, owner_id=new_user.id)
+            db.session.add(new_company)
+            db.session.flush()
+            new_user.company_id = new_company.id
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error during company registration setup: {e}")
             return jsonify({"msg": "Failed to create company account"}), 500
     
     try:
-        send_verification_email(user, user.verification_code)
+        send_verification_email(new_user, new_user.verification_code)
         db.session.commit()
     except Exception as e:
         db.session.rollback()
@@ -86,6 +96,9 @@ def verify_email():
 
     if user.is_verified:
         return jsonify({"msg": "Email is already verified."}), 400
+    
+    if user.verification_expiry is None:
+        return jsonify({"msg": "Invalid or expired verification code."}), 401
         
     if user.verification_expiry < datetime.utcnow():
         return jsonify({"msg": "Verification code has expired."}), 401
@@ -115,15 +128,15 @@ def resend_verification():
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        return jsonify({"msg": "User not found."}), 404
+        return jsonify({"msg": "If an account with that email exists and is unverified, a new code has been sent."}), 200
         
     if user.is_verified:
         return jsonify({"msg": "This account is already verified."}), 200
 
     try:
         user.set_verification_code()
-        db.session.commit()
         send_verification_email(user, user.verification_code)
+        db.session.commit()
         return jsonify({"msg": "A new verification code has been sent to your email."}), 200
     except Exception as e:
         db.session.rollback()
@@ -141,7 +154,6 @@ def login():
 
     if user and checkpw(data['password'].encode('utf-8'), user.password_hash.encode('utf-8')):
         if not user.is_verified:
-            # Send a specific error for unverified users
             return jsonify({
                 "msg": "Your account is not verified. Please check your email.",
                 "unverified": True
