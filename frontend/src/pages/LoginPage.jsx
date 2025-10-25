@@ -133,7 +133,7 @@ function LoginPage() {
                     onClick={handleResendCode}
                     disabled={resendLoading}
                   >
-                    {resendLoading ? "Sending..." : "Resend Code"}
+                    {resendLoading ? "Sending..." : "Send Code"}
                   </Button>
                   <Link
                     to="/verify-email"
