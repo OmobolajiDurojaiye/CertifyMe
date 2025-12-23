@@ -10,7 +10,7 @@ class AdminActionLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=False)
     action = db.Column(db.String(255), nullable=False)
-    target_type = db.Column(db.String(50), nullable=True) # e.g., 'user', 'certificate'
+    target_type = db.Column(db.String(50), nullable=True)
     target_id = db.Column(db.Integer, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -28,7 +28,6 @@ class Admin(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_verification_code(self):
-        """Generates a 6-digit code and sets an expiry time."""
         self.verification_code = str(random.randint(100000, 999999))
         self.verification_expiry = datetime.utcnow() + timedelta(minutes=15)
 
@@ -57,13 +56,12 @@ class User(db.Model):
     subscription_expiry = db.Column(db.DateTime, nullable=True)
     signature_image_url = db.Column(db.Text, nullable=True)
     api_key = db.Column(db.String(64), unique=True, nullable=True, index=True)
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL'), nullable=True)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL', use_alter=True), nullable=True)
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     last_login = db.Column(db.DateTime, nullable=True)
-    # --- THIS IS THE FIX ---
-    is_verified = db.Column(db.Boolean, default=True, nullable=False) # Changed default to True
-    # --- END OF FIX ---
+    is_verified = db.Column(db.Boolean, default=True, nullable=False)
     verification_code = db.Column(db.String(6), nullable=True)
     verification_expiry = db.Column(db.DateTime, nullable=True)
 
@@ -75,10 +73,8 @@ class User(db.Model):
     payments = db.relationship('Payment', backref='user', lazy=True)
 
     def set_verification_code(self):
-        """Generates a 6-digit code and sets an expiry time."""
         self.verification_code = str(random.randint(100000, 999999))
         self.verification_expiry = datetime.utcnow() + timedelta(minutes=15)
-
 
 class SupportTicket(db.Model):
     __tablename__ = 'support_tickets'
@@ -115,7 +111,10 @@ class Template(db.Model):
     secondary_color = db.Column(db.String(7), default='#64748B') 
     body_font_color = db.Column(db.String(7), default='#333333') 
     font_family = db.Column(db.String(50), default='Georgia')
-    layout_style = db.Column(db.Enum('classic', 'modern', 'visual', name='template_layouts'), default='modern', nullable=False)
+    
+    # Updated Enum: added 'receipt'
+    layout_style = db.Column(db.Enum('classic', 'modern', 'receipt', 'visual', name='template_layouts'), default='modern', nullable=False)
+    
     layout_data = db.Column(db.JSON, nullable=True)
     is_public = db.Column(db.Boolean, default=False, nullable=False)
     custom_text = db.Column(db.JSON, nullable=False, default=lambda: {
@@ -142,9 +141,7 @@ class Certificate(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('groups.id'), nullable=True)
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL'), nullable=True)
     recipient_name = db.Column(db.String(150), nullable=False)
-    # --- THIS IS THE FIX ---
-    recipient_email = db.Column(db.String(120), nullable=True) # Changed from nullable=False
-    # --- END OF FIX ---
+    recipient_email = db.Column(db.String(120), nullable=True)
     course_title = db.Column(db.String(150), nullable=False)
     issuer_name = db.Column(db.String(150), nullable=True) 
     issue_date = db.Column(db.Date, nullable=False)

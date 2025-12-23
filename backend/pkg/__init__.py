@@ -1,3 +1,5 @@
+# --- START OF FILE __init__.py ---
+
 import os
 from flask import Flask, send_from_directory, jsonify, request
 from flask_cors import CORS
@@ -79,31 +81,5 @@ def create_app():
     @app.errorhandler(404)
     def not_found(error):
         return jsonify({"msg": "Resources Not Found"}), 404
-
-    # Seed default classic template
-    with app.app_context():
-        try:
-            with db.engine.connect() as connection:
-                if db.engine.dialect.has_table(connection, "templates"):
-                    if not Template.query.filter_by(is_public=True, title='Default Classic').first():
-                        default_template = Template(
-                            title='Default Classic',
-                            primary_color='#1E3A8A',
-                            secondary_color='#D1D5DB',
-                            body_font_color='#111827',
-                            font_family='Georgia',
-                            layout_style='classic',
-                            is_public=True,
-                            custom_text={
-                                "title": "Certificate of Completion",
-                                "body": "has successfully completed the course"
-                            }
-                        )
-                        db.session.add(default_template)
-                        db.session.commit()
-                else:
-                    print("Skipping seeder: 'templates' table not found. Run 'flask db upgrade' first.")
-        except Exception as e:
-            print(f"Database connection error during seeding: {e}")
 
     return app

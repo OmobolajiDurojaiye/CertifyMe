@@ -7,8 +7,9 @@ from io import BytesIO
 import zipfile
 import re
 
-# Import the new reusable helper function
-from .certificates import _generate_certificate_pdf_in_memory, _create_email_message
+# --- CHANGED IMPORTS ---
+from ..services.pdf_service import generate_certificate_pdf
+from ..services.email_service import create_certificate_email
 
 groups_bp = Blueprint('groups', __name__)
 
@@ -63,17 +64,29 @@ def send_bulk_email_for_group(group_id):
         return jsonify({"msg": "All certificates in this group have already been sent."}), 400
 
     sent_certs, errors = [], []
-    with mail.connect() as conn:
-        for certificate in certificates_to_send:
-            try:
-                pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
-                msg = _create_email_message(certificate, pdf_buffer)
-                conn.send(msg)
-                certificate.sent_at = datetime.utcnow()
-                sent_certs.append(certificate.id)
-            except Exception as e:
-                current_app.logger.error(f"Failed to send email for cert {certificate.id}: {e}")
-                errors.append({"certificate_id": certificate.id, "msg": str(e)})
+    
+    # Iterate and send
+    for certificate in certificates_to_send:
+        try:
+            # Re-fetch template to be safe
+            template = Template.query.get(certificate.template_id)
+            
+            # Generate PDF
+            pdf_buffer = generate_certificate_pdf(certificate, template, group.user)
+            
+            # Attach template for email logic
+            certificate.template = template
+            
+            # Create Email
+            msg = create_certificate_email(certificate, pdf_buffer)
+            mail.send(msg)
+            
+            certificate.sent_at = datetime.utcnow()
+            sent_certs.append(certificate.id)
+            
+        except Exception as e:
+            current_app.logger.error(f"Failed to send email for cert {certificate.id}: {e}")
+            errors.append({"certificate_id": certificate.id, "msg": str(e)})
 
     db.session.commit()
     
@@ -81,7 +94,6 @@ def send_bulk_email_for_group(group_id):
         return jsonify({"msg": f"Processed with errors. Sent: {len(sent_certs)}", "sent": sent_certs, "errors": errors}), 207
     return jsonify({"msg": f"Successfully sent {len(sent_certs)} emails"}), 200
 
-# --- NEW ENDPOINT FOR BULK PDF DOWNLOAD ---
 @groups_bp.route('/<int:group_id>/download-bulk-pdf', methods=['GET'])
 @jwt_required()
 def download_bulk_pdf_for_group(group_id):
@@ -95,15 +107,16 @@ def download_bulk_pdf_for_group(group_id):
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         for certificate in group.certificates:
             try:
-                pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
+                template = Template.query.get(certificate.template_id)
+                pdf_buffer = generate_certificate_pdf(certificate, template, group.user)
+                
                 # Sanitize recipient name for the filename
                 sane_name = re.sub(r'[\W_]+', '_', certificate.recipient_name)
                 filename = f"certificate_{sane_name}_{certificate.verification_id[:8]}.pdf"
                 zip_file.writestr(filename, pdf_buffer.getvalue())
             except Exception as e:
                 current_app.logger.error(f"Skipping PDF for cert {certificate.id} due to error: {e}")
-                # Optionally, add an error file to the zip
-                zip_file.writestr(f"ERROR_cert_{certificate.id}.txt", f"Could not generate PDF for {certificate.recipient_name}. Error: {e}")
+                zip_file.writestr(f"ERROR_cert_{certificate.id}.txt", f"Could not generate PDF. Error: {e}")
 
     zip_buffer.seek(0)
     

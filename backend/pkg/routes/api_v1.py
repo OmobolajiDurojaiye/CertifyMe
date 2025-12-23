@@ -4,8 +4,10 @@ from datetime import datetime
 from ..models import db, User, Template, Certificate
 import uuid
 
-# Re-import helper functions from your existing certificate blueprint
-from .certificates import _generate_certificate_pdf_in_memory, _create_email_message, parse_flexible_date
+# --- CHANGED IMPORTS ---
+from ..services.pdf_service import generate_certificate_pdf
+from ..services.email_service import create_certificate_email
+from ..utils.helpers import parse_smart_date
 from ..extensions import mail
 
 # Create a new blueprint for the versioned API
@@ -55,7 +57,7 @@ def create_certificate_via_api():
         return jsonify({"msg": "Template not found or permission denied"}), 404
 
     try:
-        issue_date = parse_flexible_date(data['issue_date'])
+        issue_date = parse_smart_date(data['issue_date'])
         
         certificate = Certificate(
             user_id=user.id,
@@ -63,7 +65,7 @@ def create_certificate_via_api():
             recipient_name=data['recipient_name'],
             recipient_email=data['recipient_email'],
             course_title=data['course_title'],
-            issuer_name=user.name,  # Default to the user's name
+            issuer_name=data.get('issuer_name', user.name),
             issue_date=issue_date,
             extra_fields=data.get('extra_fields', {}),
             verification_id=str(uuid.uuid4())
@@ -76,11 +78,13 @@ def create_certificate_via_api():
 
         # Generate PDF and send email
         try:
-            pdf_buffer = _generate_certificate_pdf_in_memory(certificate)
-            # Use the user's name as the issuer in the email
-            certificate.issuer_name = user.name 
-            msg = _create_email_message(certificate, pdf_buffer)
+            pdf_buffer = generate_certificate_pdf(certificate, template, user)
+            
+            certificate.template = template
+            
+            msg = create_certificate_email(certificate, pdf_buffer)
             mail.send(msg)
+            
             certificate.sent_at = datetime.utcnow()
             db.session.commit()
             current_app.logger.info(f"API: Certificate {certificate.id} for user {user.id} created and emailed to {certificate.recipient_email}")

@@ -1,9 +1,16 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Form, Button, Alert, Spinner } from "react-bootstrap";
-import { Eye, EyeSlash } from "react-bootstrap-icons";
+import { Form, Spinner, Alert } from "react-bootstrap";
+import {
+  Eye,
+  EyeOff,
+  User,
+  Building,
+  Mail,
+  Lock,
+  ArrowRight,
+} from "lucide-react";
 import { signupUser } from "../api";
-import "../styles/Auth.css";
 
 function SignupPage() {
   const [formData, setFormData] = useState({
@@ -24,10 +31,6 @@ function SignupPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -38,7 +41,7 @@ function SignupPage() {
 
     if (account_type === "company") {
       if (!company_name.trim()) {
-        setError("Company Name is required for a company account.");
+        setError("Company Name is required.");
         setLoading(false);
         return;
       }
@@ -47,148 +50,187 @@ function SignupPage() {
 
     try {
       await signupUser(payload);
-      // Redirect to verification page instead of login
       navigate("/verify-email", { state: { email: payload.email } });
     } catch (err) {
-      setError(err.response?.data?.msg || "Signup failed. Please try again.");
+      setError(err.response?.data?.msg || "Signup failed.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-wrapper">
-        <div className="auth-panel">
-          <h2>Join the Future of Certification</h2>
-          <p>
-            Create your free account and start issuing secure, verifiable
-            credentials in minutes.
-          </p>
-        </div>
-        <div className="auth-form-container">
-          <Link to="/">
-            <img
-              src="/images/certbadge.png"
-              alt="CertifyMe Logo"
-              className="auth-logo"
-            />
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <Link
+          to="/"
+          className="flex justify-center items-center gap-2 mb-6 no-underline"
+        >
+          <img src="/images/certbadge.png" alt="Logo" className="h-10 w-10" />
+          <span className="font-bold text-2xl text-gray-900">CertifyMe</span>
+        </Link>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          Create your account
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <Link
+            to="/login"
+            className="font-medium text-indigo-600 hover:text-indigo-500 no-underline"
+          >
+            Sign in
           </Link>
-          <h3>Create an Account</h3>
-          {error && <Alert variant="danger">{error}</Alert>}
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg">
+        <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-gray-100">
           {plan && (
-            <Alert variant="info">
-              You've selected the{" "}
-              <strong>{plan.charAt(0).toUpperCase() + plan.slice(1)}</strong>{" "}
-              plan. Complete your registration to proceed to payment.
-            </Alert>
+            <div className="mb-6 bg-indigo-50 border border-indigo-100 text-indigo-700 px-4 py-3 rounded-lg text-sm font-medium text-center">
+              You selected the{" "}
+              <span className="uppercase font-bold">{plan}</span> plan.
+            </div>
           )}
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Account Type</Form.Label>
-              <div className="account-type-toggle">
-                <input
-                  type="radio"
-                  name="account_type"
-                  id="individual"
-                  value="individual"
-                  checked={formData.account_type === "individual"}
-                  onChange={handleChange}
-                />
-                <label htmlFor="individual">Individual</label>
 
-                <input
-                  type="radio"
-                  name="account_type"
-                  id="company"
-                  value="company"
-                  checked={formData.account_type === "company"}
-                  onChange={handleChange}
-                />
-                <label htmlFor="company">Company</label>
-              </div>
-            </Form.Group>
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
 
-            {formData.account_type === "company" && (
-              <Form.Group className="mb-3" controlId="company_name">
-                <Form.Label>Company / Institution Name</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="company_name"
-                  value={formData.company_name}
-                  onChange={handleChange}
-                  placeholder="Enter your company's name"
-                  required
-                />
-              </Form.Group>
-            )}
-
-            <Form.Group className="mb-3" controlId="name">
-              <Form.Label>Full Name</Form.Label>
-              <Form.Control
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter your full name"
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3" controlId="email">
-              <Form.Label>Email Address</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-4 position-relative" controlId="password">
-              <Form.Label>Password</Form.Label>
-              <Form.Control
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Create a strong password"
-                required
-                className="password-input"
-              />
+          <Form onSubmit={handleSubmit} className="space-y-6">
+            {/* Account Type Selector */}
+            <div className="grid grid-cols-2 gap-3 p-1 bg-gray-100 rounded-lg">
               <button
                 type="button"
-                className="password-toggle-btn"
-                onClick={togglePasswordVisibility}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                onClick={() =>
+                  setFormData({ ...formData, account_type: "individual" })
+                }
+                className={`py-2 text-sm font-medium rounded-md transition-all ${
+                  formData.account_type === "individual"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
               >
-                {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                Individual
               </button>
-            </Form.Group>
-            <Button className="btn-auth w-100" type="submit" disabled={loading}>
-              {loading ? (
-                <Spinner
-                  as="span"
-                  animation="border"
-                  size="sm"
-                  role="status"
-                  aria-hidden="true"
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({ ...formData, account_type: "company" })
+                }
+                className={`py-2 text-sm font-medium rounded-md transition-all ${
+                  formData.account_type === "company"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Organization
+              </button>
+            </div>
+
+            {formData.account_type === "company" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Company Name
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    name="company_name"
+                    required
+                    value={formData.company_name}
+                    onChange={handleChange}
+                    className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    placeholder="Acme Inc."
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Full Name
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  name="name"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="John Doe"
                 />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Email Address
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="you@example.com"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="block w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+            >
+              {loading ? (
+                <Spinner animation="border" size="sm" />
               ) : (
-                "Create Account"
+                <span className="flex items-center">
+                  Create Account <ArrowRight className="ml-2 h-4 w-4" />
+                </span>
               )}
-            </Button>
+            </button>
           </Form>
-          <p className="text-center mt-4 text-muted">
-            Already have an account?{" "}
-            <Link to="/login" className="auth-switch-link">
-              Sign In
-            </Link>
-            {" | "}
-            <Link to="/" className="auth-switch-link">
-              Back to Home
-            </Link>
-          </p>
         </div>
       </div>
     </div>

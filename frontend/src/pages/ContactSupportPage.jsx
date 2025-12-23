@@ -4,24 +4,28 @@ import {
   Card,
   Form,
   Button,
-  ListGroup,
-  Badge,
   Spinner,
   Row,
   Col,
   InputGroup,
-  Modal,
   Image,
   Container,
 } from "react-bootstrap";
 import {
   PlusCircle,
   ArrowLeft,
-  SendFill,
-  PersonCircle,
+  Send,
+  User,
   Paperclip,
-  Trash,
-} from "react-bootstrap-icons";
+  Trash2,
+  MessageCircle,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  FileText,
+  CornerDownRight,
+  Shield,
+} from "lucide-react";
 import {
   createUserTicket,
   getUserTickets,
@@ -30,7 +34,6 @@ import {
   deleteUserTicket,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
-import "../styles/TicketPage.css"; // --- IMPORT THE NEW STYLESHEET
 
 // Main component that decides whether to show the list or details
 function ContactSupportPage() {
@@ -73,8 +76,15 @@ function TicketList() {
       return;
     }
     setSubmitting(true);
+    const formData = new FormData();
+    formData.append("subject", subject);
+    formData.append("message", message);
+    if (file) {
+      formData.append("file", file);
+    }
+
     try {
-      await createUserTicket(subject, message, file);
+      await createUserTicket(formData);
       toast.success("Support ticket created!");
       setSubject("");
       setMessage("");
@@ -121,139 +131,203 @@ function TicketList() {
   };
 
   const getStatusBadge = (status) => {
-    const variants = {
-      open: "primary",
-      in_progress: "warning",
-      closed: "secondary",
-    };
-    return variants[status] || "info";
+    switch (status) {
+      case "open":
+        return "bg-blue-100 text-blue-700";
+      case "in_progress":
+        return "bg-yellow-100 text-yellow-700";
+      case "closed":
+        return "bg-gray-100 text-gray-600";
+      default:
+        return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case "open":
+        return <AlertCircle size={14} className="mr-1" />;
+      case "in_progress":
+        return <Clock size={14} className="mr-1" />;
+      case "closed":
+        return <CheckCircle size={14} className="mr-1" />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <Container className="py-4">
-      <Toaster position="top-center" />
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="fw-bold mb-0 h2">My Support Tickets</h1>
-        <Button as={Link} to="/dashboard/support" variant="outline-secondary">
-          Back to Help Center
-        </Button>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <Toaster position="top-right" />
+
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Support Tickets</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            Track your inquiries and communicate with our team.
+          </p>
+        </div>
+        <Link
+          to="/dashboard/support"
+          className="flex items-center text-gray-600 hover:text-indigo-600 transition-colors font-medium text-sm bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm"
+        >
+          <ArrowLeft size={16} className="mr-2" /> Back to Help Center
+        </Link>
       </div>
 
-      <Row>
-        <Col lg={5}>
-          <Card className="border-0 shadow-sm mb-4">
-            <Card.Header className="bg-white border-0 pt-3 pb-0">
-              <h5 className="mb-0 d-flex align-items-center">
-                <PlusCircle className="me-2 text-primary" /> Create a New Ticket
-              </h5>
-            </Card.Header>
-            <Card.Body>
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3">
-                  <Form.Label className="small fw-bold">Subject</Form.Label>
-                  <Form.Control
-                    type="text"
-                    placeholder="e.g., Issue with bulk upload"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label className="small fw-bold">Message</Form.Label>
-                  <Form.Control
-                    as="textarea"
-                    rows={5}
-                    placeholder="Please describe your issue in detail..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    required
-                  />
-                </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label className="small fw-bold">
-                    Attachment (Optional)
-                  </Form.Label>
-                  <Form.Control
-                    type="file"
-                    onChange={handleFileChange}
-                    accept="image/png, image/jpeg, image/gif"
-                  />
-                  {file && <Form.Text muted>Selected: {file.name}</Form.Text>}
-                </Form.Group>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  className="w-100"
-                  size="lg"
-                  disabled={submitting}
-                >
-                  {submitting ? (
-                    <Spinner as="span" animation="border" size="sm" />
-                  ) : (
-                    "Submit Ticket"
-                  )}
-                </Button>
-              </Form>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={7}>
-          <Card className="border-0 shadow-sm">
-            <Card.Header className="bg-white border-0 pt-3">
-              <h5 className="mb-0">Your Ticket History</h5>
-            </Card.Header>
-            <ListGroup variant="flush">
-              {loading ? (
-                <div className="text-center p-5">
-                  <Spinner animation="border" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* CREATE TICKET FORM */}
+        <div className="lg:col-span-5 order-2 lg:order-1">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+            <div className="flex items-center gap-2 mb-6 border-b border-gray-100 pb-4">
+              <div className="bg-indigo-50 p-2 rounded-lg text-indigo-600">
+                <PlusCircle size={20} />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900">
+                Create New Ticket
+              </h2>
+            </div>
+
+            <Form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Issue with bulk upload"
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Message
+                </label>
+                <textarea
+                  rows={5}
+                  placeholder="Please describe your issue in detail..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Attachment (Optional)
+                </label>
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 text-sm font-medium text-gray-700 transition-colors w-full">
+                    <Paperclip size={16} className="mr-2" />
+                    {file ? "Change File" : "Choose File"}
+                    <input
+                      type="file"
+                      onChange={handleFileChange}
+                      accept="image/png, image/jpeg, image/gif"
+                      className="hidden"
+                    />
+                  </label>
                 </div>
-              ) : tickets.length > 0 ? (
-                tickets.map((ticket) => (
-                  <ListGroup.Item
+                {file && (
+                  <p className="mt-2 text-xs text-green-600 flex items-center">
+                    <CheckCircle size={12} className="mr-1" /> {file.name}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-lg transition-all shadow-sm flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                disabled={submitting}
+              >
+                {submitting ? <Spinner size="sm" /> : "Submit Ticket"}
+              </button>
+            </Form>
+          </div>
+        </div>
+
+        {/* TICKET LIST */}
+        <div className="lg:col-span-7 order-1 lg:order-2">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="font-bold text-gray-700 flex items-center gap-2">
+                <FileText size={18} /> Ticket History
+              </h2>
+              <span className="bg-gray-200 text-gray-600 text-xs font-bold px-2 py-1 rounded-full">
+                {tickets.length}
+              </span>
+            </div>
+
+            {loading ? (
+              <div className="text-center py-12">
+                <Spinner animation="border" variant="primary" />
+              </div>
+            ) : tickets.length > 0 ? (
+              <div className="divide-y divide-gray-100">
+                {tickets.map((ticket) => (
+                  <Link
                     key={ticket.id}
-                    action
-                    as={Link}
                     to={`/dashboard/support/tickets/${ticket.id}`}
-                    className="d-flex justify-content-between align-items-center p-3 ticket-list-item"
+                    className="block p-4 hover:bg-indigo-50/30 transition-colors group text-decoration-none"
                   >
-                    <div className="flex-grow-1 me-3">
-                      <div className="fw-bold">{ticket.subject}</div>
-                      <small className="text-muted">
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors">
+                        {ticket.subject}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide ${getStatusBadge(
+                            ticket.status
+                          )}`}
+                        >
+                          {getStatusIcon(ticket.status)}
+                          {ticket.status.replace("_", " ")}
+                        </span>
+                        <button
+                          onClick={(e) => handleDelete(e, ticket.id)}
+                          className="text-gray-400 hover:text-red-500 p-1 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+                          title="Delete Ticket"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-xs text-gray-500">
+                      <span className="flex items-center">
+                        <Clock size={12} className="mr-1" />
                         Last updated:{" "}
                         {new Date(ticket.updated_at).toLocaleDateString()}
-                      </small>
+                      </span>
+                      <span className="flex items-center text-indigo-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0 duration-200">
+                        View Details{" "}
+                        <CornerDownRight size={12} className="ml-1" />
+                      </span>
                     </div>
-                    <div className="d-flex align-items-center">
-                      <Badge
-                        pill
-                        bg={getStatusBadge(ticket.status)}
-                        className="me-3 px-2 py-1"
-                      >
-                        {ticket.status.replace("_", " ")}
-                      </Badge>
-                      <Button
-                        variant="light"
-                        size="sm"
-                        className="btn-delete"
-                        onClick={(e) => handleDelete(e, ticket.id)}
-                        title="Delete Ticket"
-                      >
-                        <Trash className="text-danger" />
-                      </Button>
-                    </div>
-                  </ListGroup.Item>
-                ))
-              ) : (
-                <Card.Body className="text-center text-muted p-5">
-                  You have no support tickets.
-                </Card.Body>
-              )}
-            </ListGroup>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 px-4">
+                <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <MessageCircle size={32} className="text-gray-400" />
+                </div>
+                <h3 className="text-gray-900 font-medium">No tickets yet</h3>
+                <p className="text-gray-500 text-sm mt-1">
+                  Create a ticket if you need help with anything.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -298,8 +372,15 @@ function TicketDetails() {
       return;
     }
     setSending(true);
+
+    const formData = new FormData();
+    formData.append("message", reply);
+    if (file) {
+      formData.append("file", file);
+    }
+
     try {
-      await replyToTicket(ticketId, reply, file);
+      await replyToTicket(ticketId, formData);
       setReply("");
       setFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -319,108 +400,228 @@ function TicketDetails() {
     } else {
       setFile(null);
     }
-    e.target.value = null; // Reset input to allow re-selection
+    e.target.value = null;
   };
 
   if (loading) {
     return (
-      <Container
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "80vh" }}
-      >
+      <div className="min-h-[80vh] flex items-center justify-center">
         <Spinner animation="border" variant="primary" />
-      </Container>
+      </div>
     );
   }
 
   if (!ticket) return null;
 
+  const isClosed = ticket.status === "closed";
+
   return (
-    <Container className="py-4">
-      <Toaster position="top-center" />
-      <Card className="border-0 shadow-sm chat-container-card">
-        <Card.Header className="bg-white chat-header d-flex align-items-center justify-content-between p-3">
-          <h2 className="h5 mb-0 fw-bold">{ticket.subject}</h2>
-          <Button
-            as={Link}
+    <div className="max-w-4xl mx-auto px-4 py-8 h-[calc(100vh-64px)] flex flex-col">
+      <Toaster position="top-right" />
+
+      {/* HEADER */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm z-10 rounded-t-xl border-x border-t">
+        <div className="flex items-center gap-4">
+          <Link
             to="/dashboard/support/tickets"
-            variant="outline-secondary"
-            size="sm"
+            className="text-gray-500 hover:text-gray-900 transition-colors"
           >
-            <ArrowLeft /> Back to My Tickets
-          </Button>
-        </Card.Header>
-        <Card.Body className="chat-body d-flex flex-column gap-3">
-          {ticket.messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`d-flex flex-column chat-bubble ${
-                msg.sender_type === "user" ? "user" : "admin"
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900 line-clamp-1">
+              {ticket.subject}
+            </h1>
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium uppercase tracking-wide mt-1 ${
+                ticket.status === "open"
+                  ? "bg-blue-100 text-blue-700"
+                  : ticket.status === "in_progress"
+                  ? "bg-yellow-100 text-yellow-700"
+                  : "bg-gray-100 text-gray-600"
               }`}
             >
-              <div className="fw-bold d-flex align-items-center mb-1">
-                <PersonCircle className="me-2" />
-                <span>{msg.sender_name}</span>
-              </div>
-              <p className="mb-1">{msg.content}</p>
-              {msg.image_url && (
-                <Image
-                  src={msg.image_url}
-                  thumbnail
-                  className="mt-2"
-                  style={{ maxWidth: "200px", cursor: "pointer" }}
-                />
-              )}
-              <small className="opacity-75 align-self-end mt-1">
-                {new Date(msg.created_at).toLocaleTimeString()}
-              </small>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </Card.Body>
-        <Card.Footer className="chat-footer">
-          <Form onSubmit={handleReply}>
-            <InputGroup>
-              <Form.Control
-                placeholder="Type your reply..."
-                value={reply}
-                onChange={(e) => setReply(e.target.value)}
-                disabled={ticket.status === "closed"}
-                required={!file} // Required if no file is attached
-              />
-              <Button
-                variant="light"
-                onClick={() => fileInputRef.current.click()}
-                disabled={ticket.status === "closed"}
-                title="Attach file"
+              {ticket.status.replace("_", " ")}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* CHAT AREA */}
+      <div className="flex-1 overflow-y-auto p-6 bg-gray-50 border-x border-gray-200 space-y-6">
+        {ticket.messages.map((msg) => {
+          const isUser = msg.sender_type === "user";
+          return (
+            <div
+              key={msg.id}
+              className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[80%] ${
+                  isUser ? "items-end" : "items-start"
+                } flex flex-col`}
               >
-                <Paperclip size={20} />
-              </Button>
-              <Button
+                <div className="flex items-center gap-2 mb-1 px-1">
+                  {isUser ? (
+                    <>
+                      <span className="text-xs font-bold text-gray-600">
+                        {msg.sender_name}
+                      </span>
+                      <User size={12} className="text-gray-400" />
+                    </>
+                  ) : (
+                    <>
+                      <Shield size={12} className="text-indigo-600" />
+                      <span className="text-xs font-bold text-indigo-600">
+                        Support Team
+                      </span>
+                    </>
+                  )}
+                </div>
+
+                <div
+                  className={`p-4 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                    isUser
+                      ? "bg-indigo-600 text-white rounded-tr-none"
+                      : "bg-white text-gray-800 border border-gray-200 rounded-tl-none"
+                  }`}
+                >
+                  <p className="whitespace-pre-wrap">{msg.content}</p>
+                  {msg.image_url && (
+                    <a
+                      href={msg.image_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block mt-3"
+                    >
+                      <Image
+                        src={msg.image_url}
+                        thumbnail
+                        className="max-w-full rounded-lg border-2 border-white/20"
+                        style={{ maxHeight: "200px" }}
+                      />
+                    </a>
+                  )}
+                </div>
+
+                <span className="text-[10px] text-gray-400 mt-1 px-1">
+                  {new Date(msg.created_at).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* INPUT AREA */}
+      <div className="bg-white p-4 border border-gray-200 rounded-b-xl shadow-sm">
+        {isClosed ? (
+          <div className="text-center py-4 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-gray-500">
+            <Lock size={20} className="mx-auto mb-2 opacity-50" />
+            <p className="text-sm font-medium">This ticket has been closed.</p>
+          </div>
+        ) : (
+          <Form onSubmit={handleReply} className="relative">
+            {file && (
+              <div className="absolute -top-12 left-0 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center border border-indigo-100 shadow-sm animate-in fade-in slide-in-from-bottom-2">
+                <Paperclip size={12} className="mr-1.5" />
+                {file.name}
+                <button
+                  type="button"
+                  onClick={() => setFile(null)}
+                  className="ml-2 hover:bg-indigo-100 rounded-full p-0.5"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 relative">
+                <textarea
+                  placeholder="Type your reply here..."
+                  value={reply}
+                  onChange={(e) => setReply(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none text-sm min-h-[50px] max-h-[120px]"
+                  rows={2}
+                  required={!file}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current.click()}
+                  className="absolute right-3 bottom-3 text-gray-400 hover:text-indigo-600 transition-colors p-1 rounded-md hover:bg-gray-100"
+                  title="Attach File"
+                >
+                  <Paperclip size={18} />
+                </button>
+              </div>
+
+              <button
                 type="submit"
-                variant="primary"
-                disabled={sending || ticket.status === "closed"}
-                title="Send"
+                disabled={sending}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex items-center justify-center transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed flex-shrink-0"
               >
                 {sending ? (
-                  <Spinner as="span" size="sm" />
+                  <Spinner size="sm" />
                 ) : (
-                  <SendFill size={20} />
+                  <Send size={20} className="ml-0.5" />
                 )}
-              </Button>
-            </InputGroup>
-            <Form.Control
+              </button>
+            </div>
+
+            <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
               accept="image/png, image/jpeg, image/gif"
-              style={{ display: "none" }}
+              className="hidden"
             />
           </Form>
-        </Card.Footer>
-      </Card>
-    </Container>
+        )}
+      </div>
+    </div>
   );
 }
+
+// Helper components for missing imports if needed
+const Lock = ({ size, className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+  </svg>
+);
+
+const X = ({ size, className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <line x1="18" y1="6" x2="6" y2="18"></line>
+    <line x1="6" y1="6" x2="18" y2="18"></line>
+  </svg>
+);
 
 export default ContactSupportPage;

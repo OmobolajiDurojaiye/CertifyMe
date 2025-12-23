@@ -1,7 +1,5 @@
-// frontend/src/pages/AnalyticsPage.jsx
-
 import React, { useState, useEffect } from "react";
-import { Card, Row, Col, Spinner, Alert, Button } from "react-bootstrap";
+import { Row, Col, Spinner, Alert } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import { Radar, Doughnut, Line, Bar } from "react-chartjs-2";
 import {
@@ -22,13 +20,16 @@ import { getUserAnalytics } from "../api";
 import {
   Target,
   Award,
-  BarChart,
+  BarChart2,
   Users,
   TrendingUp,
   Mail,
-  Folder,
+  FolderOpen,
   Clock,
   PieChart,
+  Lock,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
 
 ChartJS.register(
@@ -47,21 +48,70 @@ ChartJS.register(
 
 const formatNumber = (num) => num?.toLocaleString() ?? "0";
 
+// --- COMPONENTS ---
+
+const StatCard = ({ title, value, icon: Icon, color, subtext, trend }) => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-100 transition-all hover:shadow-md">
+    <div className="flex items-start justify-between mb-4">
+      <div className={`p-3 rounded-lg ${color}`}>
+        <Icon size={24} />
+      </div>
+      {trend && (
+        <span
+          className={`flex items-center text-sm font-medium ${
+            trend > 0 ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          {trend > 0 ? (
+            <ArrowUpRight size={16} className="mr-1" />
+          ) : (
+            <ArrowDownRight size={16} className="mr-1" />
+          )}
+          {Math.abs(trend)}%
+        </span>
+      )}
+    </div>
+    <h3 className="text-2xl font-bold text-gray-900 mb-1">{value}</h3>
+    <p className="text-gray-500 text-sm font-medium mb-0">{title}</p>
+    {subtext && <p className="text-xs text-gray-400 mt-2">{subtext}</p>}
+  </div>
+);
+
+const ChartCard = ({ title, children, emptyMessage }) => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 h-100">
+    <h4 className="text-lg font-bold text-gray-800 mb-6">{title}</h4>
+    {children ? (
+      <div className="w-100">{children}</div>
+    ) : (
+      <div className="h-64 flex flex-col items-center justify-center text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+        <BarChart2 className="text-gray-300 mb-3" size={48} />
+        <p className="text-gray-500 font-medium">{emptyMessage}</p>
+      </div>
+    )}
+  </div>
+);
+
 const UpgradePrompt = () => (
-  <div className="text-center p-5 bg-light rounded shadow-sm mt-4">
-    <TrendingUp size={64} className="text-success mb-4" />
-    <h2 className="fw-bold mb-3">Unlock Your Performance Insights</h2>
-    <p
-      className="lead text-muted mb-4"
-      style={{ maxWidth: "600px", margin: "0 auto 1.5rem auto" }}
-    >
+  <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white rounded-xl shadow-sm border border-gray-200 relative overflow-hidden">
+    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-green-400 to-blue-500"></div>
+    <div className="bg-green-50 p-4 rounded-full mb-6">
+      <TrendingUp size={48} className="text-green-600" />
+    </div>
+    <h2 className="text-3xl font-bold text-gray-900 mb-4">
+      Unlock Professional Insights
+    </h2>
+    <p className="text-gray-600 max-w-2xl text-lg mb-8">
       Gain a competitive edge with peer benchmarking, performance scores, and
       detailed issuance trends. See how you stack up against others and identify
       your top-performing programs.
     </p>
-    <Button as={Link} to="/dashboard/settings" size="lg" variant="success">
-      Upgrade to Pro Now
-    </Button>
+    <Link
+      to="/dashboard/settings"
+      state={{ defaultTab: "billing" }}
+      className="inline-flex items-center px-8 py-3 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+    >
+      <Lock size={20} className="mr-2" /> Upgrade to Pro
+    </Link>
   </div>
 );
 
@@ -85,342 +135,269 @@ const FullDashboard = ({ insights }) => {
   const momGrowth =
     prevMonth > 0
       ? (((currentMonth - prevMonth) / prevMonth) * 100).toFixed(1)
-      : "N/A";
-  const momGrowthColor =
-    momGrowth !== "N/A"
-      ? momGrowth > 0
-        ? "text-success"
-        : "text-danger"
-      : "text-muted";
+      : "0";
 
-  const radarChartData = {
+  // Chart Options
+  const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "bottom",
+        labels: { usePointStyle: true, padding: 20 },
+      },
+    },
+  };
+
+  const radarData = {
     labels: benchmarking.labels,
     datasets: [
       {
-        label: "Your Performance",
+        label: "You",
         data: benchmarking.user_data,
-        backgroundColor: "rgba(54, 162, 235, 0.2)",
-        borderColor: "rgba(54, 162, 235, 1)",
+        backgroundColor: "rgba(79, 70, 229, 0.2)",
+        borderColor: "#4F46E5",
         borderWidth: 2,
       },
       {
-        label: "Peer Average",
+        label: "Peer Avg",
         data: benchmarking.peer_average_data,
-        backgroundColor: "rgba(255, 99, 132, 0.2)",
-        borderColor: "rgba(255, 99, 132, 1)",
+        backgroundColor: "rgba(107, 114, 128, 0.2)",
+        borderColor: "#6B7280",
         borderWidth: 2,
       },
     ],
   };
-  const radarOptions = {
-    responsive: true,
-    plugins: {
-      title: { display: true, text: "Your Performance vs. Peer Average" },
-    },
-    scales: { r: { suggestedMin: 0, pointLabels: { font: { size: 14 } } } },
-  };
 
-  const lineChartData = {
+  const lineData = {
     labels: charts.certs_over_time.labels,
     datasets: [
       {
-        label: "Certificates",
+        label: "Issued",
         data: charts.certs_over_time.data,
-        borderColor: "rgb(75, 192, 192)",
-        backgroundColor: "rgba(75, 192, 192, 0.2)",
-        tension: 0.3,
+        borderColor: "#0ea5e9",
+        backgroundColor: "rgba(14, 165, 233, 0.1)",
+        tension: 0.4,
         fill: true,
       },
     ],
   };
-  const lineOptions = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      title: { display: true, text: "Certificates Issued Over Time" },
-    },
-    scales: { y: { beginAtZero: true } },
-  };
-
-  const barChartData = {
-    labels: charts.top_programs.labels,
-    datasets: [
-      {
-        label: "Certificates",
-        data: charts.top_programs.data,
-        backgroundColor: "#36A2EB",
-      },
-    ],
-  };
-  const barOptions = {
-    indexAxis: "y",
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      title: { display: true, text: "Top 5 Programs by Issuance" },
-    },
-    scales: { x: { beginAtZero: true } },
-  };
-
-  // Status Breakdown Doughnut
-  const statusChartData = {
-    labels: status_breakdown.labels,
-    datasets: [
-      {
-        data: status_breakdown.data,
-        backgroundColor: ["#28a745", "#dc3545"],
-      },
-    ],
-  };
-  const doughnutOptions = {
-    responsive: true,
-    plugins: {
-      title: { display: true, text: "Certificate Status Breakdown" },
-      legend: { position: "right" },
-    },
-  };
-
-  // Template Usage Doughnut
-  const templateChartData = {
-    labels: template_usage.labels,
-    datasets: [
-      {
-        data: template_usage.data,
-        backgroundColor: [
-          "#FF6384",
-          "#36A2EB",
-          "#FFCE56",
-          "#4BC0C0",
-          "#9966FF",
-        ],
-      },
-    ],
-  };
-  const templateOptions = {
-    responsive: true,
-    plugins: {
-      title: { display: true, text: "Top 5 Template Usage" },
-      legend: { position: "right" },
-    },
-  };
-
-  // Top Recipients Bar
-  const recipientsBarData = {
-    labels: top_recipient.labels,
-    datasets: [
-      {
-        label: "Certificates",
-        data: top_recipient.data,
-        backgroundColor: "#FF9F40",
-      },
-    ],
-  };
-  const recipientsBarOptions = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      title: { display: true, text: "Top 5 Recipients by Certificates" },
-    },
-    scales: { y: { beginAtZero: true } },
-  };
 
   return (
     <>
-      <h3 className="fw-bold mb-3">Performance Insights</h3>
-      <Row className="mb-4">
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100 bg-primary text-white">
-            <Card.Body>
-              <Target size={32} className="mb-2" />
-              <h1 className="fw-bolder display-4">{kpis.performance_score}</h1>
-              <p className="mb-0 fs-5">Performance Score</p>
-            </Card.Body>
-          </Card>
+      <div className="mb-8">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="w-1 h-6 bg-indigo-600 rounded-full"></div>
+          Core Performance
+        </h3>
+        <Row className="g-4">
+          <Col md={3}>
+            <StatCard
+              title="Performance Score"
+              value={kpis.performance_score}
+              icon={Target}
+              color="bg-indigo-50 text-indigo-600"
+              subtext="Based on volume & consistency"
+            />
+          </Col>
+          <Col md={3}>
+            <StatCard
+              title="Issuer Rank"
+              value={`Top ${100 - kpis.percentile_rank}%`}
+              icon={Award}
+              color="bg-green-50 text-green-600"
+              subtext="Compared to similar issuers"
+            />
+          </Col>
+          <Col md={3}>
+            <StatCard
+              title="Total Certificates"
+              value={formatNumber(kpis.total_certificates)}
+              icon={BarChart2}
+              color="bg-blue-50 text-blue-600"
+              trend={momGrowth}
+            />
+          </Col>
+          <Col md={3}>
+            <StatCard
+              title="Distinct Programs"
+              value={formatNumber(kpis.total_programs)}
+              icon={Users}
+              color="bg-purple-50 text-purple-600"
+            />
+          </Col>
+        </Row>
+      </div>
+
+      <div className="mb-8">
+        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+          Operational Metrics
+        </h3>
+        <Row className="g-4">
+          <Col md={3}>
+            <StatCard
+              title="Last 7 Days"
+              value={formatNumber(recent_activity.last_7_days)}
+              icon={Clock}
+              color="bg-orange-50 text-orange-600"
+            />
+          </Col>
+          <Col md={3}>
+            <StatCard
+              title="Email Delivery"
+              value={`${email_metrics.send_rate}%`}
+              icon={Mail}
+              color="bg-teal-50 text-teal-600"
+            />
+          </Col>
+          <Col md={3}>
+            <StatCard
+              title="Groups Created"
+              value={formatNumber(group_stats.num_groups)}
+              icon={FolderOpen}
+              color="bg-gray-100 text-gray-600"
+            />
+          </Col>
+          <Col md={3}>
+            <StatCard
+              title="Avg Certs / Group"
+              value={group_stats.avg_certs_per_group}
+              icon={PieChart}
+              color="bg-pink-50 text-pink-600"
+            />
+          </Col>
+        </Row>
+      </div>
+
+      <Row className="g-4 mb-8">
+        <Col lg={4}>
+          <ChartCard title="Performance Benchmarking">
+            <div className="h-64">
+              <Radar
+                data={radarData}
+                options={{
+                  ...commonOptions,
+                  scales: { r: { suggestedMin: 0, ticks: { display: false } } },
+                }}
+              />
+            </div>
+          </ChartCard>
         </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <Award size={32} className="text-success mb-2" />
-              <h3 className="fw-bold text-success">
-                Top {100 - kpis.percentile_rank}%
-              </h3>
-              <p className="text-muted mb-0">Issuer Rank vs Peers</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <BarChart size={32} className="text-info mb-2" />
-              <h3 className="fw-bold text-info">
-                {formatNumber(kpis.total_certificates)}
-              </h3>
-              <p className="text-muted mb-0">Total Certificates</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <Users size={32} className="text-warning mb-2" />
-              <h3 className="fw-bold text-warning">
-                {formatNumber(kpis.total_programs)}
-              </h3>
-              <p className="text-muted mb-0">Distinct Programs</p>
-            </Card.Body>
-          </Card>
+        <Col lg={8}>
+          <ChartCard title="Issuance Trends (12 Months)">
+            <div className="h-64">
+              <Line data={lineData} options={commonOptions} />
+            </div>
+          </ChartCard>
         </Col>
       </Row>
 
-      {/* Additional Metrics KPIs */}
-      <h4 className="fw-bold mb-3">Additional Metrics</h4>
-      <Row className="mb-4">
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <Clock size={32} className="text-primary mb-2" />
-              <h3 className="fw-bold text-primary">
-                {formatNumber(recent_activity.last_7_days)}
-              </h3>
-              <p className="text-muted mb-0">Certs Last 7 Days</p>
-            </Card.Body>
-          </Card>
+      <Row className="g-4 mb-8">
+        <Col lg={6}>
+          <ChartCard
+            title="Top 5 Programs"
+            emptyMessage="No program data available yet."
+          >
+            {charts.top_programs.data.length > 0 && (
+              <div className="h-64">
+                <Bar
+                  data={{
+                    labels: charts.top_programs.labels,
+                    datasets: [
+                      {
+                        label: "Certificates",
+                        data: charts.top_programs.data,
+                        backgroundColor: "#3b82f6",
+                        borderRadius: 4,
+                      },
+                    ],
+                  }}
+                  options={{ ...commonOptions, indexAxis: "y" }}
+                />
+              </div>
+            )}
+          </ChartCard>
         </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <Mail size={32} className="text-info mb-2" />
-              <h3 className="fw-bold text-info">{email_metrics.send_rate}%</h3>
-              <p className="text-muted mb-0">Email Send Rate</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <Folder size={32} className="text-success mb-2" />
-              <h3 className="fw-bold text-success">
-                {formatNumber(group_stats.num_groups)}
-              </h3>
-              <p className="text-muted mb-0">Groups Created</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <PieChart size={32} className="text-warning mb-2" />
-              <h3 className="fw-bold text-warning">
-                {group_stats.avg_certs_per_group}
-              </h3>
-              <p className="text-muted mb-0">Avg Certs per Group</p>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* MoM Growth KPI */}
-      <Row className="mb-4">
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <TrendingUp size={32} className={`${momGrowthColor} mb-2`} />
-              <h3 className={`fw-bold ${momGrowthColor}`}>
-                {momGrowth !== "N/A" ? `${momGrowth}%` : momGrowth}
-              </h3>
-              <p className="text-muted mb-0">MoM Issuance Growth</p>
-            </Card.Body>
-          </Card>
+        <Col lg={6}>
+          <ChartCard
+            title="Top Recipients"
+            emptyMessage="No recipient data available yet."
+          >
+            {top_recipient.data.length > 0 && (
+              <div className="h-64">
+                <Bar
+                  data={{
+                    labels: top_recipient.labels,
+                    datasets: [
+                      {
+                        label: "Certificates",
+                        data: top_recipient.data,
+                        backgroundColor: "#f59e0b",
+                        borderRadius: 4,
+                      },
+                    ],
+                  }}
+                  options={{ ...commonOptions, indexAxis: "y" }}
+                />
+              </div>
+            )}
+          </ChartCard>
         </Col>
       </Row>
 
-      <Row>
-        <Col lg={12} className="mb-4">
-          <Card className="shadow-sm border-0 h-100">
-            <Card.Body>
-              <Radar data={radarChartData} options={radarOptions} />
-            </Card.Body>
-          </Card>
+      <Row className="g-4 mb-8">
+        <Col md={6}>
+          <ChartCard
+            title="Status Breakdown"
+            emptyMessage="No status data yet."
+          >
+            {status_breakdown.data.length > 0 && (
+              <div className="h-64">
+                <Doughnut
+                  data={{
+                    labels: status_breakdown.labels,
+                    datasets: [
+                      {
+                        data: status_breakdown.data,
+                        backgroundColor: ["#22c55e", "#eab308", "#ef4444"],
+                      },
+                    ],
+                  }}
+                  options={commonOptions}
+                />
+              </div>
+            )}
+          </ChartCard>
         </Col>
-      </Row>
-
-      <hr className="my-4" />
-      <h3 className="fw-bold mb-3">Descriptive Analytics</h3>
-      <Row>
-        <Col lg={12} className="mb-4">
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              <Line options={lineOptions} data={lineChartData} />
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={12} className="mb-4">
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              {charts.top_programs.data.length > 0 ? (
-                <Bar options={barOptions} data={barChartData} />
-              ) : (
-                <div className="text-center p-5 text-muted">
-                  <h5>No Program Data Yet</h5>
-                  <p>
-                    Issue certificates for different courses to see performance
-                    here.
-                  </p>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <hr className="my-4" />
-      <h3 className="fw-bold mb-3">Breakdown Analytics</h3>
-      <Row>
-        <Col md={6} className="mb-4">
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              {status_breakdown.data.length > 0 ? (
-                <Doughnut data={statusChartData} options={doughnutOptions} />
-              ) : (
-                <div className="text-center p-5 text-muted">
-                  <h5>No Status Data Yet</h5>
-                  <p>Issue certificates to see status breakdown here.</p>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={6} className="mb-4">
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              {template_usage.data.length > 0 ? (
-                <Doughnut data={templateChartData} options={templateOptions} />
-              ) : (
-                <div className="text-center p-5 text-muted">
-                  <h5>No Template Usage Data Yet</h5>
-                  <p>Use templates to issue certificates and see usage here.</p>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      <Row>
-        <Col lg={12} className="mb-4">
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              {top_recipient.data.length > 0 ? (
-                <Bar options={recipientsBarOptions} data={recipientsBarData} />
-              ) : (
-                <div className="text-center p-5 text-muted">
-                  <h5>No Recipient Data Yet</h5>
-                  <p>
-                    Issue certificates to recipients to see top performers here.
-                  </p>
-                </div>
-              )}
-            </Card.Body>
-          </Card>
+        <Col md={6}>
+          <ChartCard
+            title="Template Usage"
+            emptyMessage="No template data yet."
+          >
+            {template_usage.data.length > 0 && (
+              <div className="h-64">
+                <Doughnut
+                  data={{
+                    labels: template_usage.labels,
+                    datasets: [
+                      {
+                        data: template_usage.data,
+                        backgroundColor: [
+                          "#6366f1",
+                          "#ec4899",
+                          "#8b5cf6",
+                          "#14b8a6",
+                          "#f97316",
+                        ],
+                      },
+                    ],
+                  }}
+                  options={commonOptions}
+                />
+              </div>
+            )}
+          </ChartCard>
         </Col>
       </Row>
     </>
@@ -449,8 +426,9 @@ function AnalyticsPage() {
 
   if (loading)
     return (
-      <div className="text-center p-5">
-        <Spinner animation="border" /> Loading Analytics...
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <Spinner animation="border" variant="primary" className="mb-3" />
+        <p className="text-gray-500 font-medium">Crunching the numbers...</p>
       </div>
     );
   if (error) return <Alert variant="danger">{error}</Alert>;
@@ -458,8 +436,16 @@ function AnalyticsPage() {
     return <Alert variant="info">No analytics data found.</Alert>;
 
   return (
-    <div>
-      <h2 className="fw-bold mb-4">Analytics Dashboard</h2>
+    <div className="max-w-7xl mx-auto pb-12">
+      <div className="flex items-center gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+          <p className="text-gray-500 text-sm">
+            Visualize your issuance data and performance.
+          </p>
+        </div>
+      </div>
+
       {analyticsData.upgrade_required ? (
         <UpgradePrompt />
       ) : (
