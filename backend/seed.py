@@ -53,7 +53,9 @@ def seed_data():
             )
             db.session.add(t2)
 
-        if not Template.query.filter_by(title='Official Receipt').first():
+        # Payment Receipt - Ensure layout_style is explicitly set
+        receipt_template = Template.query.filter_by(title='Official Receipt').first()
+        if not receipt_template:
             t3 = Template(
                 title='Official Receipt',
                 primary_color='#111827',
@@ -65,6 +67,10 @@ def seed_data():
                 custom_text={"title": "PAYMENT RECEIPT", "body": "PAID"}
             )
             db.session.add(t3)
+        else:
+            # If it exists, ensure its style is correct
+            receipt_template.layout_style = 'receipt'
+
 
         db.session.commit()
         print("Seeding Complete (Modern, Classic, Receipt)!")
