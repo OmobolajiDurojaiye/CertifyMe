@@ -59,10 +59,10 @@ class User(db.Model):
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL', use_alter=True), nullable=True)
 
      # --- CANVA COLUMNS ---
-    canva_access_token = db.Column(db.Text, nullable=True)
-    canva_refresh_token = db.Column(db.Text, nullable=True)
-    canva_token_expiry = db.Column(db.DateTime, nullable=True)
-    canva_code_verifier = db.Column(db.String(128), nullable=True)
+    # canva_access_token = db.Column(db.Text, nullable=True)
+    # canva_refresh_token = db.Column(db.Text, nullable=True)
+    # canva_token_expiry = db.Column(db.DateTime, nullable=True)
+    # canva_code_verifier = db.Column(db.String(128), nullable=True)
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
