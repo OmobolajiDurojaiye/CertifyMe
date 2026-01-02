@@ -6,12 +6,10 @@ const PublicHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
 
-  // Close menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location]);
 
-  // Lock body scroll when menu is open
   useEffect(() => {
     if (isMenuOpen) {
       document.body.style.overflow = "hidden";
@@ -25,7 +23,6 @@ const PublicHeader = () => {
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-100 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
-            {/* Logo */}
             <div className="flex-shrink-0 flex items-center z-50">
               <Link
                 to="/"
@@ -45,14 +42,13 @@ const PublicHeader = () => {
               </Link>
             </div>
 
-            {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-8">
-              <a
-                href="/#pricing"
+              <Link
+                to="/pricing"
                 className="text-[15px] font-medium text-gray-600 hover:text-indigo-600 transition-colors no-underline"
               >
                 Pricing
-              </a>
+              </Link>
               <Link
                 to="/search"
                 className="text-[15px] font-medium text-gray-600 hover:text-indigo-600 transition-colors no-underline"
@@ -86,7 +82,6 @@ const PublicHeader = () => {
               </Link>
             </nav>
 
-            {/* Mobile Menu Button */}
             <div className="md:hidden z-50">
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -99,7 +94,6 @@ const PublicHeader = () => {
         </div>
       </header>
 
-      {/* Modern Full Screen Mobile Menu */}
       <div
         className={`fixed inset-0 bg-white z-40 transition-all duration-500 ease-in-out md:hidden ${
           isMenuOpen
@@ -110,32 +104,20 @@ const PublicHeader = () => {
         <div className="flex flex-col h-full pt-28 px-6 pb-8">
           <nav className="flex-1 flex flex-col space-y-2">
             {[
-              { label: "Pricing", path: "/#pricing", isAnchor: true },
+              { label: "Pricing", path: "/pricing" },
               { label: "Public Ledger", path: "/search" },
               { label: "Verification", path: "/verify" },
               { label: "API Documentation", path: "/docs" },
-            ].map((item) =>
-              item.isAnchor ? (
-                <a
-                  key={item.path}
-                  href={item.path}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center justify-between py-4 text-2xl font-bold text-gray-900 border-b border-gray-100 no-underline group"
-                >
-                  {item.label}
-                  <ChevronRight className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
-                </a>
-              ) : (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className="flex items-center justify-between py-4 text-2xl font-bold text-gray-900 border-b border-gray-100 no-underline group"
-                >
-                  {item.label}
-                  <ChevronRight className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
-                </Link>
-              )
-            )}
+            ].map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className="flex items-center justify-between py-4 text-2xl font-bold text-gray-900 border-b border-gray-100 no-underline group"
+              >
+                {item.label}
+                <ChevronRight className="text-gray-300 group-hover:text-indigo-600 transition-colors" />
+              </Link>
+            ))}
           </nav>
 
           <div className="mt-auto space-y-4">

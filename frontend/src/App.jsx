@@ -24,6 +24,8 @@ import OpenLedgerPage from "./pages/OpenLedgerPage";
 import SupportHubPage from "./pages/SupportHubPage";
 import HelpArticlePage from "./pages/HelpArticlePage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import PricingPage from "./pages/PricingPage"; // Import new page
+import ContactPage from "./pages/ContactPage"; // Import new page
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -52,6 +54,8 @@ function App() {
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -107,14 +111,12 @@ function App() {
           <Route path="bulk-create" element={<BulkCreateCertificatesPage />} />
           <Route path="settings" element={<SettingsPage />} />
 
-          {/* --- RESTRUCTURED SUPPORT ROUTES --- */}
           <Route path="support">
             <Route index element={<SupportHubPage />} />
             <Route path="articles/:slug" element={<HelpArticlePage />} />
             <Route path="tickets" element={<ContactSupportPage />} />
             <Route path="tickets/:ticketId" element={<ContactSupportPage />} />
           </Route>
-          {/* --- END OF RESTRUCTURED ROUTES --- */}
 
           <Route path="upload-template" element={<UploadTemplatePage />} />
           <Route

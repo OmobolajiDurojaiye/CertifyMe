@@ -7,6 +7,8 @@ from .groups import groups_bp
 from .support import support_bp
 from .api_v1 import api_v1_bp
 from .analytics import analytics_bp
+from .canva import canva_bp
+from .contact import contact_bp
 
 #Standalones
 from .uploads import uploads_bp
@@ -35,6 +37,8 @@ def register_blueprints(app):
     app.register_blueprint(support_bp, url_prefix='/api/support')
     app.register_blueprint(api_v1_bp, url_prefix='/api/v1')
     app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+    app.register_blueprint(canva_bp, url_prefix='/api/canva')
+    app.register_blueprint(contact_bp, url_prefix='/api/contact')
     
     # All admin blueprints are grouped under a single, consistent prefix.
     app.register_blueprint(admin_auth_bp, url_prefix='/api/admin/auth')
