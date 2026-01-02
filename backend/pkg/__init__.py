@@ -35,16 +35,14 @@ def create_app():
     os.makedirs(upload_path, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = upload_path
 
-    # --- THIS IS THE FINAL, ROBUST CORS FIX ---
-    # Define the origins that are allowed to make requests
-    origins = [
-        "http://localhost:5173",  # For local development
-        os.environ.get('FRONTEND_URL') # For production
-    ]
-    # Filter out any None values if FRONTEND_URL is not set
-    origins = [origin for origin in origins if origin]
-    
-    CORS(app, resources={r"/api/*": {"origins": origins}}, supports_credentials=True)
+    # --- THIS IS THE DEFINITIVE CORS FIX ---
+    # We are hardcoding the exact URLs that are allowed to make requests.
+    # This removes any dependency on environment variables for CORS.
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": ["https://www.certifyme.com.ng", "http://localhost:5173"]}},
+        supports_credentials=True
+    )
     # --- END OF FIX ---
 
     # Initialize other extensions
