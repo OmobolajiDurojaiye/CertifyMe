@@ -1,4 +1,3 @@
-# payments.py
 import os
 import requests
 import hmac
@@ -36,13 +35,10 @@ def get_usd_to_ngn_rate():
         data = response.json()
         rate = data.get('rates', {}).get('NGN')
         if rate:
-            current_app.logger.info(f"Fetched live USD to NGN rate: {rate}")
             return rate
     except requests.exceptions.RequestException as e:
         current_app.logger.error(f"Could not fetch exchange rate: {e}")
-    fallback_rate = 1500.0 
-    current_app.logger.warning(f"Using fallback USD to NGN rate: {fallback_rate}")
-    return fallback_rate
+    return 1500.0 
 
 @payments_bp.route('/initialize', methods=['POST'])
 @jwt_required()
@@ -55,32 +51,29 @@ def initialize_payment():
     if not user: return jsonify({"msg": "User not found"}), 404
     
     plan_details = PLANS[plan]
-    plan_role_order = role_order[plan]
-    current_order = role_order.get(user.role, 0)
-    # if plan_role_order < current_order:
-    #     return jsonify({"msg": f"Cannot purchase lower tier than current {user.role}"}), 400
     
     amount_in_usd = plan_details['amount_usd']
     paystack_key = current_app.config.get('PAYSTACK_SECRET_KEY', '')
     is_ngn_account = paystack_key.startswith('sk_test_') or paystack_key.startswith('sk_live_')
 
     if is_ngn_account:
-        current_app.logger.info("NGN account detected. Converting currency.")
         exchange_rate = get_usd_to_ngn_rate()
         amount_to_charge = int(amount_in_usd * exchange_rate * 100)
         currency_to_charge = "NGN"
     else:
-        current_app.logger.info("Non-NGN (USD) account detected. Using USD cents.")
         amount_to_charge = int(amount_in_usd * 100)
         currency_to_charge = "USD"
     
-    new_payment = Payment(user_id=user_id, provider='paystack', plan=plan, amount=amount_in_usd, currency='USD', status='pending')
-    db.session.add(new_payment)
-    db.session.commit()
+    pending_payment = Payment.query.filter_by(user_id=user_id, plan=plan, status='pending').first()
     
-    transaction_ref = f"CM-{user_id}-{plan}-{uuid.uuid4().hex}"
-    new_payment.transaction_ref = transaction_ref
-    db.session.commit()
+    if pending_payment:
+        transaction_ref = pending_payment.transaction_ref
+    else:
+        new_payment = Payment(user_id=user_id, provider='paystack', plan=plan, amount=amount_in_usd, currency='USD', status='pending')
+        db.session.add(new_payment)
+        transaction_ref = f"CM-{user_id}-{plan}-{uuid.uuid4().hex[:12]}"
+        new_payment.transaction_ref = transaction_ref
+        db.session.commit()
 
     return jsonify({
         "email": user.email,
@@ -91,42 +84,79 @@ def initialize_payment():
         "metadata": { "user_id": user_id, "plan": plan, "amount_usd": amount_in_usd }
     }), 200
 
+@payments_bp.route('/verify/<string:reference>', methods=['GET'])
+@jwt_required()
+def verify_payment(reference):
+    user_id = int(get_jwt_identity())
+    payment = Payment.query.filter_by(transaction_ref=reference, user_id=user_id).first()
+    
+    if not payment:
+        return jsonify({"msg": "Transaction reference not found."}), 404
+        
+    # --- THIS IS THE FIX ---
+    # If the webhook already processed it, just return success immediately.
+    if payment.status == 'paid':
+        return jsonify({"msg": "Payment already verified successfully.", "status": "paid"}), 200
+    # --- END OF FIX ---
+
+    headers = {
+        "Authorization": f"Bearer {current_app.config.get('PAYSTACK_SECRET_KEY')}",
+    }
+    
+    try:
+        response = requests.get(f"{PAYSTACK_API_URL}/transaction/verify/{reference}", headers=headers)
+        response.raise_for_status()
+        response_data = response.json()
+        
+        if response_data['data']['status'] == 'success':
+            # Verification Successful - Upgrade User
+            user = User.query.get(payment.user_id)
+            plan_details = PLANS.get(payment.plan)
+            
+            if user and plan_details:
+                user.role = plan_details['role']
+                user.cert_quota += plan_details['certificates']
+                payment.status = 'paid'
+                db.session.commit()
+                
+                return jsonify({"msg": "Payment successful. Account upgraded.", "status": "paid"}), 200
+        
+        return jsonify({"msg": "Payment verification failed or still pending.", "status": response_data['data']['status']}), 400
+
+    except requests.exceptions.HTTPError as e:
+        current_app.logger.error(f"Paystack API Error: {e.response.text}")
+        return jsonify({"msg": "Could not verify payment with provider."}), 500
+    except Exception as e:
+        current_app.logger.error(f"Verification Error: {e}")
+        return jsonify({"msg": "An unexpected error occurred during verification."}), 500
+
 @payments_bp.route('/webhook', methods=['POST'])
 def paystack_webhook():
     secret_key = current_app.config.get('PAYSTACK_SECRET_KEY')
     payload = request.data
     signature = request.headers.get('x-paystack-signature')
-    current_app.logger.info(f"Received webhook with signature: {signature}")
-    current_app.logger.info(f"Payload: {payload.decode('utf-8')}")
     
     try:
         hash_ = hmac.new(secret_key.encode('utf-8'), payload, hashlib.sha512).hexdigest()
-        current_app.logger.info(f"Computed HMAC: {hash_}")
         if not hmac.compare_digest(hash_, signature):
-            current_app.logger.error("Signature mismatch")
             return jsonify({"status": "error", "msg": "Invalid signature"}), 400
     except Exception as e:
-        current_app.logger.error(f"Signature verification error: {str(e)}")
         return jsonify({"status": "error", "msg": "Signature verification failed"}), 400
     
     event = json.loads(payload)
-    current_app.logger.info(f"Webhook event: {event}")
     
     if event.get('event') == 'charge.success':
         reference = event['data'].get('reference')
         payment = Payment.query.filter_by(transaction_ref=reference).first()
-        if not payment or payment.status == 'paid':
-            current_app.logger.warning(f"Payment {reference} not found or already processed")
-            return jsonify({"status": "ok"}), 200
         
-        payment.status = 'paid'
-        user = User.query.get(payment.user_id)
-        if user:
-            plan_details = PLANS.get(payment.plan, {})
-            if plan_details:
-                user.cert_quota += plan_details['certificates']
-                user.role = plan_details['role']
-                current_app.logger.info(f"User {user.id} upgraded to {payment.plan}, new quota: {user.cert_quota}, role: {user.role}")
-        db.session.commit()
+        if payment and payment.status != 'paid':
+            payment.status = 'paid'
+            user = User.query.get(payment.user_id)
+            if user:
+                plan_details = PLANS.get(payment.plan, {})
+                if plan_details:
+                    user.cert_quota += plan_details['certificates']
+                    user.role = plan_details['role']
+            db.session.commit()
     
     return jsonify({"status": "ok"}), 200

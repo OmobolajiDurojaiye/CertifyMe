@@ -3,9 +3,11 @@ import { usePaystackPayment } from "react-paystack";
 import {
   getCurrentUser,
   initializePayment as apiInitializePayment,
+  verifyPayment,
   uploadUserSignature,
   generateApiKey,
   switchToCompany,
+  getCanvaAuthUrl,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -25,11 +27,10 @@ import {
   Lock,
   Info,
   Key,
-  CheckCircle, // <-- Added missing import
+  CheckCircle,
+  Link as LinkIcon,
 } from "lucide-react";
 import { Modal, Spinner, Button } from "react-bootstrap";
-
-// --- COMPONENTS ---
 
 const Section = ({ title, icon: Icon, children, className = "" }) => (
   <div
@@ -97,29 +98,22 @@ const PlanCard = ({
   </div>
 );
 
-const roleOrder = { free: 0, starter: 1, growth: 2, pro: 3, enterprise: 4 };
-
 function SettingsPage() {
   const { user, refreshUser } = useUser();
   const [localUser, setLocalUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("profile");
-
-  // States
   const [signatureFile, setSignatureFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [processingPlan, setProcessingPlan] = useState(null);
   const [paystackConfig, setPaystackConfig] = useState(null);
-
-  // API Key States
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [newApiKey, setNewApiKey] = useState("");
   const [isCopied, setIsCopied] = useState(false);
-
-  // Company States
   const [newCompanyName, setNewCompanyName] = useState("");
   const [isSwitching, setIsSwitching] = useState(false);
+  const [isCanvaConnecting, setIsCanvaConnecting] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -127,8 +121,8 @@ function SettingsPage() {
   const isFreeUser = user && user.role === "free";
   const hasApiAccess = user && ["pro", "enterprise"].includes(user.role);
   const isCompanyUser = user && user.company;
+  const isCanvaConnected = user && user.canva_access_token;
 
-  // IMPORTANT: We pass the config to the hook. If config is null, it won't do anything yet.
   const initializePayment = usePaystackPayment(paystackConfig || {});
 
   const fetchUser = async () => {
@@ -147,18 +141,25 @@ function SettingsPage() {
   };
 
   useEffect(() => {
-    fetchUser();
+    const params = new URLSearchParams(location.search);
+    if (params.get("canva_connected") === "true") {
+      toast.success("Canva connected successfully!");
+      refreshUser();
+      setActiveTab("integrations");
+      navigate(location.pathname, { replace: true });
+    } else {
+      fetchUser();
+    }
+
     if (location.state?.defaultTab) {
       setActiveTab(location.state.defaultTab);
     }
-  }, [navigate]);
+  }, [navigate, location.search, location.state, refreshUser]);
 
-  // Payment Logic
   const handleUpgrade = useCallback(async (plan) => {
     setProcessingPlan(plan);
     try {
       const res = await apiInitializePayment(plan);
-      // Set config to trigger the useEffect below
       setPaystackConfig({ ...res.data, currency: res.data.currency || "NGN" });
     } catch (error) {
       toast.error(error.response?.data?.msg || "Payment init failed.");
@@ -166,28 +167,32 @@ function SettingsPage() {
     }
   }, []);
 
-  // Trigger Modal when config is ready
   useEffect(() => {
     if (paystackConfig) {
       initializePayment({
-        onSuccess: () => {
-          toast.success("Payment successful! Refreshing...");
-          // CLEANUP: Important to prevent loop
+        onSuccess: async (reference) => {
           setPaystackConfig(null);
-          setProcessingPlan(null);
-          setTimeout(() => window.location.reload(), 1500);
+          const toastId = toast.loading("Verifying payment...");
+          try {
+            await verifyPayment(reference.reference);
+            toast.success("Upgrade successful!", { id: toastId });
+            setProcessingPlan(null);
+            await refreshUser();
+            await fetchUser();
+          } catch (err) {
+            toast.error("Payment verification failed.", { id: toastId });
+            setProcessingPlan(null);
+          }
         },
         onClose: () => {
           toast.error("Payment cancelled.");
-          // CLEANUP: Important to prevent loop
           setPaystackConfig(null);
           setProcessingPlan(null);
         },
       });
     }
-  }, [paystackConfig, initializePayment]);
+  }, [paystackConfig, initializePayment, refreshUser]);
 
-  // Handlers
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && (file.type === "image/png" || file.type === "image/jpeg")) {
@@ -205,8 +210,8 @@ function SettingsPage() {
     const formData = new FormData();
     formData.append("signature", signatureFile);
     try {
-      const res = await uploadUserSignature(formData);
-      toast.success(res.data.msg);
+      await uploadUserSignature(formData);
+      toast.success("Signature uploaded!");
       refreshUser();
       setSignatureFile(null);
     } catch (error) {
@@ -255,6 +260,17 @@ function SettingsPage() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
+  const handleCanvaConnect = async () => {
+    setIsCanvaConnecting(true);
+    try {
+      const response = await getCanvaAuthUrl();
+      window.location.href = response.data.auth_url;
+    } catch (error) {
+      toast.error("Could not connect to Canva. Please try again.");
+      setIsCanvaConnecting(false);
+    }
+  };
+
   if (loading)
     return (
       <div className="flex justify-center p-12">
@@ -264,6 +280,7 @@ function SettingsPage() {
 
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
+    // { id: "integrations", label: "Integrations", icon: LinkIcon },
     { id: "billing", label: "Billing", icon: CreditCard },
     {
       id: "developer",
@@ -280,11 +297,10 @@ function SettingsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="text-gray-500">
-          Manage your account preferences and subscription.
+          Manage your account, integrations, and billing.
         </p>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-1 mb-8 border-b border-gray-200 overflow-x-auto">
         {tabs.map((tab) => (
           <button
@@ -303,10 +319,8 @@ function SettingsPage() {
         ))}
       </div>
 
-      {/* --- PROFILE TAB --- */}
       {activeTab === "profile" && (
         <div className="space-y-6">
-          {/* Public Profile */}
           <Section title="Public Profile" icon={User}>
             {isCompanyUser && (
               <div className="bg-blue-50 text-blue-800 p-3 rounded-lg flex items-start gap-3 mb-6 text-sm">
@@ -343,7 +357,6 @@ function SettingsPage() {
             </div>
           </Section>
 
-          {/* Company Workspace */}
           {!isCompanyUser && (
             <Section title="Company Workspace" icon={Building}>
               <p className="text-gray-600 mb-4 text-sm">
@@ -366,14 +379,13 @@ function SettingsPage() {
                   disabled={isSwitching}
                   className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap flex items-center"
                 >
-                  {isSwitching && <Spinner size="sm" className="mr-2" />}
-                  Switch to Company
+                  {isSwitching && <Spinner size="sm" className="mr-2" />} Switch
+                  to Company
                 </button>
               </form>
             </Section>
           )}
 
-          {/* Signature Management */}
           <Section
             title="Signature Management"
             icon={PenTool}
@@ -415,7 +427,7 @@ function SettingsPage() {
                       <Spinner size="sm" className="mr-2" />
                     ) : (
                       <UploadCloud size={16} className="mr-2" />
-                    )}
+                    )}{" "}
                     Save Signature
                   </button>
                 </form>
@@ -432,7 +444,6 @@ function SettingsPage() {
             </div>
           </Section>
 
-          {/* Account Actions */}
           <Section title="Account Actions" icon={Shield}>
             <div className="space-y-2">
               <button
@@ -457,7 +468,39 @@ function SettingsPage() {
         </div>
       )}
 
-      {/* --- BILLING TAB --- */}
+      {/* {activeTab === "integrations" && (
+        <Section title="External Apps" icon={LinkIcon}>
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex items-center gap-4">
+              <img
+                src="https://static.canva.com/web/images/8439b51bb7a19f6e65ce1064bc37c197.svg"
+                alt="Canva"
+                className="w-10 h-10"
+              />
+              <div>
+                <h4 className="font-bold text-gray-900">Canva</h4>
+                <p className="text-sm text-gray-500">
+                  Import your designs to use as templates.
+                </p>
+              </div>
+            </div>
+            {isCanvaConnected ? (
+              <div className="flex items-center gap-2 text-green-600 font-medium text-sm bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
+                <CheckCircle size={16} /> Connected
+              </div>
+            ) : (
+              <button
+                onClick={handleCanvaConnect}
+                disabled={isCanvaConnecting}
+                className="bg-black text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                {isCanvaConnecting ? <Spinner size="sm" /> : "Connect"}
+              </button>
+            )}
+          </div>
+        </Section>
+      )} */}
+
       {activeTab === "billing" && (
         <div>
           <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-8 flex items-start gap-3">
@@ -512,14 +555,12 @@ function SettingsPage() {
         </div>
       )}
 
-      {/* --- DEVELOPER TAB --- */}
       {activeTab === "developer" && hasApiAccess && (
         <Section title="API Configuration" icon={Key}>
           <p className="text-gray-600 mb-6">
             Use this key to authenticate requests to the CertifyMe API. Keep it
             secret.
           </p>
-
           {localUser?.api_key ? (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 flex items-start gap-3">
               <CheckCircle className="text-green-500 mt-0.5" size={20} />
@@ -543,7 +584,6 @@ function SettingsPage() {
               </div>
             </div>
           )}
-
           <button
             onClick={handleGenerateApiKey}
             className="bg-red-50 text-red-600 border border-red-200 px-4 py-2 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center gap-2"
@@ -551,7 +591,6 @@ function SettingsPage() {
             <Key size={16} />
             {localUser?.api_key ? "Regenerate Key" : "Generate Key"}
           </button>
-
           {localUser?.api_key && (
             <p className="text-xs text-red-500 mt-2">
               Warning: Regenerating will stop existing integrations.
@@ -560,7 +599,6 @@ function SettingsPage() {
         </Section>
       )}
 
-      {/* API Key Modal */}
       <Modal
         show={showKeyModal}
         onHide={() => setShowKeyModal(false)}

@@ -7,30 +7,33 @@ from dateutil.relativedelta import relativedelta
 
 admin_analytics_bp = Blueprint('admin_analytics', __name__)
 
-
 @admin_analytics_bp.route('/dashboard-stats', methods=['GET'])
 @jwt_required()
 def get_dashboard_stats():
+    # Strict check to ensure only an Admin can access this
     if not isinstance(current_user, Admin):
         return jsonify({"msg": "Admin access required"}), 403
 
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     
-    total_users = User.query.count()
-    total_certificates = Certificate.query.count()
-    total_companies = Company.query.count()
+    # Use 'or 0' to prevent None values if tables are empty
+    total_users = User.query.count() or 0
+    total_certificates = Certificate.query.count() or 0
+    total_companies = Company.query.count() or 0
     total_revenue = db.session.query(func.sum(Payment.amount)).filter(Payment.status == 'paid').scalar() or 0.0
 
-    new_users_30d = User.query.filter(User.created_at >= thirty_days_ago).count()
-    new_certs_30d = Certificate.query.filter(Certificate.created_at >= thirty_days_ago).count()
+    new_users_30d = User.query.filter(User.created_at >= thirty_days_ago).count() or 0
+    new_certs_30d = Certificate.query.filter(Certificate.created_at >= thirty_days_ago).count() or 0
     revenue_30d = db.session.query(func.sum(Payment.amount)).filter(
         Payment.status == 'paid',
         Payment.created_at >= thirty_days_ago
     ).scalar() or 0.0
 
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
+    
+    # Handle cases where a payment's user might have been deleted (outerjoin)
     recent_payments = db.session.query(Payment, User.name.label('user_name')) \
-                                .join(User, Payment.user_id == User.id) \
+                                .outerjoin(User, Payment.user_id == User.id) \
                                 .filter(Payment.status == 'paid') \
                                 .order_by(Payment.created_at.desc()).limit(5).all()
     
@@ -57,7 +60,7 @@ def get_dashboard_stats():
             for u in recent_users
         ],
         'recent_payments': [
-            {'id': p.id, 'user_name': user_name, 'amount': float(p.amount), 'plan': p.plan, 'date': p.created_at.isoformat()}
+            {'id': p.id, 'user_name': user_name or "Deleted User", 'amount': float(p.amount), 'plan': p.plan, 'date': p.created_at.isoformat()}
             for p, user_name in recent_payments
         ],
         'revenue_trend_30d': [
@@ -72,9 +75,9 @@ def get_analytics():
     if not isinstance(current_user, Admin):
         return jsonify({"msg": "Admin access required"}), 403
 
-    total_users = User.query.count()
-    total_certificates = Certificate.query.count()
-    total_companies = Company.query.count()
+    total_users = User.query.count() or 0
+    total_certificates = Certificate.query.count() or 0
+    total_companies = Company.query.count() or 0
     total_revenue = db.session.query(func.sum(Payment.amount)).filter(Payment.status == 'paid').scalar() or 0.0
     
     kpi_stats = {

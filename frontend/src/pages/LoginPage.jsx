@@ -112,28 +112,34 @@ function LoginPage() {
           )}
 
           {showVerificationPrompt && (
-            <div className="mb-6 p-4 rounded-lg bg-yellow-50 border border-yellow-200">
-              <h4 className="text-sm font-bold text-yellow-800 flex items-center gap-2 mb-2">
-                <AlertTriangle size={16} /> Verification Required
-              </h4>
-              <p className="text-xs text-yellow-700 mb-3">
-                Your account isn't verified yet.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleResendCode}
-                  disabled={resendLoading}
-                  className="text-xs font-semibold text-yellow-800 underline hover:text-yellow-900"
-                >
-                  {resendLoading ? "Sending..." : "Resend Code"}
-                </button>
-                <Link
-                  to="/verify-email"
-                  state={{ email: formData.email }}
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
-                >
-                  Enter Code &rarr;
-                </Link>
+            <div className="bg-yellow-50 p-3 rounded-lg mb-4 border border-yellow-200 text-yellow-800">
+              <div className="flex items-start">
+                <AlertTriangle
+                  size={20}
+                  className="mr-2 mt-0.5 flex-shrink-0"
+                />
+                <div>
+                  <h6 className="font-bold mb-1">Account not verified</h6>
+                  <p className="text-xs mb-2">
+                    Check your email for the code or request a new one.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleResendCode}
+                      disabled={resendLoading}
+                      className="text-xs font-semibold text-yellow-900 underline hover:text-black"
+                    >
+                      {resendLoading ? "Sending..." : "Resend Code"}
+                    </button>
+                    <Link
+                      to="/verify-email"
+                      state={{ email: formData.email }}
+                      className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                    >
+                      Enter Code &rarr;
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -167,13 +173,13 @@ function LoginPage() {
               <div className="flex justify-between items-center mb-1">
                 <label
                   htmlFor="password"
-                  class="block text-sm font-medium text-gray-700"
+                  className="block text-sm font-medium text-gray-700"
                 >
                   Password
                 </label>
                 <Link
                   to="/forgot-password"
-                  class="text-sm font-medium text-indigo-600 hover:text-indigo-500 no-underline"
+                  className="text-sm font-medium text-indigo-600 hover:text-indigo-500 no-underline"
                 >
                   Forgot password?
                 </Link>
