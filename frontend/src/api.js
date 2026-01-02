@@ -1,281 +1,219 @@
-// api.js
 import axios from "axios";
-import { API_BASE_URL } from "./config";
+import { SERVER_BASE_URL } from "./config";
 
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+const API = axios.create({
+  baseURL: `${SERVER_BASE_URL}/api`,
 });
 
-const authInterceptor = (config) => {
+API.interceptors.request.use((req) => {
   const token = localStorage.getItem("token");
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    req.headers.Authorization = `Bearer ${token}`;
   }
-  return config;
-};
+  return req;
+});
 
-apiClient.interceptors.request.use(authInterceptor);
-
-export default apiClient;
-
-// --- USER API Calls ---
-export const loginUser = (credentials) =>
-  apiClient.post("/auth/login", credentials);
-export const signupUser = (userData) =>
-  apiClient.post("/auth/register", userData);
+// --- USER AUTH ---
+export const loginUser = (credentials) => API.post("/auth/login", credentials);
+export const signupUser = (userData) => API.post("/auth/register", userData);
 export const verifyEmail = (verificationData) =>
-  apiClient.post("/auth/verify-email", verificationData);
+  API.post("/auth/verify-email", verificationData);
 export const resendVerificationEmail = (email) =>
-  apiClient.post("/auth/resend-verification", { email });
+  API.post("/auth/resend-verification", { email });
 export const requestPasswordReset = (email) =>
-  apiClient.post("/auth/forgot-password", { email });
+  API.post("/auth/forgot-password", { email });
 export const resetPassword = (token, password) =>
-  apiClient.post("/auth/reset-password", { token, password });
+  API.post("/auth/reset-password", { token, password });
 
-// --- ADMIN API Calls ---
+// --- ADMIN AUTH ---
 export const adminLogin = (credentials) =>
-  apiClient.post("/admin/auth/login", credentials);
-export const getAdminStatus = () => apiClient.get("/admin/auth/status");
+  API.post("/admin/auth/login", credentials);
+export const getAdminStatus = () => API.get("/admin/auth/status");
 export const adminSignup = (userData) =>
-  apiClient.post("/admin/auth/signup", userData);
+  API.post("/admin/auth/signup", userData);
 export const verifyAdmin = (verificationData) =>
-  apiClient.post("/admin/auth/verify", verificationData);
-export const getAdminProfile = () => apiClient.get("/admin/users/me");
+  API.post("/admin/auth/verify", verificationData);
+export const getAdminProfile = () => API.get("/admin/users/me");
 
-// Admin User Management
+// --- TEMPLATES ---
+export const getTemplates = () => API.get("/templates/");
+export const getTemplate = (templateId) => API.get(`/templates/${templateId}`);
+export const createTemplate = (formData) =>
+  API.post("/templates/", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const updateTemplate = (templateId, formData) =>
+  API.put(`/templates/${templateId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const deleteTemplate = (templateId) =>
+  API.delete(`/templates/${templateId}`);
+export const createCustomTemplate = (formData) =>
+  API.post("/templates/upload-custom", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const updateCustomTemplate = (templateId, formData) =>
+  API.put(`/templates/upload-custom/${templateId}`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+// --- CERTIFICATES ---
+export const getCertificates = () => API.get("/certificates/");
+export const createCertificate = (certData) =>
+  API.post("/certificates/", certData);
+export const getCertificate = (certId) => API.get(`/certificates/${certId}`);
+export const updateCertificate = (certId, certData) =>
+  API.put(`/certificates/${certId}`, certData);
+export const deleteCertificate = (certId) =>
+  API.delete(`/certificates/${certId}`);
+export const verifyCertificate = (verificationId) =>
+  API.get(`/certificates/verify/${verificationId}`);
+export const bulkCreateCertificates = (formData) =>
+  API.post("/certificates/bulk", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const updateCertificateStatus = (certId, status) =>
+  API.put(`/certificates/${certId}/status`, { status });
+export const advancedSearchCertificates = (params) => {
+  const cleanedParams = Object.entries(params).reduce((acc, [key, value]) => {
+    if (value !== null && value !== "" && value !== undefined) acc[key] = value;
+    return acc;
+  }, {});
+  return API.get(
+    `/certificates/advanced-search?${new URLSearchParams(
+      cleanedParams
+    ).toString()}`
+  );
+};
+export const getCertificatePDF = (certId) =>
+  API.get(`/certificates/${certId}/pdf`, { responseType: "blob" });
+
+// --- EMAILING ---
+export const sendCertificateEmail = (certId) =>
+  API.post(`/certificates/${certId}/send`);
+export const sendBulkEmails = (certificateIds) =>
+  API.post("/certificates/bulk-send", { certificate_ids: certificateIds });
+
+// --- USER PROFILE & SETTINGS ---
+export const getCurrentUser = () => API.get("/users/me");
+export const uploadUserSignature = (formData) =>
+  API.post("/users/me/signature", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const switchToCompany = (companyName) =>
+  API.post("/users/me/switch-to-company", { company_name: companyName });
+export const generateApiKey = () => API.post("/users/me/api-key");
+export const updateUserProfile = (data) => API.put("/users/me", data);
+
+// --- PAYMENTS ---
+export const initializePayment = (plan) =>
+  API.post("/payments/initialize", { plan });
+export const verifyPayment = (reference) =>
+  API.get(`/payments/verify/${reference}`);
+
+// --- USER ANALYTICS ---
+export const getUserAnalytics = () => API.get("/analytics/dashboard");
+
+// --- GROUPS ---
+export const getGroups = (page = 1) => API.get(`/groups/?page=${page}`);
+export const createGroup = (name) => API.post("/groups/", { name });
+export const getGroupDetails = (groupId) => API.get(`/groups/${groupId}`);
+export const deleteGroup = (groupId) => API.delete(`/groups/${groupId}`);
+export const sendGroupBulkEmail = (groupId) =>
+  API.post(`/groups/${groupId}/send-bulk-email`);
+export const downloadGroupBulkPDF = (groupId) =>
+  API.get(`/groups/${groupId}/download-bulk-pdf`, { responseType: "blob" });
+
+// --- SUPPORT TICKETS ---
+export const createUserTicket = (formData) =>
+  API.post("/support/tickets", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const getUserTickets = () => API.get("/support/tickets");
+export const getUserTicketDetails = (ticketId) =>
+  API.get(`/support/tickets/${ticketId}`);
+export const replyToTicket = (ticketId, formData) =>
+  API.post(`/support/tickets/${ticketId}/reply`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+export const deleteUserTicket = (ticketId) =>
+  API.delete(`/support/tickets/${ticketId}`);
+
+// --- CANVA ---
+export const getCanvaAuthUrl = () => API.get("/canva/auth");
+
+// --- CONTACT ---
+export const sendContactMessage = (contactData) =>
+  API.post("/contact/", contactData);
+
+// --- MISC ---
+export const downloadBulkTemplate = () =>
+  API.get("/certificates/bulk-template", { responseType: "blob" });
+export const uploadEditorImage = (formData) =>
+  API.post("/uploads/editor-images", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+// --- ADMIN API ---
 export const getAdminUsers = (params = {}) => {
-  if (params.start_date instanceof Date) {
-    params.start_date = params.start_date.toISOString().split("T")[0];
-  }
-  if (params.end_date instanceof Date) {
-    params.end_date = params.end_date.toISOString().split("T")[0];
-  }
   const query = new URLSearchParams(params).toString();
-  return apiClient.get(`/admin/users?${query}`);
+  return API.get(`/admin/users?${query}`);
 };
 export const getAdminUserDetails = (userId) =>
-  apiClient.get(`/admin/users/${userId}`);
+  API.get(`/admin/users/${userId}`);
 export const adjustUserQuota = (userId, adjustment, reason) =>
-  apiClient.post(`/admin/users/${userId}/adjust-quota`, { adjustment, reason });
+  API.post(`/admin/users/${userId}/adjust-quota`, { adjustment, reason });
 export const suspendAdminUser = (userId) =>
-  apiClient.post(`/admin/users/${userId}/suspend`);
+  API.post(`/admin/users/${userId}/suspend`);
 export const unsuspendAdminUser = (userId) =>
-  apiClient.post(`/admin/users/${userId}/unsuspend`);
+  API.post(`/admin/users/${userId}/unsuspend`);
 export const updateAdminUserPlan = (userId, plan) =>
-  apiClient.put(`/admin/users/${userId}/plan`, { plan });
+  API.put(`/admin/users/${userId}/plan`, { plan });
 export const deleteAdminUser = (userId) =>
-  apiClient.delete(`/admin/users/${userId}/delete`);
-
-// Admin Company Management
+  API.delete(`/admin/users/${userId}/delete`);
 export const getAdminCompanies = (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  return apiClient.get(`/admin/companies?${query}`);
+  return API.get(`/admin/companies?${query}`);
 };
 export const getAdminCompanyDetails = (companyId) =>
-  apiClient.get(`/admin/companies/${companyId}`);
+  API.get(`/admin/companies/${companyId}`);
 export const deleteAdminCompany = (companyId) =>
-  apiClient.delete(`/admin/companies/${companyId}/delete`);
-
-// Admin Messaging
-export const getEmailRecipients = () =>
-  apiClient.get("/admin/messaging/recipients");
+  API.delete(`/admin/companies/${companyId}/delete`);
+export const getEmailRecipients = () => API.get("/admin/messaging/recipients");
 export const sendAdminBulkEmail = (emailData) =>
-  apiClient.post("/admin/messaging/send-email", emailData);
-
-// Admin Payments
+  API.post("/admin/messaging/send-email", emailData);
 export const getAdminTransactions = (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  return apiClient.get(`/admin/payments/transactions?${query}`);
+  return API.get(`/admin/payments/transactions?${query}`);
 };
 export const getAdminTransactionDetails = (paymentId) =>
-  apiClient.get(`/admin/payments/transactions/${paymentId}`);
-
-// Admin Certificates
+  API.get(`/admin/payments/transactions/${paymentId}`);
 export const getAdminCertificatesOverview = () =>
-  apiClient.get("/admin/certificates/overview");
+  API.get("/admin/certificates/overview");
 export const getAdminCertificates = (params = {}) => {
-  if (params.start_date instanceof Date) {
-    params.start_date = params.start_date.toISOString().split("T")[0];
-  }
-  if (params.end_date instanceof Date) {
-    params.end_date = params.end_date.toISOString().split("T")[0];
-  }
   const query = new URLSearchParams(params).toString();
-  return apiClient.get(`/admin/certificates?${query}`);
+  return API.get(`/admin/certificates?${query}`);
 };
 export const revokeAdminCertificate = (certId) =>
-  apiClient.post(`/admin/certificates/${certId}/revoke`);
-
-// Admin Analytics
+  API.post(`/admin/certificates/${certId}/revoke`);
 export const getAdminAnalytics = (period = "1y") =>
-  apiClient.get(`/admin/analytics/insights?period=${period}`);
-export const getAdminDashboardStats = async () => {
-  const response = await apiClient.get("/admin/dashboard-stats");
-  return response.data;
-};
-
-// Admin Support Tickets
+  API.get(`/admin/analytics/insights?period=${period}`);
+export const getAdminDashboardStats = () => API.get("/admin/dashboard-stats");
 export const getOpenTicketsCount = () =>
-  apiClient.get("/admin/support/tickets/open-count");
+  API.get("/admin/support/tickets/open-count");
 export const getAdminSupportTickets = (params = {}) => {
   const query = new URLSearchParams(params).toString();
-  return apiClient.get(`/admin/support/tickets?${query}`);
+  return API.get(`/admin/support/tickets?${query}`);
 };
 export const getAdminTicketDetails = (ticketId) =>
-  apiClient.get(`/admin/support/tickets/${ticketId}`);
+  API.get(`/admin/support/tickets/${ticketId}`);
 export const adminReplyToTicket = (ticketId, message, file) => {
   const formData = new FormData();
   formData.append("message", message);
-  if (file) {
-    formData.append("file", file);
-  }
-  return apiClient.post(`/admin/support/tickets/${ticketId}/reply`, formData, {
+  if (file) formData.append("file", file);
+  return API.post(`/admin/support/tickets/${ticketId}/reply`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
 export const updateTicketStatus = (ticketId, status) =>
-  apiClient.put(`/admin/support/tickets/${ticketId}/status`, { status });
-
-// User Support Tickets
-export const createUserTicket = (subject, message, file) => {
-  const formData = new FormData();
-  formData.append("subject", subject);
-  formData.append("message", message);
-  if (file) {
-    formData.append("file", file);
-  }
-  return apiClient.post("/support/tickets", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-};
-export const getUserTickets = () => apiClient.get("/support/tickets");
-export const getUserTicketDetails = (ticketId) =>
-  apiClient.get(`/support/tickets/${ticketId}`);
-export const replyToTicket = (ticketId, message, file) => {
-  const formData = new FormData();
-  formData.append("message", message);
-  if (file) {
-    formData.append("file", file);
-  }
-  return apiClient.post(`/support/tickets/${ticketId}/reply`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-};
-
-export const deleteUserTicket = (ticketId) =>
-  apiClient.delete(`/support/tickets/${ticketId}`);
-
-// --- USER-FACING API Calls ---
-export const getTemplates = () => apiClient.get("/templates/");
-export const getTemplate = (templateId) =>
-  apiClient.get(`/templates/${templateId}`);
-export const createTemplate = (formData) =>
-  apiClient.post("/templates/", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-export const updateTemplate = (templateId, formData) =>
-  apiClient.put(`/templates/${templateId}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-export const deleteTemplate = (templateId) =>
-  apiClient.delete(`/templates/${templateId}`);
-
-// Visual Template Editor
-export const createVisualTemplate = (templateData) =>
-  apiClient.post("/templates/visual/", templateData);
-export const getVisualTemplate = (templateId) =>
-  apiClient.get(`/templates/visual/${templateId}`);
-export const updateVisualTemplate = (templateId, templateData) =>
-  apiClient.put(`/templates/visual/${templateId}`, templateData);
-
-// Certificates
-export const getCertificates = () => apiClient.get("/certificates/");
-export const createCertificate = (certData) =>
-  apiClient.post("/certificates/", certData);
-export const getCertificate = (certId) =>
-  apiClient.get(`/certificates/${certId}`);
-export const updateCertificate = (certId, certData) =>
-  apiClient.put(`/certificates/${certId}`, certData);
-export const deleteCertificate = (certId) =>
-  apiClient.delete(`/certificates/${certId}`);
-export const verifyCertificate = (verificationId) =>
-  apiClient.get(`/certificates/verify/${verificationId}`);
-export const bulkCreateCertificates = (formData) =>
-  apiClient.post("/certificates/bulk", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-
-export const updateCertificateStatus = (certId, status) =>
-  apiClient.put(`/certificates/${certId}/status`, { status });
-
-export const advancedSearchCertificates = (params) => {
-  // Clean up params object by removing empty/null values
-  const cleanedParams = Object.entries(params).reduce((acc, [key, value]) => {
-    if (value !== null && value !== "" && value !== undefined) {
-      acc[key] = value;
-    }
-    return acc;
-  }, {});
-
-  const query = new URLSearchParams(cleanedParams).toString();
-  return apiClient.get(`/certificates/advanced-search?${query}`);
-};
-
-// Emailing Certificates
-export const sendCertificateEmail = (certId) =>
-  apiClient.post(`/certificates/${certId}/send`);
-export const sendBulkEmails = (certificateIds) =>
-  apiClient.post("/certificates/bulk-send", {
-    certificate_ids: certificateIds,
-  });
-export const getCertificatePDF = (certId) =>
-  apiClient.get(`/certificates/${certId}/pdf`, {
-    responseType: "blob",
-  });
-
-// User Profile & Settings
-export const getCurrentUser = () => apiClient.get("/users/me");
-export const uploadUserSignature = (formData) =>
-  apiClient.post("/users/me/signature", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-export const switchToCompany = (companyName) =>
-  apiClient.post("/users/me/switch-to-company", {
-    company_name: companyName,
-  });
-export const generateApiKey = () => apiClient.post("/users/me/api-key");
-
-// Payments
-export const initializePayment = (plan) =>
-  apiClient.post("/payments/initialize", { plan });
-
-// User Analytics
-export const getUserAnalytics = () => apiClient.get("/analytics/dashboard");
-
-// Groups
-export const getGroups = (page = 1) => apiClient.get(`/groups/?page=${page}`);
-export const createGroup = (name) => apiClient.post("/groups/", { name });
-export const getGroupDetails = (groupId) => apiClient.get(`/groups/${groupId}`);
-export const deleteGroup = (groupId) => apiClient.delete(`/groups/${groupId}`);
-export const sendGroupBulkEmail = (groupId) =>
-  apiClient.post(`/groups/${groupId}/send-bulk-email`);
-export const downloadGroupBulkPDF = (groupId) =>
-  apiClient.get(`/groups/${groupId}/download-bulk-pdf`, {
-    responseType: "blob",
-  });
-
-// Misc
-export const downloadBulkTemplate = () =>
-  apiClient.get("/certificates/bulk-template", { responseType: "blob" });
-export const uploadEditorImage = (formData) =>
-  apiClient.post("/uploads/editor-images", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-export const createCustomTemplate = (formData) =>
-  apiClient.post("/templates/upload-custom", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-export const updateCustomTemplate = (templateId, formData) =>
-  apiClient.put(`/templates/upload-custom/${templateId}`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
+  API.put(`/admin/support/tickets/${ticketId}/status`, { status });
