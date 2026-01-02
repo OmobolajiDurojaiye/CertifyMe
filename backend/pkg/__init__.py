@@ -1,6 +1,6 @@
 import os
 from flask import Flask, send_from_directory, jsonify
-from flask_cors import CORS
+from flask_cors import CORS  # Ensure CORS is imported at the top
 from .extensions import db, migrate, mail, jwt
 from .routes import register_blueprints
 from .models import Admin, User
@@ -8,12 +8,21 @@ from .models import Admin, User
 def create_app():
     app = Flask(__name__)
 
-    # --- Load all configs directly from environment variables ---
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
+    # --- THIS IS THE FIX ---
+    # Initialize CORS immediately after creating the app instance.
+    # This ensures it's one of the first middleware to run.
+    CORS(app, 
+         resources={r"/api/*": {"origins": ["http://localhost:5173", "https://www.certifyme.com.ng"]}}, 
+         supports_credentials=True
+    )
+    # --- END OF FIX ---
+
+    # Load all configs directly from environment variables
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_default_secret_key')
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'a_default_jwt_key')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400
 
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql+mysqlconnector://root@127.0.0.1/certifyme_db')
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_recycle": 280}
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -35,17 +44,7 @@ def create_app():
     os.makedirs(upload_path, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = upload_path
 
-    # --- THIS IS THE DEFINITIVE CORS FIX ---
-    # We are hardcoding the exact URLs that are allowed to make requests.
-    # This removes any dependency on environment variables for CORS.
-    CORS(
-        app,
-        resources={r"/api/*": {"origins": ["https://www.certifyme.com.ng", "http://localhost:5173"]}},
-        supports_credentials=True
-    )
-    # --- END OF FIX ---
-
-    # Initialize other extensions
+    # Initialize other extensions AFTER config and CORS
     db.init_app(app)
     migrate.init_app(app, db)
     mail.init_app(app)
