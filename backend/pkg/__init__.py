@@ -1,6 +1,6 @@
 import os
 from flask import Flask, send_from_directory, jsonify
-from flask_cors import CORS  # Ensure CORS is imported at the top
+from flask_cors import CORS
 from .extensions import db, migrate, mail, jwt
 from .routes import register_blueprints
 from .models import Admin, User
@@ -8,16 +8,24 @@ from .models import Admin, User
 def create_app():
     app = Flask(__name__)
 
-    # --- THIS IS THE FIX ---
-    # Initialize CORS immediately after creating the app instance.
-    # This ensures it's one of the first middleware to run.
-    CORS(app, 
-         resources={r"/api/*": {"origins": ["http://localhost:5173", "https://www.certifyme.com.ng"]}}, 
-         supports_credentials=True
+    # --- THIS IS THE DEFINITIVE CORS FIX ---
+    # We are explicitly defining all allowed origins and resource paths.
+    # This removes any ambiguity.
+    CORS(
+        app,
+        resources={
+            r"/api/*": {
+                "origins": ["https://www.certifyme.com.ng", "http://localhost:5173"]
+            },
+            r"/uploads/*": {
+                "origins": ["https://www.certifyme.com.ng", "http://localhost:5173"]
+            }
+        },
+        supports_credentials=True
     )
     # --- END OF FIX ---
 
-    # Load all configs directly from environment variables
+    # Load configuration from environment variables
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_default_secret_key')
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'a_default_jwt_key')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400
@@ -29,9 +37,7 @@ def create_app():
     app.config['FRONTEND_URL'] = os.environ.get('FRONTEND_URL')
     app.config['PAYSTACK_SECRET_KEY'] = os.environ.get('PAYSTACK_SECRET_KEY')
     app.config['PAYSTACK_PUBLIC_KEY'] = os.environ.get('PAYSTACK_PUBLIC_KEY')
-    app.config['CANVA_CLIENT_ID'] = os.environ.get('CANVA_CLIENT_ID')
-    app.config['CANVA_CLIENT_SECRET'] = os.environ.get('CANVA_CLIENT_SECRET')
-
+    
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
     app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
@@ -43,7 +49,7 @@ def create_app():
     upload_path = os.path.abspath(os.path.join(app.root_path, '..', '..', 'Uploads'))
     os.makedirs(upload_path, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = upload_path
-
+    
     # Initialize other extensions AFTER config and CORS
     db.init_app(app)
     migrate.init_app(app, db)
