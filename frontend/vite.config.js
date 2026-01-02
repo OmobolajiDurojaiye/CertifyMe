@@ -2,16 +2,21 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url"; // <-- IMPORT THIS
+
+// --- THIS IS THE FIX for __dirname ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// --- END OF FIX ---
 
 const HOSTNAME = "https://certifyme.com.ng";
-// Updated routes to include the new public pages
 const ROUTES = [
   "/",
   "/signup",
   "/login",
-  "/pricing", // Added
-  "/contact", // Added
-  "/search", // Added
+  "/pricing",
+  "/contact",
+  "/search",
   "/verify",
   "/docs",
 ];
@@ -21,15 +26,11 @@ export default defineConfig({
     react(),
     {
       name: "manual-sitemap-generator",
-      // --- THIS IS THE FIX ---
-      // This ensures the plugin runs *after* the 'dist' directory is created.
       enforce: "post",
-      // --- END OF FIX ---
       closeBundle() {
         const distPath = path.resolve(__dirname, "dist");
         const sitemapPath = path.resolve(distPath, "sitemap.xml");
 
-        // Ensure the dist directory exists before writing to it
         if (!fs.existsSync(distPath)) {
           fs.mkdirSync(distPath, { recursive: true });
         }
@@ -58,7 +59,7 @@ ${urls}
   server: {
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000",
+        target: "http://1227.0.0.1:5000",
         changeOrigin: true,
       },
     },
