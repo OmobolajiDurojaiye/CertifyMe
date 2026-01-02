@@ -13,7 +13,7 @@ API.interceptors.request.use((req) => {
   return req;
 });
 
-// --- USER AUTH ---
+// USER AUTH
 export const loginUser = (credentials) => API.post("/auth/login", credentials);
 export const signupUser = (userData) => API.post("/auth/register", userData);
 export const verifyEmail = (verificationData) =>
@@ -25,7 +25,7 @@ export const requestPasswordReset = (email) =>
 export const resetPassword = (token, password) =>
   API.post("/auth/reset-password", { token, password });
 
-// --- ADMIN AUTH ---
+// ADMIN AUTH
 export const adminLogin = (credentials) =>
   API.post("/admin/auth/login", credentials);
 export const getAdminStatus = () => API.get("/admin/auth/status");
@@ -35,7 +35,7 @@ export const verifyAdmin = (verificationData) =>
   API.post("/admin/auth/verify", verificationData);
 export const getAdminProfile = () => API.get("/admin/users/me");
 
-// --- TEMPLATES ---
+// TEMPLATES
 export const getTemplates = () => API.get("/templates/");
 export const getTemplate = (templateId) => API.get(`/templates/${templateId}`);
 export const createTemplate = (formData) =>
@@ -57,7 +57,7 @@ export const updateCustomTemplate = (templateId, formData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-// --- CERTIFICATES ---
+// CERTIFICATES
 export const getCertificates = () => API.get("/certificates/");
 export const createCertificate = (certData) =>
   API.post("/certificates/", certData);
@@ -88,13 +88,13 @@ export const advancedSearchCertificates = (params) => {
 export const getCertificatePDF = (certId) =>
   API.get(`/certificates/${certId}/pdf`, { responseType: "blob" });
 
-// --- EMAILING ---
+// EMAILING
 export const sendCertificateEmail = (certId) =>
   API.post(`/certificates/${certId}/send`);
 export const sendBulkEmails = (certificateIds) =>
   API.post("/certificates/bulk-send", { certificate_ids: certificateIds });
 
-// --- USER PROFILE & SETTINGS ---
+// USER PROFILE & SETTINGS
 export const getCurrentUser = () => API.get("/users/me");
 export const uploadUserSignature = (formData) =>
   API.post("/users/me/signature", formData, {
@@ -105,16 +105,16 @@ export const switchToCompany = (companyName) =>
 export const generateApiKey = () => API.post("/users/me/api-key");
 export const updateUserProfile = (data) => API.put("/users/me", data);
 
-// --- PAYMENTS ---
+// PAYMENTS
 export const initializePayment = (plan) =>
   API.post("/payments/initialize", { plan });
 export const verifyPayment = (reference) =>
   API.get(`/payments/verify/${reference}`);
 
-// --- USER ANALYTICS ---
+// USER ANALYTICS
 export const getUserAnalytics = () => API.get("/analytics/dashboard");
 
-// --- GROUPS ---
+// GROUPS
 export const getGroups = (page = 1) => API.get(`/groups/?page=${page}`);
 export const createGroup = (name) => API.post("/groups/", { name });
 export const getGroupDetails = (groupId) => API.get(`/groups/${groupId}`);
@@ -124,7 +124,7 @@ export const sendGroupBulkEmail = (groupId) =>
 export const downloadGroupBulkPDF = (groupId) =>
   API.get(`/groups/${groupId}/download-bulk-pdf`, { responseType: "blob" });
 
-// --- SUPPORT TICKETS ---
+// SUPPORT TICKETS
 export const createUserTicket = (formData) =>
   API.post("/support/tickets", formData, {
     headers: { "Content-Type": "multipart/form-data" },
@@ -139,14 +139,14 @@ export const replyToTicket = (ticketId, formData) =>
 export const deleteUserTicket = (ticketId) =>
   API.delete(`/support/tickets/${ticketId}`);
 
-// --- CANVA ---
+// CANVA
 export const getCanvaAuthUrl = () => API.get("/canva/auth");
 
-// --- CONTACT ---
+// CONTACT
 export const sendContactMessage = (contactData) =>
   API.post("/contact/", contactData);
 
-// --- MISC ---
+// MISC
 export const downloadBulkTemplate = () =>
   API.get("/certificates/bulk-template", { responseType: "blob" });
 export const uploadEditorImage = (formData) =>
@@ -154,11 +154,9 @@ export const uploadEditorImage = (formData) =>
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-// --- ADMIN API ---
-export const getAdminUsers = (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  return API.get(`/admin/users?${query}`);
-};
+// ADMIN API
+export const getAdminUsers = (params = {}) =>
+  API.get(`/admin/users?${new URLSearchParams(params).toString()}`);
 export const getAdminUserDetails = (userId) =>
   API.get(`/admin/users/${userId}`);
 export const adjustUserQuota = (userId, adjustment, reason) =>
@@ -171,10 +169,8 @@ export const updateAdminUserPlan = (userId, plan) =>
   API.put(`/admin/users/${userId}/plan`, { plan });
 export const deleteAdminUser = (userId) =>
   API.delete(`/admin/users/${userId}/delete`);
-export const getAdminCompanies = (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  return API.get(`/admin/companies?${query}`);
-};
+export const getAdminCompanies = (params = {}) =>
+  API.get(`/admin/companies?${new URLSearchParams(params).toString()}`);
 export const getAdminCompanyDetails = (companyId) =>
   API.get(`/admin/companies/${companyId}`);
 export const deleteAdminCompany = (companyId) =>
@@ -182,18 +178,16 @@ export const deleteAdminCompany = (companyId) =>
 export const getEmailRecipients = () => API.get("/admin/messaging/recipients");
 export const sendAdminBulkEmail = (emailData) =>
   API.post("/admin/messaging/send-email", emailData);
-export const getAdminTransactions = (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  return API.get(`/admin/payments/transactions?${query}`);
-};
+export const getAdminTransactions = (params = {}) =>
+  API.get(
+    `/admin/payments/transactions?${new URLSearchParams(params).toString()}`
+  );
 export const getAdminTransactionDetails = (paymentId) =>
   API.get(`/admin/payments/transactions/${paymentId}`);
 export const getAdminCertificatesOverview = () =>
   API.get("/admin/certificates/overview");
-export const getAdminCertificates = (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  return API.get(`/admin/certificates?${query}`);
-};
+export const getAdminCertificates = (params = {}) =>
+  API.get(`/admin/certificates?${new URLSearchParams(params).toString()}`);
 export const revokeAdminCertificate = (certId) =>
   API.post(`/admin/certificates/${certId}/revoke`);
 export const getAdminAnalytics = (period = "1y") =>
@@ -201,10 +195,8 @@ export const getAdminAnalytics = (period = "1y") =>
 export const getAdminDashboardStats = () => API.get("/admin/dashboard-stats");
 export const getOpenTicketsCount = () =>
   API.get("/admin/support/tickets/open-count");
-export const getAdminSupportTickets = (params = {}) => {
-  const query = new URLSearchParams(params).toString();
-  return API.get(`/admin/support/tickets?${query}`);
-};
+export const getAdminSupportTickets = (params = {}) =>
+  API.get(`/admin/support/tickets?${new URLSearchParams(params).toString()}`);
 export const getAdminTicketDetails = (ticketId) =>
   API.get(`/admin/support/tickets/${ticketId}`);
 export const adminReplyToTicket = (ticketId, message, file) => {

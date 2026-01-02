@@ -1,19 +1,19 @@
 import os
 from flask import Flask, send_from_directory, jsonify
+from flask_cors import CORS
 from .extensions import db, migrate, mail, jwt
 from .routes import register_blueprints
 from .models import Admin, User
-from .cors import init_cors # <-- IMPORT THE NEW CORS FUNCTION
 
 def create_app():
     app = Flask(__name__)
 
     # --- Load all configs directly from environment variables ---
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_default_secret_key')
-    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'a_default_jwt_key')
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400
 
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql+mysqlconnector://root@127.0.0.1/certifyme_db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_recycle": 280}
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -35,8 +35,17 @@ def create_app():
     os.makedirs(upload_path, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = upload_path
 
-    # --- INITIALIZE CORS USING THE DEDICATED FUNCTION ---
-    init_cors(app)
+    # --- THIS IS THE FINAL, ROBUST CORS FIX ---
+    # Define the origins that are allowed to make requests
+    origins = [
+        "http://localhost:5173",  # For local development
+        os.environ.get('FRONTEND_URL') # For production
+    ]
+    # Filter out any None values if FRONTEND_URL is not set
+    origins = [origin for origin in origins if origin]
+    
+    CORS(app, resources={r"/api/*": {"origins": origins}}, supports_credentials=True)
+    # --- END OF FIX ---
 
     # Initialize other extensions
     db.init_app(app)
