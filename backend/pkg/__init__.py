@@ -39,16 +39,18 @@ def create_app():
     mail.init_app(app)
     jwt.init_app(app)
 
-    # --- UPDATED CORS CONFIGURATION ---
-    CORS(app, resources={r"/api/*": {"origins": [
-        "http://localhost:5173", 
-        app.config['FRONTEND_URL']
-    ]}})
+    # --- THIS IS THE CORRECTED FIX ---
+    # Define your frontend URL. A specific URL is more secure than "*".
+    frontend_url = app.config['FRONTEND_URL']
+    
+    # Initialize CORS with the specific origin.
+    # The 'supports_credentials=True' is good practice for auth headers.
+    CORS(app, resources={
+        r"/api/*": {"origins": [frontend_url, "http://localhost:5173"]},
+        r"/uploads/*": {"origins": [frontend_url, "http://localhost:5173"]}
+    }, supports_credentials=True)
+    # --- END OF FIX ---
 
-    @app.before_request
-    def handle_preflight():
-        if request.method.upper() == 'OPTIONS':
-            return app.make_response(('', 204))
 
     @jwt.user_lookup_loader
     def user_lookup_callback(_jwt_header, jwt_data):
