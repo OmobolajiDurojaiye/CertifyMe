@@ -4,13 +4,14 @@ import fs from "fs";
 import path from "path";
 
 const HOSTNAME = "https://certifyme.com.ng";
+// Updated routes to include the new public pages
 const ROUTES = [
   "/",
   "/signup",
   "/login",
-  "/dashboard",
-  "/dashboard/create",
-  "/dashboard/bulk-create",
+  "/pricing", // Added
+  "/contact", // Added
+  "/search", // Added
   "/verify",
   "/docs",
 ];
@@ -20,8 +21,18 @@ export default defineConfig({
     react(),
     {
       name: "manual-sitemap-generator",
+      // --- THIS IS THE FIX ---
+      // This ensures the plugin runs *after* the 'dist' directory is created.
+      enforce: "post",
+      // --- END OF FIX ---
       closeBundle() {
-        const sitemapPath = path.resolve("dist", "sitemap.xml");
+        const distPath = path.resolve(__dirname, "dist");
+        const sitemapPath = path.resolve(distPath, "sitemap.xml");
+
+        // Ensure the dist directory exists before writing to it
+        if (!fs.existsSync(distPath)) {
+          fs.mkdirSync(distPath, { recursive: true });
+        }
 
         const urls = ROUTES.map(
           (url) => `
@@ -29,17 +40,13 @@ export default defineConfig({
     <loc>${HOSTNAME}${url}</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <priority>${url === "/" ? "1.0" : "0.8"}</priority>
   </url>`
         ).join("\n");
 
         const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-  xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
-  xmlns:xhtml="http://www.w3.org/1999/xhtml"
-  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-  xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls}
 </urlset>`;
 
@@ -48,4 +55,12 @@ ${urls}
       },
     },
   ],
+  server: {
+    proxy: {
+      "/api": {
+        target: "http://127.0.0.1:5000",
+        changeOrigin: true,
+      },
+    },
+  },
 });
