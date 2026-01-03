@@ -15,7 +15,6 @@ const PricingCard = ({ plan, isPopular }) => (
     {isPopular && (
       <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2">
         <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-600 text-white rounded-full text-sm font-bold shadow-lg">
-          <Star size={14} className="fill-current text-yellow-400" />
           Most Popular
         </div>
       </div>
@@ -70,9 +69,9 @@ const PricingPage = () => {
     {
       name: "Starter",
       priceUSD: "$15",
-      priceNGN: "₦21,556",
+      priceNGN: "₦22,500",
       certs: "500",
-      costPerCert: "₦43.11",
+      costPerCert: "₦45",
       for: "For workshops, bootcamps, and small cohorts.",
       features: [
         "500 certificate credits",
@@ -84,9 +83,9 @@ const PricingPage = () => {
     {
       name: "Growth",
       priceUSD: "$50",
-      priceNGN: "₦71,855",
+      priceNGN: "₦70,000",
       certs: "2,000",
-      costPerCert: "₦35.93",
+      costPerCert: "₦35",
       for: "For schools and training centers issuing regularly.",
       features: [
         "2,000 certificate credits",
@@ -98,29 +97,29 @@ const PricingPage = () => {
     {
       name: "Pro",
       priceUSD: "$100",
-      priceNGN: "₦143,710",
+      priceNGN: "₦145,000",
       certs: "5,000",
-      costPerCert: "₦28.74",
+      costPerCert: "₦29",
       for: "For institutions needing automation and integrations.",
       features: [
         "5,000 certificate credits",
         "Everything in Growth, plus:",
         "API access",
-        "Custom branding",
+        "Priority support",
       ],
     },
     {
       name: "Enterprise",
       priceUSD: "$300",
-      priceNGN: "₦431,130",
+      priceNGN: "₦440,000",
       certs: "20,000",
-      costPerCert: "₦21.56",
+      costPerCert: "₦22",
       for: "For universities, exam bodies, and large organizations.",
       features: [
         "20,000 certificate credits",
-        "Dedicated account manager",
+        "Everything in Pro, plus:",
         "SLA-backed support",
-        "Custom onboarding",
+        "Custom onboarding (on request)",
       ],
     },
   ];
@@ -181,7 +180,7 @@ const PricingPage = () => {
               institution grows, the cost per certificate goes down.
             </p>
             <p className="text-indigo-600 font-semibold">
-              From ₦43 per certificate on Starter → as low as ₦21 per
+              From ₦45 per certificate on Starter → as low as ₦22 per
               certificate on Enterprise.
             </p>
           </div>
@@ -229,10 +228,11 @@ const PricingPage = () => {
                     <Check className="text-green-500" /> API access
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="text-green-500" /> Custom branding
+                    <Check className="text-green-500" /> SLA-backed support
                   </li>
                   <li className="flex items-center gap-3">
-                    <Check className="text-green-500" /> System integrations
+                    <Check className="text-green-500" /> Custom onboarding (on
+                    request)
                   </li>
                 </ul>
               </div>

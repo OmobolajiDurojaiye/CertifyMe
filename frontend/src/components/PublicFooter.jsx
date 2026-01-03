@@ -35,7 +35,7 @@ const PublicFooter = () => {
           <div>
             <h4 className="font-bold text-gray-900 mb-6 text-white">Product</h4>
             <ul className="space-y-4">
-              <FooterLink to="/#pricing">Pricing</FooterLink>
+              <FooterLink to="/pricing">Pricing</FooterLink>
               <FooterLink to="/search">Public Ledger</FooterLink>
               <FooterLink to="/verify">Verification Portal</FooterLink>
               <FooterLink to="/docs">API Documentation</FooterLink>
@@ -53,7 +53,7 @@ const PublicFooter = () => {
                 Founder's Note
               </FooterLink>
               <FooterLink to="/contact">Contact</FooterLink>
-              <FooterLink to="/careers">Careers</FooterLink>
+              <FooterLink to="#">Careers</FooterLink>
             </ul>
           </div>
 
@@ -61,9 +61,9 @@ const PublicFooter = () => {
           <div>
             <h4 className="font-bold text-gray-900 mb-6 text-white">Legal</h4>
             <ul className="space-y-4">
-              <FooterLink to="/privacy">Privacy Policy</FooterLink>
-              <FooterLink to="/terms">Terms of Service</FooterLink>
-              <FooterLink to="/security">Security</FooterLink>
+              <FooterLink to="#">Privacy Policy</FooterLink>
+              <FooterLink to="#">Terms of Service</FooterLink>
+              {/* <FooterLink to="">Security</FooterLink> */}
             </ul>
           </div>
         </div>
