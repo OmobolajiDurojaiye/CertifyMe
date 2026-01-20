@@ -1,5 +1,5 @@
-import React from "react";
-import { Check, LayoutTemplate, Award } from "lucide-react";
+import React, { useState } from "react";
+import { Check, LayoutTemplate, Award, ChevronDown, ChevronUp } from "lucide-react";
 import TemplateRenderer from "./templates/TemplateRenderer";
 
 /**
@@ -8,16 +8,29 @@ import TemplateRenderer from "./templates/TemplateRenderer";
  * @param {string} value - The currently selected layout style.
  * @param {function} onChange - Callback when a layout is selected (passes layout name string).
  * @param {string[]} options - Array of layout style strings (e.g. ['classic', 'modern', ...]).
+ * @param {boolean} collapsible - Whether the selector works as a collapsible accordion.
  */
-const TemplateSelector = ({ value, onChange, options = [] }) => {
+const TemplateSelector = ({ value, onChange, options = [], collapsible = true }) => {
+  const [isOpen, setIsOpen] = useState(true);
+
   return (
     <div className="space-y-3">
-      <label className="block text-gray-700 font-semibold text-sm flex items-center gap-2">
-        <LayoutTemplate size={16} />
-        Choose {options.length > 0 && typeof options[0] === 'object' ? 'Template' : 'Layout'}
-      </label>
+      <button 
+        type="button"
+        onClick={() => collapsible && setIsOpen(!isOpen)}
+        className={`w-full flex items-center justify-between text-gray-700 font-semibold text-sm transition-colors ${collapsible ? 'hover:text-indigo-600 cursor-pointer' : ''}`}
+      >
+        <span className="flex items-center gap-2">
+            <LayoutTemplate size={16} />
+            Choose {options.length > 0 && typeof options[0] === 'object' ? 'Template' : 'Layout'}
+        </span>
+        {collapsible && (
+            isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />
+        )}
+      </button>
       
-      <div className="custom-scrollbar grid grid-cols-2 lg:grid-cols-3 gap-6 p-2 max-h-[500px] overflow-y-auto pr-3">
+      {isOpen && (
+      <div className="custom-scrollbar grid grid-cols-2 lg:grid-cols-3 gap-6 p-2 max-h-[500px] overflow-y-auto pr-3 animate-in slide-in-from-top-2 duration-300">
         {options.map((option) => {
           const isObject = typeof option === 'object';
           const optionValue = isObject ? option.id : option;
@@ -89,6 +102,7 @@ const TemplateSelector = ({ value, onChange, options = [] }) => {
           );
         })}
       </div>
+      )}
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;

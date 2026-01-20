@@ -17,83 +17,19 @@ import {
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
 import { LandingHero } from "../components/ui/landing-hero";
+import { FeaturesSection } from "../components/FeaturesSection";
+import { StatsSection } from "../components/StatsSection";
+import { TestimonialSection } from "../components/TestimonialSection";
+import { ApiSection } from "../components/ApiSection";
 
 // --- SECTIONS ---
 
 // Hero component removed in favor of AcmeHero
 
 
-const Features = () => (
-  <section className="py-24 bg-gray-50">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center max-w-3xl mx-auto mb-16">
-        <h2 className="text-indigo-600 font-semibold tracking-wide uppercase text-sm">
-          Features
-        </h2>
-        <p className="mt-2 text-3xl font-extrabold text-gray-900 sm:text-4xl">
-          Everything you need to issue credentials
-        </p>
-      </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        {[
-          {
-            icon: Layout,
-            title: "Custom Templates",
-            desc: "Drag & drop builder. Upload your own designs or use our professional presets.",
-          },
-          {
-            icon: Zap,
-            title: "Bulk Generation",
-            desc: "Upload a CSV with thousands of names. We generate and email them instantly.",
-          },
-          {
-            icon: ShieldCheck,
-            title: "Bank-Grade Security",
-            desc: "Every certificate gets a unique ID and QR code for instant, fraud-proof verification.",
-          },
-        ].map((feature, idx) => (
-          <div
-            key={idx}
-            className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all"
-          >
-            <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-6">
-              <feature.icon size={24} />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">
-              {feature.title}
-            </h3>
-            <p className="text-gray-500 leading-relaxed">{feature.desc}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-);
 
-const Stats = () => (
-  <section className="py-12 bg-indigo-900 text-white">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-indigo-800">
-        <div className="p-4">
-          <Building className="mx-auto mb-4 text-indigo-300" size={32} />
-          <div className="text-4xl font-extrabold mb-1">10+</div>
-          <div className="text-indigo-200">Companies Onboard</div>
-        </div>
-        <div className="p-4">
-          <Users className="mx-auto mb-4 text-indigo-300" size={32} />
-          <div className="text-4xl font-extrabold mb-1">20+</div>
-          <div className="text-indigo-200">Active Issuers</div>
-        </div>
-        <div className="p-4">
-          <Award className="mx-auto mb-4 text-indigo-300" size={32} />
-          <div className="text-4xl font-extrabold mb-1">200+</div>
-          <div className="text-indigo-200">Certificates Verified</div>
-        </div>
-      </div>
-    </div>
-  </section>
-);
+
 
 const PricingCard = ({
   title,
@@ -211,103 +147,7 @@ const Pricing = () => (
   </section>
 );
 
-const ApiCTA = () => (
-  <section className="py-20 bg-gray-900 text-white overflow-hidden relative">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
-      <div className="md:w-1/2">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-900/50 border border-indigo-700 text-indigo-300 text-sm font-semibold mb-6">
-          <Code size={16} /> For Developers
-        </div>
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-          Build on our Infrastructure
-        </h2>
-        <p className="text-gray-400 text-lg mb-8 leading-relaxed">
-          Automate certificate generation directly from your own application
-          using our robust REST API. Perfect for LMS platforms, event apps, and
-          HR tools.
-        </p>
-        <Link
-          to="/docs"
-          className="inline-flex items-center text-white font-bold hover:text-indigo-400 no-underline text-lg"
-        >
-          Read the Documentation <ArrowRight className="ml-2" size={20} />
-        </Link>
-      </div>
-      <div className="md:w-1/2 bg-gray-800 rounded-xl p-6 shadow-2xl border border-gray-700 font-mono text-sm">
-        <div className="flex gap-2 mb-4">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-        </div>
-        <div className="space-y-2 text-indigo-300">
-          <p>
-            <span className="text-pink-400">POST</span> /api/v1/certificates
-          </p>
-          <p className="text-gray-400">{`{`}</p>
-          <p className="pl-4">
-            <span className="text-blue-400">"template_id"</span>:{" "}
-            <span className="text-green-400">"tmpl_123"</span>,
-          </p>
-          <p className="pl-4">
-            <span className="text-blue-400">"recipient_name"</span>:{" "}
-            <span className="text-green-400">"Jane Doe"</span>,
-          </p>
-          <p className="pl-4">
-            <span className="text-blue-400">"course"</span>:{" "}
-            <span className="text-green-400">"React Advanced"</span>
-          </p>
-          <p className="text-gray-400">{`}`}</p>
-          <p className="mt-4 text-green-500">// Response: 201 Created</p>
-        </div>
-      </div>
-    </div>
-  </section>
-);
 
-const Testimonials = () => {
-  const testimonials = [
-    {
-      quote:
-        "CertifyMe is a game changer. The ability to custom my certificates and issue them in bulk made all the difference.",
-      name: "Chibuzor Azodo, PhD",
-      title: "Founder, Staunch Analytics Ltd",
-      image: "/images/chibuzor-azodo.png",
-    },
-  ];
-
-  return (
-    <section className="py-24 bg-gray-50 border-b border-gray-200">
-      <div className="max-w-4xl mx-auto px-4 text-center">
-        <div className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-gray-100 relative">
-          <Quote
-            size={48}
-            className="text-indigo-100 absolute top-8 left-8 -z-0"
-          />
-          <div className="relative z-10">
-            <p className="text-xl md:text-2xl text-gray-700 font-medium italic mb-8">
-              "{testimonials[0].quote}"
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <img
-                src={testimonials[0].image}
-                alt={testimonials[0].name}
-                className="w-12 h-12 rounded-full object-cover"
-              />
-              <div className="text-left">
-                <div className="font-bold text-gray-900">
-                  {testimonials[0].name}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {testimonials[0].title}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-};
 
 function LandingPage() {
   return (
@@ -315,6 +155,8 @@ function LandingPage() {
       <PublicHeader />
       <main>
         <LandingHero />
+        <StatsSection />
+        <FeaturesSection />
         <div className="py-10 border-b border-gray-100 bg-white">
           <div className="max-w-7xl mx-auto px-4 flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
             <img
@@ -334,11 +176,10 @@ function LandingPage() {
             />
           </div>
         </div>
-        <Features />
-        <Stats />
-        <Testimonials />
+
+        <TestimonialSection />
         <Pricing />
-        <ApiCTA />
+        <ApiSection />
       </main>
       <PublicFooter />
     </div>
