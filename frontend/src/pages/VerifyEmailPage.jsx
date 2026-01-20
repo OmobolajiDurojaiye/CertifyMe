@@ -1,60 +1,55 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Form, Spinner, Alert } from "react-bootstrap";
+import { useLocation, useNavigate } from "react-router-dom";
 import { verifyEmail, resendVerificationEmail } from "../api";
-import { Mail, ArrowRight, ShieldCheck, ArrowLeft } from "lucide-react";
+import { CheckCircle, AlertCircle, Loader2, ArrowRight } from "lucide-react";
+import AuthLayout from "../layouts/AuthLayout";
 
 function VerifyEmailPage() {
-  const [verificationCode, setVerificationCode] = useState("");
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState(state?.email || "");
+  const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const email = location.state?.email;
 
   useEffect(() => {
-    if (!email) {
-      navigate("/signup");
+    // If no email provided, redirect to login
+    if (!state?.email) {
+      navigate("/login");
     }
-  }, [email, navigate]);
+  }, [state, navigate]);
 
-  const handleChange = (e) => {
-    // Only allow numbers and max 6 chars
-    const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-    setVerificationCode(val);
-  };
-
-  const handleSubmit = async (e) => {
+  const handleVerify = async (e) => {
     e.preventDefault();
+    setVerifyLoading(true);
     setError("");
     setSuccess("");
-    setLoading(true);
 
     try {
-      const response = await verifyEmail({
-        email,
-        verification_code: verificationCode,
-      });
-      localStorage.setItem("token", response.data.access_token);
-      navigate("/dashboard");
+      await verifyEmail({ email, verification_code: code });
+      setSuccess("Email verification successful! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (err) {
       setError(
-        err.response?.data?.msg || "Verification failed. Check the code."
+        err.response?.data?.msg || "Verification failed. Please check the code."
       );
     } finally {
-      setLoading(false);
+      setVerifyLoading(false);
     }
   };
 
-  const handleResendCode = async () => {
+  const handleResend = async () => {
+    setResendLoading(true);
     setError("");
     setSuccess("");
-    setResendLoading(true);
+
     try {
-      const response = await resendVerificationEmail(email);
-      setSuccess(response.data.msg);
+      await resendVerificationEmail(email);
+      setSuccess("A new verification code has been sent to your email.");
     } catch (err) {
       setError(err.response?.data?.msg || "Failed to resend code.");
     } finally {
@@ -62,118 +57,77 @@ function VerifyEmailPage() {
     }
   };
 
-  if (!email) return null;
-
   return (
-    <div className="d-flex min-vh-100 bg-white">
-      {/* LEFT SIDE - BRANDING */}
-      <div
-        className="d-none d-lg-flex col-lg-6 bg-indigo-900 text-white flex-column justify-content-center align-items-center p-5 position-relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #1e1b4b 0%, #3730a3 100%)",
-        }}
-      >
-        <div
-          className="position-relative z-1 text-center"
-          style={{ maxWidth: "480px" }}
-        >
-          <ShieldCheck size={64} className="mb-4 text-indigo-300" />
-          <h1 className="fw-bold display-6 mb-3">Secure Your Account</h1>
-          <p className="lead opacity-75">
-            Verification helps us keep your data safe and ensures you are a real
-            person.
-          </p>
-        </div>
-      </div>
-
-      {/* RIGHT SIDE - FORM */}
-      <div className="col-12 col-lg-6 d-flex flex-column justify-content-center align-items-center p-4 p-md-5 bg-light">
-        <div
-          className="w-100 bg-white p-4 p-md-5 rounded-4 shadow-sm text-center"
-          style={{ maxWidth: "450px" }}
-        >
-          <div className="mb-4">
-            <div className="bg-indigo-50 d-inline-flex p-3 rounded-circle mb-3 text-indigo-600">
-              <Mail size={32} />
+    <AuthLayout
+      title="Verify your email"
+      subtitle={`We've sent a 6-digit verification code to ${email}. Please enter it below.`}
+    >
+      <form onSubmit={handleVerify} className="space-y-6">
+        {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+                <p className="text-sm text-red-700 font-medium">{error}</p>
             </div>
-            <h2 className="fw-bold text-dark mb-2">Check Your Email</h2>
-            <p className="text-muted small mb-0">
-              We've sent a 6-digit code to:
-            </p>
-            <p className="fw-bold text-dark">{email}</p>
-          </div>
+        )}
 
-          {error && (
-            <Alert
-              variant="danger"
-              className="border-0 bg-danger-subtle text-danger small py-2"
-            >
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert
-              variant="success"
-              className="border-0 bg-success-subtle text-success small py-2"
-            >
-              {success}
-            </Alert>
-          )}
+        {success && (
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                <CheckCircle className="text-green-500 shrink-0 mt-0.5" size={18} />
+                <p className="text-sm text-green-700 font-medium">{success}</p>
+            </div>
+        )}
 
-          <Form onSubmit={handleSubmit} className="mb-4">
-            <Form.Group className="mb-4">
-              <Form.Control
+        <div className="space-y-5">
+          <div>
+            <label
+              htmlFor="code"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Verification Code
+            </label>
+            <div className="relative">
+              <input
+                id="code"
                 type="text"
-                value={verificationCode}
-                onChange={handleChange}
-                placeholder="000000"
-                className="text-center fw-bold fs-3 tracking-widest border-2 py-2"
-                style={{ letterSpacing: "0.5em" }}
-                autoFocus
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').substring(0, 6))}
                 required
+                className="block w-full text-center tracking-[0.5em] text-2xl font-mono py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+                placeholder="000000"
+                maxLength={6}
               />
-            </Form.Group>
-
-            <button
-              type="submit"
-              disabled={loading || verificationCode.length < 6}
-              className="btn btn-primary w-100 py-2.5 fw-bold shadow-sm"
-              style={{ backgroundColor: "#4f46e5", borderColor: "#4f46e5" }}
-            >
-              {loading ? (
-                <Spinner size="sm" animation="border" />
-              ) : (
-                <>
-                  Verify & Sign In <ArrowRight size={18} className="ms-1" />
-                </>
-              )}
-            </button>
-          </Form>
-
-          <div className="d-flex flex-column gap-2 text-sm">
-            <div className="text-muted">
-              Didn't receive the code?{" "}
-              <button
-                onClick={handleResendCode}
-                disabled={resendLoading}
-                className="btn btn-link p-0 text-indigo-600 text-decoration-none fw-bold"
-              >
-                {resendLoading ? "Sending..." : "Resend"}
-              </button>
             </div>
-
-            <div className="border-top pt-3 mt-2">
-              <Link
-                to="/login"
-                className="text-muted text-decoration-none small d-inline-flex align-items-center hover:text-dark"
-              >
-                <ArrowLeft size={14} className="me-1" /> Back to Sign In
-              </Link>
-            </div>
+            <p className="mt-2 text-xs text-gray-500 text-center">Enter the 6-digit code sent to your email.</p>
           </div>
         </div>
-      </div>
-    </div>
+
+        <button
+          type="submit"
+          disabled={verifyLoading}
+          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all transform active:scale-[0.98]"
+        >
+          {verifyLoading ? (
+             <Loader2 className="animate-spin h-5 w-5" />
+          ) : (
+             <span className="flex items-center gap-2">Verify Email <ArrowRight size={16} /></span>
+          )}
+        </button>
+
+        <div className="text-center mt-6">
+             <p className="text-sm text-gray-600">
+                 Didn't receive the code?{' '}
+                 <button 
+                    type="button" 
+                    onClick={handleResend}
+                    disabled={resendLoading}
+                    className="font-medium text-indigo-600 hover:text-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                 >
+                     {resendLoading ? 'Sending...' : 'Resend code'}
+                 </button>
+             </p>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }
 

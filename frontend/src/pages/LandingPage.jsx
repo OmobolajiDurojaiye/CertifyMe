@@ -16,52 +16,12 @@ import {
 } from "lucide-react";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
+import { LandingHero } from "../components/ui/landing-hero";
 
 // --- SECTIONS ---
 
-const Hero = () => (
-  <section className="relative overflow-hidden bg-white pt-16 pb-24 lg:pt-32 lg:pb-40">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 text-sm font-semibold mb-8 border border-indigo-100">
-        <span className="relative flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-        </span>
-        Now supporting bulk PDF exports
-      </div>
-      <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6 leading-tight">
-        Issue <span className="text-indigo-600">Verifiable</span> <br />
-        Credentials in Seconds.
-      </h1>
-      <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-500 mb-10">
-        Create branded certificates, upload recipients via CSV, and auto-deliver
-        secure PDFs. No fakeable docs. No bloated tools. Just simple issuance.
-      </p>
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Link
-          to="/signup"
-          className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-500/25 no-underline"
-        >
-          Start Issuing Free
-          <ArrowRight className="ml-2 -mr-1" size={20} />
-        </Link>
-        <Link
-          to="/search"
-          className="inline-flex items-center justify-center px-8 py-4 text-base font-bold text-gray-700 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all no-underline"
-        >
-          Verify a Certificate
-        </Link>
-      </div>
-    </div>
+// Hero component removed in favor of AcmeHero
 
-    {/* Abstract Background Decoration */}
-    <div className="absolute top-0 left-1/2 w-full -translate-x-1/2 h-full z-0 pointer-events-none opacity-30">
-      <div className="absolute top-20 left-10 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-      <div className="absolute top-20 right-10 w-72 h-72 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-      <div className="absolute -bottom-32 left-1/2 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-    </div>
-  </section>
-);
 
 const Features = () => (
   <section className="py-24 bg-gray-50">
@@ -354,7 +314,7 @@ function LandingPage() {
     <div className="font-sans text-gray-900 bg-white">
       <PublicHeader />
       <main>
-        <Hero />
+        <LandingHero />
         <div className="py-10 border-b border-gray-100 bg-white">
           <div className="max-w-7xl mx-auto px-4 flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
             <img

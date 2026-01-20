@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Form, Button, Alert, Spinner } from "react-bootstrap";
 import { requestPasswordReset } from "../api";
-import "../styles/Auth.css";
+import { Mail, ArrowLeft, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import AuthLayout from "../layouts/AuthLayout";
 
 function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -12,82 +12,84 @@ function ForgotPasswordPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setMessage("");
     setLoading(true);
+    setMessage("");
+    setError("");
 
     try {
-      const response = await requestPasswordReset(email);
-      setMessage(response.data.msg);
+      await requestPasswordReset(email);
+      setMessage("If an account exists for that email, we have sent password reset instructions.");
     } catch (err) {
-      setError(
-        err.response?.data?.msg || "An error occurred. Please try again."
-      );
+      setError(err.response?.data?.msg || "Failed to request password reset.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-wrapper">
-        <div className="auth-panel">
-          <h2>Forgot Your Password?</h2>
-          <p>
-            No problem. Enter your email address and we'll send you a link to
-            reset it.
-          </p>
-        </div>
-        <div className="auth-form-container">
-          <img
-            src="/images/certbadge.png"
-            alt="CertifyMe Logo"
-            className="auth-logo mx-auto d-block"
-            style={{ maxHeight: "35px" }}
-          />
-          <h3>Reset Password</h3>
-          {error && <Alert variant="danger">{error}</Alert>}
-          {message && <Alert variant="success">{message}</Alert>}
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3" controlId="email">
-              <Form.Label>Email Address</Form.Label>
-              <Form.Control
+    <AuthLayout
+      title="Reset your password"
+      subtitle="Enter your email address and we'll send you a link to reset your password."
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-md flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={18} />
+                <p className="text-sm text-red-700 font-medium">{error}</p>
+            </div>
+        )}
+
+        {message && (
+             <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-md flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+                <CheckCircle className="text-green-500 shrink-0 mt-0.5" size={18} />
+                <p className="text-sm text-green-700 font-medium">{message}</p>
+            </div>
+        )}
+
+        <div className="space-y-5">
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Email address
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <Mail size={18} />
+              </div>
+              <input
+                id="email"
                 type="email"
-                name="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
                 required
-                disabled={!!message} // Disable form after success
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow sm:text-sm"
+                placeholder="you@example.com"
               />
-            </Form.Group>
-            <Button
-              className="btn-auth w-100"
-              type="submit"
-              disabled={loading || !!message}
-            >
-              {loading ? (
-                <Spinner
-                  as="span"
-                  animation="border"
-                  size="sm"
-                  role="status"
-                  aria-hidden="true"
-                />
-              ) : (
-                "Send Reset Link"
-              )}
-            </Button>
-          </Form>
-          <p className="text-center mt-4 text-muted">
-            Remember your password?{" "}
-            <Link to="/login" className="auth-switch-link">
-              Sign In
-            </Link>
-          </p>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed transition-all transform active:scale-[0.98]"
+        >
+          {loading ? (
+             <Loader2 className="animate-spin h-5 w-5" />
+          ) : (
+            "Send Reset Link"
+          )}
+        </button>
+
+        <div className="text-center mt-4">
+             <Link to="/login" className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
+                <ArrowLeft size={16} /> Back to Sign In
+             </Link>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }
 

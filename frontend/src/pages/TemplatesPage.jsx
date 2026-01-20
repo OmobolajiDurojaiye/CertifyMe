@@ -741,13 +741,15 @@ const TemplateCard = ({
                <span className="text-[10px] font-mono text-gray-400 select-all">#{template.id}</span>
            </div>
            
-           <button 
+           {!template.is_public && (
+            <button 
               onClick={() => onDeleteClick(template)}
               className="text-gray-400 hover:text-red-600 transition-colors p-1 hover:bg-red-50 rounded"
               title="Delete Template"
-           >
+            >
               <Trash2 size={16} />
-           </button>
+            </button>
+           )}
         </div>
       </div>
     </div>
