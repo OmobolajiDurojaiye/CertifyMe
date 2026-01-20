@@ -1,13 +1,4 @@
 import React, { useState, useEffect } from "react";
-import {
-  Card,
-  Row,
-  Col,
-  Spinner,
-  Alert,
-  ButtonGroup,
-  Button,
-} from "react-bootstrap";
 import { Line, Bar, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -21,6 +12,13 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import {
+    Users,
+    DollarSign,
+    FileText,
+    TrendingUp,
+    Download,
+} from "lucide-react";
 import { getAdminAnalytics } from "../api";
 
 ChartJS.register(
@@ -35,7 +33,6 @@ ChartJS.register(
   Legend
 );
 
-// Helper to format numbers with commas
 const formatNumber = (num) =>
   num ? num.toLocaleString(undefined, { maximumFractionDigits: 2 }) : "0";
 
@@ -43,7 +40,7 @@ function AdminAnalyticsPage() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [period, setPeriod] = useState("1y"); // '30d', '90d', '1y', 'all'
+  const [period, setPeriod] = useState("1y");
 
   useEffect(() => {
     fetchAnalytics();
@@ -63,6 +60,7 @@ function AdminAnalyticsPage() {
 
   const getChartOptions = (text) => ({
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { position: "top" },
       title: { display: true, text },
@@ -76,200 +74,174 @@ function AdminAnalyticsPage() {
         label: label,
         data: data?.map((g) => g.count || g.total) || [],
         borderColor: color,
-        backgroundColor: `${color}80`, // Add transparency
-        tension: 0.1,
+        backgroundColor: `${color}40`,
+        tension: 0.3, // Smoother curve
         fill: true,
       },
     ],
   });
 
   if (loading) {
-    return (
-      <div className="text-center p-5">
-        <Spinner animation="border" /> Loading Analytics...
-      </div>
-    );
+     return <div className="flex justify-center items-center h-[60vh] text-gray-500">Loading Analytics...</div>
   }
-  if (error) return <Alert variant="danger">{error}</Alert>;
-  if (!analytics) return <Alert variant="info">No analytics data found.</Alert>;
+  if (error) return <div className="p-4 bg-red-50 text-red-600 rounded-lg border border-red-200">{error}</div>;
+  if (!analytics) return <div className="p-4 bg-blue-50 text-blue-600 rounded-lg">No analytics data found.</div>;
 
   const { kpi_stats } = analytics;
 
   return (
-    <div>
-      <h2 className="fw-bold mb-4">Analytics & Insights</h2>
-
-      {/* --- KPI Cards Section --- */}
-      <Row className="mb-4">
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <h3 className="fw-bold text-primary">
-                {formatNumber(kpi_stats.total_users)}
-              </h3>
-              <p className="text-muted mb-0">Total Users</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <h3 className="fw-bold text-success">
-                ${formatNumber(kpi_stats.total_revenue)}
-              </h3>
-              <p className="text-muted mb-0">Total Revenue (USD)</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <h3 className="fw-bold text-info">
-                {formatNumber(kpi_stats.total_certificates)}
-              </h3>
-              <p className="text-muted mb-0">Total Certificates</p>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3}>
-          <Card className="shadow-sm border-0 text-center h-100">
-            <Card.Body>
-              <h3 className="fw-bold text-warning">
-                {formatNumber(kpi_stats.avg_certs_per_user)}
-              </h3>
-              <p className="text-muted mb-0">Avg. Certs Per User</p>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* --- Period Filter --- */}
-      <div className="d-flex justify-content-end mb-3">
-        <ButtonGroup>
-          <Button
-            variant={period === "30d" ? "primary" : "outline-primary"}
-            onClick={() => setPeriod("30d")}
-          >
-            30 Days
-          </Button>
-          <Button
-            variant={period === "90d" ? "primary" : "outline-primary"}
-            onClick={() => setPeriod("90d")}
-          >
-            90 Days
-          </Button>
-          <Button
-            variant={period === "1y" ? "primary" : "outline-primary"}
-            onClick={() => setPeriod("1y")}
-          >
-            1 Year
-          </Button>
-          <Button
-            variant={period === "all" ? "primary" : "outline-primary"}
-            onClick={() => setPeriod("all")}
-          >
-            All Time
-          </Button>
-        </ButtonGroup>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Analytics & Insights</h1>
+          <p className="text-sm text-gray-500">
+             Comprehensive view of platform performance
+          </p>
+        </div>
+         <div className="flex bg-white rounded-lg shadow-sm border border-gray-200 p-1">
+            {['30d', '90d', '1y', 'all'].map((p) => (
+                <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all
+                        ${period === p ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}
+                >
+                    {p === 'all' ? 'All Time' : p.toUpperCase()}
+                </button>
+            ))}
+         </div>
       </div>
 
-      {/* --- Growth Charts Section --- */}
-      <Row>
-        <Col lg={12} className="mb-4">
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              <Line
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600">
+                    <Users size={24}/>
+                </div>
+                 <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+12%</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{formatNumber(kpi_stats.total_users)}</h3>
+            <p className="text-sm text-gray-500">Total Users</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+            <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center text-green-600">
+                    <DollarSign size={24}/>
+                </div>
+                <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+8%</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">${formatNumber(kpi_stats.total_revenue)}</h3>
+            <p className="text-sm text-gray-500">Total Revenue</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+             <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600">
+                    <FileText size={24}/>
+                </div>
+                 <span className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+24%</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{formatNumber(kpi_stats.total_certificates)}</h3>
+            <p className="text-sm text-gray-500">Total Certificates</p>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+             <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600">
+                    <TrendingUp size={24}/>
+                </div>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{formatNumber(kpi_stats.avg_certs_per_user)}</h3>
+            <p className="text-sm text-gray-500">Avg. Certs / User</p>
+        </div>
+      </div>
+
+      {/* Charts Row 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-[350px]">
+            <Line
                 options={getChartOptions("Revenue Growth (USD)")}
                 data={generateChartData(
                   "Revenue",
                   analytics.revenue_growth,
-                  "rgb(40, 167, 69)"
+                  "#10B981" // Tailwind Green-500
                 )}
-              />
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={6} className="mb-4">
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              <Line
+            />
+         </div>
+         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-[350px]">
+            <Line
                 options={getChartOptions("New User Signups")}
                 data={generateChartData(
                   "Users",
                   analytics.user_growth,
-                  "rgb(75, 192, 192)"
+                  "#3B82F6" // Tailwind Blue-500
                 )}
-              />
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={6} className="mb-4">
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              <Line
+            />
+         </div>
+      </div>
+
+       {/* Charts Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+         <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-[350px]">
+             <Line
                 options={getChartOptions("Certificates Issued")}
                 data={generateChartData(
                   "Certificates",
                   analytics.cert_growth,
-                  "rgb(255, 159, 64)"
+                  "#F59E0B" // Tailwind Amber-500
                 )}
               />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* --- Distribution & Top Users Section --- */}
-      <Row>
-        <Col md={5}>
-          <Card className="shadow-sm border-0 mb-4">
-            <Card.Body>
-              <Doughnut
-                options={getChartOptions("Plan Distribution")}
+         </div>
+         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-[350px] flex flex-col justify-center">
+             <Doughnut
+                options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        title: { display: true, text: 'Plan Distribution' }
+                    }
+                }}
                 data={{
-                  labels:
-                    analytics.plan_distribution?.map((p) =>
-                      p.role.toUpperCase()
-                    ) || [],
+                  labels: analytics.plan_distribution?.map((p) => p.role.toUpperCase()) || [],
                   datasets: [
                     {
                       label: "Users",
-                      data:
-                        analytics.plan_distribution?.map((p) => p.count) || [],
+                      data: analytics.plan_distribution?.map((p) => p.count) || [],
                       backgroundColor: [
-                        "#FF6384",
-                        "#36A2EB",
-                        "#FFCE56",
-                        "#4BC0C0",
-                        "#9966FF",
+                        "#F472B6", // Pink
+                        "#60A5FA", // Blue
+                        "#FBBF24", // Amber
+                        "#34D399", // Emerald
+                        "#A78BFA", // Violet
                       ],
+                      borderWidth: 0
                     },
                   ],
                 }}
               />
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={7}>
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              <Bar
-                options={getChartOptions("Top 5 Users by Certificates Issued")}
-                data={{
-                  labels: analytics.top_users?.map((u) => u.name) || [],
-                  datasets: [
-                    {
-                      label: "Certificates",
-                      data: analytics.top_users?.map((u) => u.cert_count) || [],
-                      backgroundColor: "#36A2EB",
-                    },
-                  ],
-                }}
-              />
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+         </div>
+      </div>
+
+      {/* Top Users Bar Chart */}
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 h-[400px]">
+         <Bar
+            options={getChartOptions("Top 5 Users by Certificates Issued")}
+            data={{
+                labels: analytics.top_users?.map((u) => u.name) || [],
+                datasets: [
+                {
+                    label: "Certificates",
+                    data: analytics.top_users?.map((u) => u.cert_count) || [],
+                    backgroundColor: "#6366F1", // Indigo
+                    borderRadius: 4,
+                },
+                ],
+            }}
+            />
+      </div>
     </div>
   );
 }

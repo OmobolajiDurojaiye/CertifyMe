@@ -2,17 +2,54 @@ import os
 import base64
 import qrcode
 from io import BytesIO
-from flask import current_app, render_template_string
+from flask import current_app, render_template_string, render_template
 from weasyprint import HTML
-from ..pdf_templates import (
-    get_classic_pdf_template, 
-    get_modern_pdf_template, 
-    get_receipt_pdf_template
-)
+
+
 
 def get_image_as_base64(image_path):
     if not image_path:
         return None
+    
+    # Check if it's already a base64 string (starts with data:image)
+    if image_path.startswith('data:image'):
+        # Extract the base64 part
+        if ',' in image_path:
+            return image_path.split(',')[1]
+        return image_path
+
+    # Check if it is a complete URL (http/https)
+    if image_path.startswith('http'):
+        import requests
+        try:
+            response = requests.get(image_path)
+            if response.status_code == 200:
+                return base64.b64encode(response.content).decode('utf-8')
+        except Exception as e:
+             current_app.logger.error(f"Error fetching image from URL {image_path}: {e}")
+             return None
+
+    # Fallback to local file system
+    # Assuming relative path from app root or absolute path
+    # If using absolute UPLOAD_FOLDER path
+    if not os.path.isabs(image_path):
+        image_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', ''), image_path)
+
+    if os.path.exists(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode('utf-8')
+    return None
+
+def react_style_to_css(style_dict):
+    """Convert React camelCase style dict to standard CSS string."""
+    if not style_dict or not isinstance(style_dict, dict):
+        return ""
+    css_parts = []
+    for k, v in style_dict.items():
+        # Convert camelCase to kebab-case
+        kebab_key = "".join(['-' + c.lower() if c.isupper() else c for c in k])
+        css_parts.append(f"{kebab_key}: {v}")
+    return "; ".join(css_parts)
     try:
         # Handle both relative (upload) and absolute paths
         if image_path.startswith('/uploads/'):
@@ -161,10 +198,11 @@ def _generate_html_pdf(certificate, template, issuer):
         "signature": certificate.signature or certificate.issuer_name,
         "issuer_name": certificate.issuer_name,
         "verification_id": certificate.verification_id,
-        "frontend_url": current_app.config['FRONTEND_URL'].replace('https://', '').replace('http://', ''),
+        "frontend_url": (current_app.config.get('FRONTEND_URL') or "certifyme.com.ng").replace('https://', '').replace('http://', ''),
         "logo_base64": logo_base64,
         "background_base64": background_base64,
         "primary_color": template.primary_color,
+        "primary_color_alpha": f"{template.primary_color}22",
         "secondary_color": template.secondary_color,
         "body_font_color": template.body_font_color,
         "font_family": template.font_family,
@@ -174,16 +212,52 @@ def _generate_html_pdf(certificate, template, issuer):
         "extra_fields": extra,
         "amount": amount
     }
-
-    # Only include supported templates
-    html_template_str = {
-        'classic': get_classic_pdf_template(), 
-        'modern': get_modern_pdf_template(),
-        'receipt': get_receipt_pdf_template()
-    }.get(template.layout_style, get_modern_pdf_template())
     
-    html_content = render_template_string(html_template_str, **context)
-    return _render_pdf_bytes(html_content)
+    # Process layout_data for styles
+    layout_data = template.layout_data or {}
+    context['text_style'] = react_style_to_css(layout_data.get('textStyle'))
+    context['background_style'] = react_style_to_css(layout_data.get('backgroundStyle'))
+    
+    # helper for explicit map
+    def react_style_to_css_map(style_dict):
+        if not style_dict or not isinstance(style_dict, dict):
+             return {}
+        css_map = {}
+        for k, v in style_dict.items():
+            kebab_key = "".join(['-' + c.lower() if c.isupper() else c for c in k])
+            css_map[kebab_key] = v
+        return css_map
+
+    context['text_style_map'] = react_style_to_css_map(layout_data.get('textStyle'))
+    context['background_style_map'] = react_style_to_css_map(layout_data.get('backgroundStyle'))
+
+
+    # Use Modular Templates if available
+    file_templates = {
+        'classic': 'certificates/classic.html',
+        'award_gold': 'certificates/award_gold.html',
+        'modern': 'certificates/modern.html',
+        'receipt': 'certificates/receipt.html',
+        'modern_landscape': 'certificates/modern_landscape.html',
+        'elegant_serif': 'certificates/elegant_serif.html',
+        'minimalist_bold': 'certificates/minimalist_bold.html',
+        'corporate_blue': 'certificates/corporate_blue.html',
+        'tech_dark': 'certificates/tech_dark.html',
+        'creative_art': 'certificates/creative_art.html',
+        'badge_cert': 'certificates/badge_cert.html',
+        'diploma_classic': 'certificates/diploma_classic.html',
+        'achievement_star': 'certificates/achievement_star.html',
+    }
+    
+    # Use Modular Templates or default to modern
+    template_file = file_templates.get(template.layout_style, 'certificates/modern.html')
+    
+    try:
+        html_content = render_template(template_file, **context)
+        return _render_pdf_bytes(html_content)
+    except Exception as e:
+        current_app.logger.error(f"Error rendering file template: {e}")
+        raise e
 
 def _generate_qr_base64(data):
     qr = qrcode.QRCode(version=1, box_size=10, border=4)

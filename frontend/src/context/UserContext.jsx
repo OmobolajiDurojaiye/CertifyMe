@@ -1,6 +1,4 @@
-// frontend/src/context/UserContext.jsx
-
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext, useCallback } from "react";
 import { getCurrentUser } from "../api";
 
 const UserContext = createContext(null);
@@ -9,8 +7,9 @@ export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
+      // Don't set loading to true here to avoid flickering on silent refresh
+      // setLoading(true); 
       const token = localStorage.getItem("token");
       if (token) {
         try {
@@ -18,20 +17,28 @@ export const UserProvider = ({ children }) => {
           setUser(res.data);
         } catch (error) {
           console.error("Failed to fetch user", error);
-          // Handle token expiration if necessary
           if (error.response && error.response.status === 401) {
             localStorage.removeItem("token");
+            setUser(null);
           }
         }
+      } else {
+          setUser(null);
       }
       setLoading(false);
-    };
-
-    fetchUser();
   }, []);
 
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  // Wrapper to allow manual refresh and set loading state if needed
+  const refreshUser = async () => {
+      await fetchUser();
+  };
+
   return (
-    <UserContext.Provider value={{ user, loading }}>
+    <UserContext.Provider value={{ user, loading, refreshUser }}>
       {children}
     </UserContext.Provider>
   );

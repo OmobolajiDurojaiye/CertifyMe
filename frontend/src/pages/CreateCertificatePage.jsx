@@ -6,7 +6,7 @@ import {
   getCertificate,
   updateCertificate,
 } from "../api";
-import QRCode from "react-qr-code";
+import TemplateRenderer from "../components/templates/TemplateRenderer";
 import { SERVER_BASE_URL } from "../config";
 import {
   Calendar,
@@ -27,7 +27,9 @@ import {
 } from "lucide-react";
 import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
-import KonvaPreview from "../components/KonvaPreview";
+import { useUser } from "../context/UserContext";
+import TemplateSelector from "../components/TemplateSelector";
+
 
 // --- REUSABLE UI COMPONENTS ---
 const FormInput = ({ label, icon: Icon, required, ...props }) => (
@@ -74,323 +76,6 @@ const FormSelect = ({ label, icon: Icon, required, children, ...props }) => (
   </div>
 );
 
-const CertificatePreview = ({ template, formData }) => {
-  if (!template) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full bg-gray-50/50 rounded-xl border-2 border-dashed border-gray-200 p-12 text-center">
-        <LayoutTemplate className="w-12 h-12 text-gray-300 mb-3" />
-        <p className="text-gray-500 font-medium">
-          Select a template to generate preview
-        </p>
-      </div>
-    );
-  }
-
-  const dynamicData = { ...formData };
-  if (formData.extra_fields?.amount) {
-    dynamicData.amount = formData.extra_fields.amount;
-  }
-
-  if (template.layout_style === "visual") {
-    return (
-      <div className="shadow-lg rounded-lg overflow-hidden h-full">
-        <KonvaPreview
-          layoutData={template.layout_data}
-          dynamicData={dynamicData}
-        />
-      </div>
-    );
-  }
-
-  const {
-    layout_style,
-    primary_color = "#0284C7",
-    secondary_color = "#3B82F6",
-    body_font_color = "#1F2937",
-    font_family = "serif",
-    background_url,
-    logo_url,
-    custom_text,
-  } = template;
-
-  const certificateTitle = custom_text?.title || "Certificate of Completion";
-  const certificateBody =
-    custom_text?.body || "has successfully completed the course";
-
-  const {
-    recipient_name = "Recipient Name",
-    course_title = "Course Title",
-    issue_date = new Date().toLocaleDateString("en-CA"),
-    signature = "Signature",
-    issuer_name = "Issuer Name",
-    verification_id = "pending",
-  } = formData;
-
-  const textStyle = { color: body_font_color, fontFamily: font_family };
-  const backgroundStyle = {
-    backgroundImage: background_url
-      ? `url(${SERVER_BASE_URL}${background_url})`
-      : "none",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-  };
-
-  const issueDateFormatted = new Date(issue_date).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
-  const renderReceipt = () => (
-    <div
-      className="h-full w-full bg-white relative flex flex-col shadow-xl overflow-hidden text-sm"
-      style={{ fontFamily: "sans-serif" }}
-    >
-      <div className="p-8 h-full flex flex-col">
-        <div className="flex justify-between items-start mb-6">
-          <div>
-            {logo_url ? (
-              <img
-                src={`${SERVER_BASE_URL}${logo_url}`}
-                className="h-12 object-contain mb-2"
-                alt="Logo"
-              />
-            ) : (
-              <h2
-                className="text-xl font-bold"
-                style={{ color: primary_color }}
-              >
-                {issuer_name}
-              </h2>
-            )}
-          </div>
-          <div className="text-right text-gray-500 text-xs">
-            <p className="font-bold text-base text-gray-800">{issuer_name}</p>
-            <p>Receipt</p>
-            <p>{issueDateFormatted}</p>
-          </div>
-        </div>
-        <div
-          className="flex justify-between items-center p-3 rounded mb-6"
-          style={{ background: primary_color, color: "white" }}
-        >
-          <span className="font-bold text-lg tracking-wider">
-            {certificateTitle}
-          </span>
-          <span className="font-mono opacity-80">
-            #{verification_id.substring(0, 8).toUpperCase()}
-          </span>
-        </div>
-        <div className="flex justify-between mb-6">
-          <div>
-            <p className="text-xs font-bold text-gray-400 uppercase">Bill To</p>
-            <p className="font-bold text-lg text-gray-800">{recipient_name}</p>
-          </div>
-          <div className="text-right">
-            <p className="text-xs font-bold text-gray-400 uppercase">Status</p>
-            <p className="font-bold text-green-600">PAID</p>
-          </div>
-        </div>
-        <div className="border-b border-gray-200 mb-2">
-          <div className="flex justify-between py-2 bg-gray-50 px-2 font-bold text-gray-500 text-xs uppercase">
-            <span>Description</span>
-            <span>Amount</span>
-          </div>
-          <div className="flex justify-between py-4 px-2">
-            <span className="font-medium text-gray-800">{course_title}</span>
-            <span className="font-bold" style={{ color: primary_color }}>
-              {formData.extra_fields?.amount || "PAID"}
-            </span>
-          </div>
-        </div>
-        <div className="flex justify-end mt-4 mb-auto">
-          <div className="w-1/2 flex justify-between border-t-2 border-gray-800 pt-2">
-            <span className="font-bold text-lg">Total</span>
-            <span
-              className="font-bold text-lg"
-              style={{ color: primary_color }}
-            >
-              {formData.extra_fields?.amount || "PAID"}
-            </span>
-          </div>
-        </div>
-        <div className="border-t border-gray-200 pt-4 mt-4 flex justify-between items-end">
-          <div className="text-xs text-gray-400">
-            <p>Auth Signature: {signature}</p>
-            <p className="font-mono mt-1">ID: {verification_id}</p>
-          </div>
-          <QRCode
-            value={`${window.location.origin}/verify/${verification_id}`}
-            size={48}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderClassic = () => (
-    <div
-      className="h-full w-full bg-white relative flex flex-col shadow-xl overflow-hidden"
-      style={{
-        border: `8px double ${primary_color}`,
-        ...backgroundStyle,
-        fontFamily: font_family,
-      }}
-    >
-      <div
-        style={{
-          height: "12px",
-          borderBottom: `4px solid ${primary_color}`,
-          background: `linear-gradient(to right, ${primary_color}, ${secondary_color})`,
-        }}
-      />
-      <div className="flex-grow flex flex-col justify-center items-center text-center p-8">
-        {logo_url && (
-          <img
-            src={`${SERVER_BASE_URL}${logo_url}`}
-            alt="Logo"
-            className="mb-4 object-contain h-24 w-24"
-          />
-        )}
-        <h1
-          className="font-bold uppercase tracking-wider text-3xl md:text-4xl mb-2"
-          style={{ color: primary_color }}
-        >
-          {certificateTitle}
-        </h1>
-        <p className="italic text-lg mb-4" style={{ color: "#4B5EAA" }}>
-          This is to certify that
-        </p>
-        <h2
-          className="font-extrabold text-4xl md:text-5xl mb-4"
-          style={{ fontFamily: "'Georgia', serif", ...textStyle }}
-        >
-          {recipient_name}
-        </h2>
-        <p className="italic text-xl mb-4" style={{ color: "#4B5EAA" }}>
-          {certificateBody}
-        </p>
-        <p
-          className="font-bold uppercase text-2xl md:text-3xl mb-6"
-          style={{ color: secondary_color }}
-        >
-          {course_title}
-        </p>
-        <p className="text-lg mb-8" style={{ color: body_font_color }}>
-          Awarded on {issueDateFormatted}
-        </p>
-        <div className="flex justify-between w-full max-w-2xl mt-auto pt-8 px-8">
-          <div className="text-center w-40">
-            <p className="font-semibold text-lg" style={textStyle}>
-              {signature || issuer_name}
-            </p>
-            <div className="h-px w-full bg-gray-400 my-1"></div>
-            <span className="text-gray-500 text-sm">Authorized Signature</span>
-          </div>
-          <div className="text-center w-40">
-            <p className="font-semibold text-lg" style={textStyle}>
-              {issuer_name}
-            </p>
-            <div className="h-px w-full bg-gray-400 my-1"></div>
-            <span className="text-gray-500 text-sm">Issuer</span>
-          </div>
-        </div>
-        <div className="absolute bottom-4 right-4 bg-white p-1 rounded shadow-sm">
-          <QRCode
-            value={`${window.location.origin}/verify/${verification_id}`}
-            size={60}
-          />
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderModern = () => (
-    <div
-      className="flex h-full w-full shadow-xl overflow-hidden bg-white"
-      style={{
-        border: `6px solid ${primary_color}`,
-        ...backgroundStyle,
-        fontFamily: font_family,
-      }}
-    >
-      <div
-        className="w-[35%] flex flex-col justify-between items-center p-8 text-white"
-        style={{
-          background: `linear-gradient(135deg, ${primary_color}, ${secondary_color})`,
-        }}
-      >
-        <div className="text-center">
-          {logo_url && (
-            <img
-              src={`${SERVER_BASE_URL}${logo_url}`}
-              className="w-24 h-24 rounded-full border-4 border-white shadow-md mb-4 object-cover bg-white"
-              alt="Logo"
-            />
-          )}
-          <p className="font-bold uppercase tracking-widest text-sm opacity-90">
-            {issuer_name}
-          </p>
-        </div>
-        <div className="bg-white p-2 rounded-lg shadow-lg">
-          <QRCode
-            value={`${window.location.origin}/verify/${verification_id}`}
-            size={80}
-          />
-        </div>
-      </div>
-      <div className="w-[65%] flex flex-col justify-center p-12 relative bg-white/95">
-        <h1
-          className="font-light uppercase tracking-[0.2em] text-2xl mb-6"
-          style={{ color: primary_color }}
-        >
-          {certificateTitle}
-        </h1>
-        <h2
-          className="font-bold text-5xl mb-4 leading-tight"
-          style={{ fontFamily: "'Georgia', serif", ...textStyle }}
-        >
-          {recipient_name}
-        </h2>
-        <p className="italic text-xl text-gray-600 mb-6">{certificateBody}</p>
-        <p
-          className="font-bold uppercase text-2xl tracking-wide mb-8"
-          style={{ color: secondary_color }}
-        >
-          {course_title}
-        </p>
-        <p className="text-lg mb-8" style={textStyle}>
-          Awarded on {issueDateFormatted}
-        </p>
-        <div
-          className="flex justify-between mt-auto pt-6 border-t-2"
-          style={{ borderColor: primary_color }}
-        >
-          <div>
-            <p className="font-bold text-lg" style={textStyle}>
-              {signature || issuer_name}
-            </p>
-            <p className="text-gray-500 text-sm uppercase tracking-wide">
-              Signature
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="font-bold text-lg" style={textStyle}>
-              {issuer_name}
-            </p>
-            <p className="text-gray-500 text-sm uppercase tracking-wide">
-              Issuer
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (layout_style === "receipt") return renderReceipt();
-  if (layout_style === "modern") return renderModern();
-  return renderClassic();
-};
 
 const CreateCertificatePage = () => {
   const { certId } = useParams();
@@ -415,6 +100,8 @@ const CreateCertificatePage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const { user } = useUser();
+  const isPro = user?.role === 'pro' || user?.role === 'enterprise';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -459,8 +146,14 @@ const CreateCertificatePage = () => {
 
   const handleTemplateChange = (e) => {
     const templateId = e.target.value;
-    setFormData({ ...formData, template_id: templateId });
     const template = templates.find((t) => String(t.id) === String(templateId));
+    
+    if (template?.is_premium && !isPro) {
+        toast.error("This is a Premium Template. Please upgrade your account to use it.");
+        return;
+    }
+
+    setFormData({ ...formData, template_id: templateId });
     setSelectedTemplate(template || null);
   };
 
@@ -559,26 +252,11 @@ const CreateCertificatePage = () => {
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              <FormSelect
-                label="Select Template"
-                icon={LayoutTemplate}
-                name="template_id"
-                onChange={handleTemplateChange}
+              <TemplateSelector
                 value={formData.template_id}
-                required
-              >
-                <option value="">Choose a template...</option>
-                {templates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.title}{" "}
-                    {t.is_public
-                      ? "(System)"
-                      : t.layout_style === "visual"
-                      ? "(Visual)"
-                      : ""}
-                  </option>
-                ))}
-              </FormSelect>
+                onChange={(val) => handleTemplateChange({ target: { value: val } })}
+                options={templates}
+              />
 
               <div className="border-t border-gray-100 my-4"></div>
 
@@ -762,7 +440,7 @@ const CreateCertificatePage = () => {
 
             <div className="w-full bg-gray-100 rounded-lg border border-gray-200 overflow-hidden flex items-center justify-center p-4 min-h-[400px]">
               <div className="w-full shadow-xl transition-all duration-300">
-                <CertificatePreview
+                <TemplateRenderer
                   template={selectedTemplate}
                   formData={formData}
                 />
@@ -794,9 +472,10 @@ const CreateCertificatePage = () => {
             className="w-full max-w-6xl max-h-[90vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <CertificatePreview
+            <TemplateRenderer
               template={selectedTemplate}
               formData={formData}
+              isFullscreen={true}
             />
           </div>
         </div>

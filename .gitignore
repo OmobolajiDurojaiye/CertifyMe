@@ -18,3 +18,11 @@ __pycache__/
 *.pyc
 
 /uploads/
+
+# Debug Scripts (Do not commit)
+backend/check_braces.py
+backend/debug_*.py
+backend/fix_templates.py
+backend/reproduce_issue.py
+backend/app_backup.py
+*.log

@@ -6,7 +6,9 @@ from .routes import register_blueprints
 from .models import Admin, User
 
 def create_app():
-    app = Flask(__name__)
+    # Templates are located in backend/templates, but this file is in backend/pkg/
+    # So we need to point to '../templates' relative to this file's directory
+    app = Flask(__name__, template_folder='../templates')
 
     # --- THIS IS THE DEFINITIVE CORS FIX ---
     # We are explicitly defining all allowed origins and resource paths.

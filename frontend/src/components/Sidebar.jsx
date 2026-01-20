@@ -58,11 +58,13 @@ function Sidebar() {
 
       {/* --- NAVIGATION LINKS --- */}
       <div className="flex-1 px-4 py-6 space-y-1">
+        {/* ... links ... */}
         <NavLink to="/dashboard" end className={navItemClass}>
           <LayoutDashboard size={20} />
           <span>My Certificates</span>
         </NavLink>
-
+        {/* ... */}
+        
         <NavLink to="/dashboard/groups" className={navItemClass}>
           <FolderOpen size={20} />
           <span>Groups</span>
@@ -129,7 +131,7 @@ function Sidebar() {
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors font-medium text-sm text-left"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors font-medium text-sm text-left mt-2"
           >
             <LogOut size={20} />
             <span>Logout</span>

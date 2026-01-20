@@ -1,16 +1,5 @@
 /* --- START OF FILE frontend/src/App.css --- */
-:root {
-  --primary-blue: #2563eb;
-  --secondary-gold: #facc15;
-  --background-white: #f9fafb;
-  --text-slate: #1e293b;
-  --accent-green: #22c55e;
-  --text-slate-light: #64748b;
-  --sidebar-bg: #111827; /* Darker sidebar for more contrast */
-  --sidebar-text: #94a3b8;
-  --sidebar-text-active: #ffffff;
-  --border-color: #e5e7eb; /* A consistent light border color */
-}
+
 
 body {
   font-family: "Inter", sans-serif;
@@ -42,7 +31,7 @@ h6 {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  border-right: 1px solid #1f2937; /* Subtle separator */
+  border-right: 1px solid var(--border-color); /* Updated to use variable */
 }
 .sidebar-logo {
   font-family: "Poppins", sans-serif;
@@ -60,6 +49,7 @@ h6 {
   color: var(--primary-blue);
 }
 
+
 .sidebar .nav-link {
   color: var(--sidebar-text);
   font-weight: 500;
@@ -72,7 +62,7 @@ h6 {
 }
 .sidebar .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.05);
-  color: white;
+  color: var(--text-slate); /* ensure visibility */
 }
 .sidebar .nav-link.active {
   background-color: var(--primary-blue);
@@ -98,7 +88,7 @@ h6 {
 
 /* Custom Main Content Card */
 .page-content-card {
-  background-color: white;
+  background-color: var(--card-bg);
   padding: 2rem;
   border-radius: 1.5rem; /* Super curvy */
   border: 1px solid var(--border-color);
@@ -107,7 +97,7 @@ h6 {
 
 /* --- MODERN COMPONENT STYLES --- */
 .stat-card {
-  background-color: white;
+  background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 1.5rem;
   padding: 1.5rem;
@@ -142,8 +132,8 @@ h6 {
 .empty-state-card {
   border-style: dashed;
   border-width: 2px;
-  border-color: #cbd5e1;
-  background-color: #fdfdff;
+  border-color: var(--border-color);
+  background-color: var(--card-bg);
   padding: 4rem;
   text-align: center;
   border-radius: 1.5rem;
@@ -166,7 +156,8 @@ h6 {
   border-radius: 0.75rem !important;
   padding: 0.9rem 1rem !important;
   border: 1px solid var(--border-color) !important;
-  background-color: var(--background-white) !important;
+  background-color: var(--input-bg) !important;
+  color: var(--text-slate) !important;
 }
 .custom-form-control:focus {
   border-color: var(--primary-blue) !important;
@@ -175,7 +166,7 @@ h6 {
 
 /* Custom Accordion Styles */
 .custom-accordion .accordion-item {
-  background-color: #f9fafb; /* Slightly off-white */
+  background-color: var(--card-bg); /* Slightly off-white */
   border: 1px solid var(--border-color);
   border-radius: 1rem !important;
   margin-bottom: 1rem;
@@ -183,21 +174,22 @@ h6 {
 .custom-accordion .accordion-button {
   font-weight: 600;
   color: var(--text-slate);
-  background-color: #f9fafb;
+  background-color: var(--card-bg);
   border-radius: 1rem !important;
 }
 .custom-accordion .accordion-button:focus {
   box-shadow: none;
 }
 .custom-accordion .accordion-button:not(.collapsed) {
-  background-color: #f0f2f5;
+  background-color: var(--input-bg);
   color: var(--primary-blue);
 }
 .custom-accordion .accordion-body {
   padding: 1rem 1.25rem;
+  color: var(--text-slate);
 }
 .certificate-preview {
-  background-color: #f9fafb;
+  background-color: var(--background-white);
   border: 1px solid var(--border-color);
   border-radius: 1.5rem;
   height: 100%;

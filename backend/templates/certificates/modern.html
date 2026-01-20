@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700;800&display=swap');
+        
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 297mm;
+            height: 210mm;
+            background-color: white;
+            font-family: 'Roboto', sans-serif;
+            color: black;
+            
+            /* Fallback variables */
+            --primary-color: #000000;
+            --secondary-color: #666666;
+            --body-font-color: #333333;
+        }
+
+        .container {
+            /* flex h-full w-full bg-white text-black border-4 shadow-lg */
+            display: flex;
+            width: 100%;
+            height: 100%;
+            border: 4px solid var(--primary-color);
+            background-color: var(--background-color, white);
+            
+            /* background_style moved inline */
+        }
+
+        .sidebar {
+            /* w-[35%] p-4 flex flex-col justify-between items-center text-center */
+            width: 35%;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            /* background: linear-gradient(135deg, ${primary_color}, ${secondary_color}) */
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .logo-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .logo {
+            /* w-20 h-20 rounded-full border-4 border-white object-cover bg-white shadow-sm mb-2 */
+            width: 5rem;
+            height: 5rem;
+            border-radius: 50%;
+            border: 4px solid white;
+            object-fit: cover;
+            background-color: white;
+            margin-bottom: 0.5rem;
+        }
+
+        .issuer-name {
+            /* font-bold text-white text-xs uppercase tracking-wider */
+            font-weight: 700;
+            color: white;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .qr-box {
+            /* bg-white/90 p-2 rounded shadow-sm */
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .main {
+            /* w-[65%] p-6 flex flex-col justify-center bg-white/90 backdrop-blur-sm */
+            width: 65%;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .title {
+            /* font-light uppercase tracking-widest mb-4 */
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 1rem;
+            margin-top: 0;
+            
+            font-size: 1.5rem; /* isFullscreen */
+            color: var(--primary-color);
+        }
+
+        .recipient {
+            /* font-extrabold mb-3 */
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            margin-top: 0;
+            
+            font-size: 2.5rem; /* isFullscreen */
+            color: var(--color, inherit);
+            font-family: var(--font-family, inherit);
+            font-size: var(--font-size, 2.5rem);
+            font-weight: var(--font-weight, 800);
+        }
+
+        .body-text {
+            /* italic mb-4 text-sm */
+            font-style: italic;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            margin-top: 0;
+            color: var(--body-font-color);
+        }
+
+        .course {
+            /* font-bold uppercase tracking-wide mb-6 */
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            margin-bottom: 1.5rem;
+            margin-top: 0;
+            
+            font-size: 1.2rem; /* isFullscreen */
+            color: var(--secondary-color);
+        }
+
+        .date-line {
+            /* text-sm mb-4 */
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            margin-top: 0;
+        }
+
+        .footer {
+            /* flex justify-between mt-auto pt-3 border-t-2 */
+            display: flex;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 0.75rem;
+            border-top: 2px solid var(--primary-color);
+        }
+
+        .footer-left {
+            /* text-xs */
+            font-size: 0.75rem;
+            /* text_style applied inline */
+        }
+
+        .footer-right {
+            /* text-xs text-right */
+            font-size: 0.75rem;
+            text-align: right;
+            /* text_style applied inline */
+        }
+        
+        .footer-bold {
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .footer-sub {
+            color: #6b7280;
+            margin: 0;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container" style="--primary-color: {{ primary_color }}; --secondary-color: {{ secondary_color }}; --body-font-color: {{ body_font_color }}; --background-color: {{ background_style_map.get('background-color', 'white') }};">
+        <div class="sidebar">
+            <div class="logo-section">
+                {% if logo_base64 %}
+                <img src="data:image/png;base64,{{ logo_base64 }}" class="logo">
+                {% endif %}
+                <p class="issuer-name">{{ issuer_name }}</p>
+            </div>
+            
+            <div class="qr-box">
+                <!-- Size 64 in React -> around 64px or larger depending on usage, sticking to standard preview size -->
+                <img src="data:image/png;base64,{{ qr_base64 }}" style="width: 64px; height: 64px;">
+            </div>
+        </div>
+        
+        <div class="main">
+            <h1 class="title">{{ custom_text.get('title', 'Certificate') }}</h1>
+            
+            <h2 class="recipient" style="--color: {{ text_style_map.get('color', 'inherit') }}; --font-family: {{ text_style_map.get('font-family', 'inherit') }}; --font-size: {{ text_style_map.get('font-size', 'inherit') }}; --font-weight: {{ text_style_map.get('font-weight', 'inherit') }};">{{ recipient_name }}</h2>
+            
+            <p class="body-text">{{ custom_text.get('body', 'has successfully completed') }}</p>
+            
+            <p class="course">{{ course_title }}</p>
+            
+            <p class="date-line">{{ custom_text.get('date_prefix', 'Awarded on') }} {{ issue_date }}</p>
+            
+            <div class="footer">
+                <div class="footer-left" {% if text_style %}style="{{ text_style }}"{% endif %}>
+                    <p class="footer-bold">{{ signature if signature else issuer_name }}</p>
+                    <p class="footer-sub">{{ custom_text.get('signature_label', 'Authorized Signature') }}</p>
+                </div>
+                <div class="footer-right" {% if text_style %}style="{{ text_style }}"{% endif %}>
+                    <p class="footer-bold">{{ verification_id[:8] if verification_id else 'PENDING' }}</p>
+                    <p class="footer-sub">{{ custom_text.get('verification_label', 'Verification ID') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,17 +1,16 @@
 import React from "react";
-import { Nav, Image } from "react-bootstrap";
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import {
-  Speedometer2,
-  PeopleFill,
-  BoxArrowRight,
+  LayoutDashboard,
+  Users,
   Building,
-  CashStack,
-  FileEarmarkText,
-  BarChartFill,
-  ChatDotsFill,
-  EnvelopeFill,
-} from "react-bootstrap-icons";
+  CreditCard,
+  FileText,
+  BarChart2,
+  MessageSquare,
+  LogOut,
+  Mail,
+} from "lucide-react";
 
 function AdminSidebar() {
   const navigate = useNavigate();
@@ -22,78 +21,88 @@ function AdminSidebar() {
     navigate("/admin/login");
   };
 
+  const navItemClass = ({ isActive }) =>
+    `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 font-medium text-sm ${
+      isActive
+        ? "bg-indigo-50 text-indigo-700"
+        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+    }`;
+
   return (
-    <div className="sidebar">
-      <div>
-        <Link to="/admin/dashboard" className="sidebar-logo">
-          <Image src="/images/certbadge.png" width={32} />
-          <span>
-            <span className="green">Certify</span>
-            <span className="blue">Me</span>
+    <aside className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 left-0 overflow-y-auto">
+      {/* --- LOGO HEADER --- */}
+      <div className="p-6 border-b border-gray-100">
+        <Link
+          to="/admin/dashboard"
+          className="flex items-center gap-3 no-underline"
+        >
+          <img
+            src="/images/certbadge.png"
+            alt="CertifyMe"
+            className="w-8 h-8 object-contain"
+          />
+          <span className="text-xl font-bold text-gray-900 tracking-tight">
+            CertifyMe <span className="text-indigo-600 text-xs">Admin</span>
           </span>
         </Link>
-        <Nav className="flex-column" as="ul">
-          <Nav.Item as="li">
-            <NavLink to="/admin/dashboard" className="nav-link" end>
-              <Speedometer2 />
-              <span>Dashboard</span>
-            </NavLink>
-          </Nav.Item>
-          <Nav.Item as="li">
-            <NavLink to="/admin/users" className="nav-link">
-              <PeopleFill />
-              <span>User Management</span>
-            </NavLink>
-          </Nav.Item>
-          {/* --- NEW: Company Management --- */}
-          <Nav.Item as="li">
-            <NavLink to="/admin/companies" className="nav-link">
-              <Building />
-              <span>Companies</span>
-            </NavLink>
-          </Nav.Item>
-          <Nav.Item as="li">
-            <NavLink to="/admin/payments" className="nav-link">
-              <CashStack />
-              <span>Payments</span>
-            </NavLink>
-          </Nav.Item>
-          <Nav.Item as="li">
-            <NavLink to="/admin/certificates" className="nav-link">
-              <FileEarmarkText />
-              <span>Certificates</span>
-            </NavLink>
-          </Nav.Item>
-          <Nav.Item as="li">
-            <NavLink to="/admin/analytics" className="nav-link">
-              <BarChartFill />
-              <span>Analytics</span>
-            </NavLink>
-          </Nav.Item>
-          <Nav.Item as="li">
-            <NavLink to="/admin/support" className="nav-link">
-              <ChatDotsFill />
-              <span>Support Tickets</span>
-            </NavLink>
-          </Nav.Item>
-          {/* --- NEW: Messaging --- */}
-          <Nav.Item as="li">
-            <NavLink to="/admin/messaging" className="nav-link">
-              <EnvelopeFill />
-              <span>Messaging</span>
-            </NavLink>
-          </Nav.Item>
-        </Nav>
       </div>
-      <Nav className="flex-column" as="ul">
-        <Nav.Item as="li">
-          <Nav.Link href="#" onClick={handleLogout} className="nav-link">
-            <BoxArrowRight />
+
+      {/* --- NAVIGATION LINKS --- */}
+      <div className="flex-1 px-4 py-6 space-y-1">
+        <NavLink to="/admin/dashboard" end className={navItemClass}>
+          <LayoutDashboard size={20} />
+          <span>Dashboard</span>
+        </NavLink>
+
+        <NavLink to="/admin/users" className={navItemClass}>
+          <Users size={20} />
+          <span>User Management</span>
+        </NavLink>
+
+        <NavLink to="/admin/companies" className={navItemClass}>
+          <Building size={20} />
+          <span>Companies</span>
+        </NavLink>
+
+        <NavLink to="/admin/payments" className={navItemClass}>
+          <CreditCard size={20} />
+          <span>Payments</span>
+        </NavLink>
+
+        <NavLink to="/admin/certificates" className={navItemClass}>
+          <FileText size={20} />
+          <span>Certificates</span>
+        </NavLink>
+
+        <NavLink to="/admin/analytics" className={navItemClass}>
+          <BarChart2 size={20} />
+          <span>Analytics</span>
+        </NavLink>
+
+        <NavLink to="/admin/support" className={navItemClass}>
+          <MessageSquare size={20} />
+          <span>Support Tickets</span>
+        </NavLink>
+
+        <NavLink to="/admin/messaging" className={navItemClass}>
+          <Mail size={20} />
+          <span>Messaging</span>
+        </NavLink>
+      </div>
+
+      {/* --- FOOTER SECTION --- */}
+      <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+        <div className="space-y-1">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors font-medium text-sm text-left"
+          >
+            <LogOut size={20} />
             <span>Logout</span>
-          </Nav.Link>
-        </Nav.Item>
-      </Nav>
-    </div>
+          </button>
+        </div>
+      </div>
+    </aside>
   );
 }
 

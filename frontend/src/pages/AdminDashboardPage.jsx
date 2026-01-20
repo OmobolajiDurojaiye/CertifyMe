@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Alert, Spinner } from "react-bootstrap";
 import {
   Users,
   FileBadge,
@@ -9,6 +8,9 @@ import {
   ListOrdered,
   ShoppingCart,
   ChevronRight,
+  Loader2,
+  AlertCircle,
+  Inbox,
 } from "lucide-react";
 import { Line } from "react-chartjs-2";
 import {
@@ -71,7 +73,7 @@ function AdminDashboardPage() {
     const fetchStats = async () => {
       try {
         const responseData = await getAdminDashboardStats();
-        setData(responseData);
+        setData(responseData.data || responseData);
       } catch (err) {
         setError("Failed to load dashboard stats. Please refresh.");
         console.error("Dashboard Error:", err);
@@ -85,13 +87,25 @@ function AdminDashboardPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[60vh]">
-        <Spinner animation="border" variant="primary" />
+        <Loader2 className="animate-spin text-indigo-600" size={48} />
       </div>
     );
   }
 
-  if (error) return <Alert variant="danger">{error}</Alert>;
-  if (!data) return <Alert variant="info">No dashboard data found.</Alert>;
+  if (error)
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded flex items-center gap-2">
+        <AlertCircle size={20} />
+        {error}
+      </div>
+    );
+  if (!data || (!data.kpi && !data.recent_users))
+    return (
+      <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded flex items-center gap-2">
+        <Inbox size={20} />
+        No dashboard data found or database is empty.
+      </div>
+    );
 
   const { kpi, recent_users, recent_payments, revenue_trend_30d } = data;
 
@@ -121,18 +135,33 @@ function AdminDashboardPage() {
       legend: { display: false },
     },
     scales: {
-      y: { beginAtZero: true, ticks: { callback: (value) => `$${value}` } },
-      x: { grid: { display: false } },
+      y: { 
+        beginAtZero: true, 
+        ticks: { 
+            callback: (value) => `$${value}`,
+            color: '#94a3b8' 
+        },
+        grid: {
+            color: '#334155'
+        }
+    },
+      x: { 
+          grid: { display: false },
+          ticks: { color: '#94a3b8' }
+      },
     },
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">
-        Dashboard Overview
-      </h1>
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Welcome back! Here's what's happening with your platform.
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatCard
           title="Total Revenue"
           value={formatCurrency(kpi?.total_revenue)}
@@ -180,14 +209,14 @@ function AdminDashboardPage() {
             <h3 className="text-lg font-bold text-gray-800 p-6 pb-4 border-b border-gray-100 flex items-center gap-2">
               <ListOrdered size={20} className="text-gray-400" /> Recent Signups
             </h3>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto max-h-[400px]">
               {recent_users && recent_users.length > 0 ? (
                 <div className="divide-y divide-gray-100">
                   {recent_users.map((user) => (
                     <Link
                       to={`/admin/users/${user.id}`}
                       key={user.id}
-                      className="p-4 flex items-center justify-between hover:bg-gray-50 no-underline text-current"
+                      className="p-4 flex items-center justify-between hover:bg-gray-50 no-underline text-current transition-colors"
                     >
                       <div>
                         <p className="font-semibold text-gray-800 text-sm mb-0">
@@ -211,7 +240,7 @@ function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <ShoppingCart size={20} className="text-gray-400" /> Recent
@@ -242,7 +271,7 @@ function AdminDashboardPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
                 {recent_payments.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
+                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
                       {p.user_name}
                     </td>

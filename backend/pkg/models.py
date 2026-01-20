@@ -118,11 +118,20 @@ class Template(db.Model):
     body_font_color = db.Column(db.String(7), default='#333333') 
     font_family = db.Column(db.String(50), default='Georgia')
     
-    # Updated Enum: added 'receipt'
-    layout_style = db.Column(db.Enum('classic', 'modern', 'receipt', 'visual', name='template_layouts'), default='modern', nullable=False)
+    # Updated Enum: added premium templates
+    # layout_style = db.Column(db.Enum(
+    #     'classic', 'modern', 'receipt', 'visual', 
+    #     'modern_landscape', 'elegant_serif', 'minimalist_bold', 
+    #     'corporate_blue', 'tech_dark', 'creative_art', 
+    #     'badge_cert', 'award_gold', 'diploma_classic', 
+    #     'achievement_star',
+    #     name='template_layouts'
+    # ), default='modern', nullable=False)
+    layout_style = db.Column(db.String(50), default='modern', nullable=False)
     
     layout_data = db.Column(db.JSON, nullable=True)
     is_public = db.Column(db.Boolean, default=False, nullable=False)
+    is_premium = db.Column(db.Boolean, default=False, nullable=False)
     custom_text = db.Column(db.JSON, nullable=False, default=lambda: {
         "title": "Certificate of Completion",
         "body": "has successfully completed the course"
