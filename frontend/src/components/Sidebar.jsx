@@ -92,7 +92,7 @@ function Sidebar() {
         </NavLink>
 
         {user &&
-          (user.role === "free" ? (
+          (user.role?.toLowerCase() === "free" ? (
             <OverlayTrigger
               placement="right"
               delay={{ show: 250, hide: 400 }}

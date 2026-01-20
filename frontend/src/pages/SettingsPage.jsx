@@ -118,8 +118,9 @@ function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isFreeUser = user && user.role === "free";
-  const hasApiAccess = user && ["pro", "enterprise"].includes(user.role);
+  const isFreeUser = user && user.role?.toLowerCase() === "free";
+  const hasApiAccess =
+    user && ["pro", "enterprise"].includes(user.role?.toLowerCase());
   const isCompanyUser = user && user.company;
   const isCanvaConnected = user && user.canva_access_token;
 
@@ -520,7 +521,7 @@ function SettingsPage() {
               price="$15 /month"
               features={["500 Credits", "Standard Templates", "Email Support"]}
               actionText="Upgrade"
-              current={user?.role === "starter"}
+              current={user?.role?.toLowerCase() === "starter"}
               onAction={() => handleUpgrade("starter")}
               loading={processingPlan === "starter"}
             />
@@ -529,7 +530,7 @@ function SettingsPage() {
               price="$50 /month"
               features={["2,000 Credits", "All Templates", "Priority Support"]}
               actionText="Upgrade"
-              current={user?.role === "growth"}
+              current={user?.role?.toLowerCase() === "growth"}
               onAction={() => handleUpgrade("growth")}
               loading={processingPlan === "growth"}
             />
@@ -538,7 +539,7 @@ function SettingsPage() {
               price="$100 /month"
               features={["5,000 Credits", "API Access", "Custom Branding"]}
               actionText="Upgrade"
-              current={user?.role === "pro"}
+              current={user?.role?.toLowerCase() === "pro"}
               onAction={() => handleUpgrade("pro")}
               loading={processingPlan === "pro"}
             />
@@ -547,7 +548,7 @@ function SettingsPage() {
               price="$300 /month"
               features={["20,000 Credits", "Dedicated Manager", "SLA"]}
               actionText="Upgrade"
-              current={user?.role === "enterprise"}
+              current={user?.role?.toLowerCase() === "enterprise"}
               onAction={() => handleUpgrade("enterprise")}
               loading={processingPlan === "enterprise"}
             />
