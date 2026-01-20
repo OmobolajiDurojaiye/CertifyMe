@@ -29,6 +29,7 @@ import { Spinner } from "react-bootstrap";
 import toast, { Toaster } from "react-hot-toast";
 import { useUser } from "../context/UserContext";
 import TemplateSelector from "../components/TemplateSelector";
+import HelpGuide from "../components/HelpGuide";
 
 
 // --- REUSABLE UI COMPONENTS ---
@@ -225,21 +226,32 @@ const CreateCertificatePage = () => {
       <Toaster position="top-right" />
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <Link
-          to="/dashboard"
-          className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
-        >
-          <ArrowLeft size={24} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {isEditMode ? "Edit Document" : "Issue New Document"}
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Fill in the details below. Custom fields are supported.
-          </p>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+            <Link
+            to="/dashboard"
+            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+            >
+            <ArrowLeft size={24} />
+            </Link>
+            <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+                {isEditMode ? "Edit Document" : "Issue New Document"}
+            </h1>
+            <p className="text-gray-500 text-sm">
+                Fill in the details below. Custom fields are supported.
+            </p>
+            </div>
         </div>
+        <HelpGuide 
+            title="How to Issue"
+            steps={[
+                "Choose a template from the visual selector.",
+                "Enter recipient details (Name, Email, etc.).",
+                "Add custom fields if your template needs them.",
+                "Click 'Generate Document' to issue."
+            ]}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

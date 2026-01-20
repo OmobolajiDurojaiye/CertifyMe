@@ -28,6 +28,7 @@ import {
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { useUser } from "../context/UserContext";
+import HelpGuide from "../components/HelpGuide";
 
 
 
@@ -205,21 +206,32 @@ const BulkCreateCertificatesPage = () => {
       <Toaster position="top-right" />
 
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <Link
-          to="/dashboard"
-          className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
-        >
-          <ArrowLeft size={24} />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Bulk Create Certificates
-          </h1>
-          <p className="text-gray-500 text-sm">
-            Upload a spreadsheet to generate hundreds of certificates at once.
-          </p>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+            <Link
+            to="/dashboard"
+            className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+            >
+            <ArrowLeft size={24} />
+            </Link>
+            <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+                Bulk Create Certificates
+            </h1>
+            <p className="text-gray-500 text-sm">
+                Upload a spreadsheet to generate hundreds of certificates at once.
+            </p>
+            </div>
         </div>
+        <HelpGuide 
+            title="Bulk Creation Guide"
+            steps={[
+                "Select a template for your certificates.",
+                "Choose an existing group or create a new one.",
+                "Upload a CSV/Excel file (Use the sample template!).",
+                "Click 'Start Bulk Process' to generate all certificates."
+            ]}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
