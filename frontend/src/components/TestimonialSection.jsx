@@ -4,7 +4,7 @@ import { Quote } from "lucide-react";
 export function TestimonialSection() {
   const testimonials = [
     {
-      quote: "CertifyMe is a game changer. The ability to customize my certificates and issue them in bulk made all the difference.",
+      quote: "ProofDeck is a game changer. The ability to customize my certificates and issue them in bulk made all the difference.",
       name: "Chibuzor Azodo, PhD",
       title: "Founder, Staunch Analytics Ltd",
       image: "/images/chibuzor-azodo.png",

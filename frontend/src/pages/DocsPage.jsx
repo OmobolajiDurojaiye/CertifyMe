@@ -276,7 +276,7 @@ print(response.json())`;
                     </h2>
                     <div className="prose prose-lg text-gray-600">
                         <p>
-                            The CertifyMe API is organized around REST. Our API has
+                            The ProofDeck API is organized around REST. Our API has
                             predictable resource-oriented URLs, accepts <code className="text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">application/json</code> request
                             bodies, returns JSON-encoded responses, and uses standard HTTP
                             response codes to indicate API errors.

@@ -38,7 +38,7 @@ def create_certificate_email(certificate, pdf_buffer):
                 <a href="{verification_url}" class="button" target="_blank">{button_text}</a>
             </div>
             <div class="footer">
-                <p>Issued by {certificate.issuer_name} via CertifyMe</p>
+                <p>Issued by {certificate.issuer_name} via ProofDeck</p>
                 <p>Verification ID: {certificate.verification_id}</p>
             </div>
         </div>
@@ -48,7 +48,7 @@ def create_certificate_email(certificate, pdf_buffer):
     
     msg = Message(
         subject=subject,
-        sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')),
+        sender=('ProofDeck', current_app.config.get('MAIL_USERNAME')),
         recipients=[certificate.recipient_email],
         html=html_body
     )

@@ -51,16 +51,16 @@ function AdminLoginPage() {
         <div className="auth-panel" style={{ backgroundColor: "#dc3545" }}>
           <h2>Administrator Access</h2>
           <p>
-            Welcome to the CertifyMe Admin Control Panel. Please authenticate to
+            Welcome to the ProofDeck Admin Control Panel. Please authenticate to
             continue.
           </p>
         </div>
         <div className="auth-form-container">
           <img
-            src="/images/certbadge.png"
-            alt="CertifyMe Logo"
+            src="/logo.png"
+            alt="ProofDeck Logo"
             className="auth-logo mx-auto d-block"
-            style={{ maxHeight: "35px" }}
+            style={{ maxHeight: "45px" }}
           />
           <h3>Admin Sign In</h3>
           {error && <Alert variant="danger">{error}</Alert>}
@@ -73,7 +73,7 @@ function AdminLoginPage() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="admin@certifyme.com"
+                placeholder="admin@proofdeck.com"
                 required
               />
             </Form.Group>

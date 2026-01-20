@@ -50,10 +50,10 @@ function AdminVerifyPage() {
         </div>
         <div className="auth-form-container">
           <img
-            src="/images/certbadge.png"
-            alt="CertifyMe Logo"
+            src="/logo.png"
+            alt="ProofDeck Logo"
             className="auth-logo mx-auto d-block"
-            style={{ maxHeight: "35px" }}
+            style={{ maxHeight: "45px" }}
           />
           <h3>Enter Verification Code</h3>
           {error && <Alert variant="danger">{error}</Alert>}

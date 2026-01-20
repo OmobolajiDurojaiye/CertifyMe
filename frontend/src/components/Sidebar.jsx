@@ -46,12 +46,12 @@ function Sidebar() {
       <div className="p-6 border-b border-gray-100">
         <Link to="/dashboard" className="flex items-center gap-3 no-underline">
           <img
-            src="/images/certbadge.png"
-            alt="CertifyMe"
-            className="w-8 h-8 object-contain"
+            src="/logo.png"
+            alt="ProofDeck"
+            className="w-10 h-10 object-contain"
           />
           <span className="text-xl font-bold text-gray-900 tracking-tight">
-            CertifyMe
+            ProofDeck
           </span>
         </Link>
       </div>

@@ -1,9 +1,9 @@
-const CACHE_NAME = "certifyme-cache-v1";
+const CACHE_NAME = "proofdeck-cache-v1";
 const APP_SHELL_URLS = [
   "/",
   "/index.html",
   "/manifest.json",
-  "/images/certbadge.png",
+  "/logo.png",
 ];
 
 // On install, cache the app shell

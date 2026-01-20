@@ -208,7 +208,8 @@ const PricingPage = () => {
                 </span>
                 </h1>
                 <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
-                CertifyMe uses a transparent credit-based system. One certificate equals one credit. No hidden fees. No monthly subscriptions.
+                ProofDeck uses a credit-based system. One certificate equals one
+              credit. No hidden fees. No surprises.ubscriptions.
                 </p>
           </div>
         </section>
@@ -329,7 +330,7 @@ const PricingPage = () => {
                 to="/signup"
                 className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transform hover:-translate-y-1 no-underline"
               >
-                Get Started Now
+                Get Started with ProofDeckNow
               </Link>
               <Link
                 to="/contact"

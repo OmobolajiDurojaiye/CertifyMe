@@ -27,7 +27,7 @@ def handle_contact_form():
     subject = f"New Contact Form Submission from {clean_name}"
 
     html_body = f"""
-    <p>You have received a new message from the CertifyMe contact form:</p>
+    <p>You have received a new message from the ProofDeck contact form:</p>
     <ul>
         <li><strong>Name:</strong> {clean_name}</li>
         <li><strong>Email:</strong> {email}</li>
@@ -39,7 +39,7 @@ def handle_contact_form():
 
     msg = Message(
         subject=subject,
-        sender=('CertifyMe Contact Form', current_app.config.get('MAIL_USERNAME')),
+        sender=('ProofDeck Contact Form', current_app.config.get('MAIL_USERNAME')),
         recipients=[admin_email],
         reply_to=email, # Allows you to reply directly to the user
         html=html_body

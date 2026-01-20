@@ -6,7 +6,7 @@ from bcrypt import hashpw, gensalt
 import sys
 
 # Create a new Click group for admin commands
-admin_cli = click.Group('admin', help='Admin commands for CertifyMe.')
+admin_cli = click.Group('admin', help='Admin commands for ProofDeck.')
 
 @admin_cli.command('create')
 @click.option('--name', prompt=True, help='The name of the admin user.')

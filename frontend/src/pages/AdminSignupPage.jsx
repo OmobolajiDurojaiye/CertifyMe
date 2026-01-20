@@ -40,15 +40,15 @@ function AdminSignupPage() {
         <div className="auth-panel" style={{ backgroundColor: "#0d6efd" }}>
           <h2>Create Your Admin Account</h2>
           <p>
-            This is a one-time setup for the master administrator of CertifyMe.
+            This is a one-time setup for the master administrator of ProofDeck.
           </p>
         </div>
         <div className="auth-form-container">
           <img
-            src="/images/certbadge.png"
-            alt="CertifyMe Logo"
+            src="/logo.png"
+            alt="ProofDeck Logo"
             className="auth-logo mx-auto d-block"
-            style={{ maxHeight: "35px" }}
+            style={{ maxHeight: "45px" }}
           />
           <h3>Admin Setup</h3>
           {error && <Alert variant="danger">{error}</Alert>}

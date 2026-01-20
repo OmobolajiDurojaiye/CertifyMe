@@ -73,8 +73,7 @@ const ContactPage = () => {
                         <ContactInfoRow 
                             icon={Mail}
                             title="Email Us"
-                            content="hello.certifyme@gmail.com"
-                            link="mailto:hello.certifyme@gmail.com"
+                            link="mailto:hello@proofdeck.app"
                             desc="For general inquiries and support."
                         />
                         <ContactInfoRow 

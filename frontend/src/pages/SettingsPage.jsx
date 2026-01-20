@@ -559,7 +559,7 @@ function SettingsPage() {
       {activeTab === "developer" && hasApiAccess && (
         <Section title="API Configuration" icon={Key}>
           <p className="text-gray-600 mb-6">
-            Use this key to authenticate requests to the CertifyMe API. Keep it
+            Use this key to authenticate requests to the ProofDeck API. Keep it
             secret.
           </p>
           {localUser?.api_key ? (

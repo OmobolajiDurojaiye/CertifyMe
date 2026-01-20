@@ -21,9 +21,9 @@ export const helpArticles = [
     description: "Start off on the right foot! The core workflow from A to Z.",
     content: (
       <>
-        <h2 className="text-xl font-bold mb-4">The Core CertifyMe Workflow</h2>
+        <h2 className="text-xl font-bold mb-4">The Core ProofDeck Workflow</h2>
         <p className="mb-4">
-          CertifyMe is built around a simple and powerful four-step process:
+          ProofDeck is built around a simple and powerful four-step process:
         </p>
         <ol className="list-decimal pl-5 space-y-2 mb-6">
           <li>
@@ -227,7 +227,7 @@ export const helpArticles = [
           How Our Credit-Based Model Works
         </h2>
         <p className="mb-4">
-          CertifyMe uses a credit-based model. Each issued certificate consumes
+          ProofDeck uses a credit-based model. Each issued certificate consumes
           one credit from your account quota.
         </p>
         <h2 className="text-xl font-bold mb-4">Upgrading Your Plan</h2>
@@ -277,7 +277,7 @@ export const helpArticles = [
     icon: <Code2 size={24} />,
     theme: "text-pink-600 bg-pink-50",
     description:
-      "Integrate CertifyMe into your own systems. (Pro & Enterprise)",
+      "Integrate ProofDeck into your own systems. (Pro & Enterprise)",
     content: (
       <>
         <h2 className="text-xl font-bold mb-4">Generating Your API Key</h2>
@@ -300,7 +300,7 @@ export const helpArticles = [
         </ol>
         <p className="mb-6">
           For detailed implementation, refer to the official{" "}
-          <strong>CertifyMe API Documentation</strong>.
+          <strong>ProofDeck API Documentation</strong>.
         </p>
       </>
     ),

@@ -33,7 +33,7 @@ const AuthLayout = ({ children, title, subtitle, linkText, linkTo, linkLabel }) 
         {/* Brand Header */}
         <Link to="/" className="relative z-10 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700 hover:opacity-90 transition-opacity no-underline">
           <div className="bg-white/20 backdrop-blur-md p-1.5 rounded-lg border border-white/10">
-            <img src="/images/certbadge.png" alt="Logo" className="w-8 h-8 object-contain" />
+            <img src="/logo.png" alt="ProofDeck" className="w-10 h-10 object-contain" />
           </div>
           <span className="text-2xl font-bold tracking-tight text-white">{APP_NAME}</span>
         </Link>
@@ -41,7 +41,7 @@ const AuthLayout = ({ children, title, subtitle, linkText, linkTo, linkLabel }) 
         {/* Testimonial */}
         <div className="relative z-10 max-w-md animate-in fade-in slide-in-from-left-4 duration-1000 delay-150">
           <blockquote className="text-xl font-medium leading-relaxed mb-6 font-serif italic text-indigo-50">
-            "CertifyMe is a game changer. The ability to custom my certificates and issue them in bulk made all the difference."
+            "ProofDeck is a game changer. The ability to custom my certificates and issue them in bulk made all the difference."
           </blockquote>
           <div className="flex items-center gap-4">
             <img 
@@ -71,7 +71,7 @@ const AuthLayout = ({ children, title, subtitle, linkText, linkTo, linkLabel }) 
          {/* Mobile Header */}
         <div className="lg:hidden p-6 flex items-center justify-between">
            <Link to="/" className="flex items-center gap-2 text-indigo-600 no-underline">
-              <img src="/images/certbadge.png" alt="Logo" className="w-8 h-8 object-contain" />
+               <img src="/logo.png" alt="ProofDeck" className="w-10 h-10 object-contain" />
               <span className="font-bold text-xl text-gray-900">{APP_NAME}</span>
            </Link>
         </div>

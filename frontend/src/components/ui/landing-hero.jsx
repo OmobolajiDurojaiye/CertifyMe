@@ -114,7 +114,7 @@ export function LandingHero() {
                    <div className="rounded-xl overflow-hidden bg-white border border-gray-100">
                         <img
                         src="/images/dashboard-preview.png"
-                        alt="CertifyMe Dashboard Preview"
+                        alt="ProofDeck Dashboard Preview"
                         className="w-full h-auto object-cover"
                         />
                    </div>

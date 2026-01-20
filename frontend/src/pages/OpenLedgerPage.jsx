@@ -163,7 +163,7 @@ const OpenLedgerPage = () => {
             </h1>
             <p className="text-gray-500 text-lg">
               Search and verify credentials issued by organizations on
-              CertifyMe.
+              ProofDeck.
             </p>
           </div>
         </div>
@@ -329,7 +329,7 @@ const OpenLedgerPage = () => {
                   </h2>
                   <p className="text-gray-500 max-w-md mx-auto">
                     Use the filters on the left to browse the public ledger of
-                    verified credentials issued on CertifyMe.
+                    verified credentials issued on ProofDeck.
                   </p>
                 </div>
               )}

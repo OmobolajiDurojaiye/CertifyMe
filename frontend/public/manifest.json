@@ -1,15 +1,15 @@
 {
-  "short_name": "CertifyMe",
-  "name": "CertifyMe: Secure Certificate Issuer",
-  "description": "Issue and verify secure digital certificates and badges in minutes.",
+  "short_name": "ProofDeck",
+  "name": "ProofDeck: Secure Certificate Issuer",
+  "description": "Issue and verify secure digital credentials in minutes.",
   "icons": [
     {
-      "src": "/images/certbadge.png",
+      "src": "/logo.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/images/certbadge.png",
+      "src": "/logo.png",
       "type": "image/png",
       "sizes": "512x512"
     }
@@ -18,5 +18,5 @@
   "scope": "/",
   "display": "standalone",
   "background_color": "#111827",
-  "theme_color": "#2563eb"
+  "theme_color": "#4f46e5"
 }

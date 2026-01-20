@@ -31,13 +31,13 @@ const PublicHeader = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-indigo-600 blur-lg opacity-20 group-hover:opacity-40 transition-opacity"></div>
                   <img
-                    src="/images/certbadge.png"
-                    alt="CertifyMe"
-                    className="h-9 w-9 relative"
+                    src="/logo.png"
+                    alt="ProofDeck"
+                    className="w-10 h-10 rounded-lg"
                   />
                 </div>
                 <span className="font-bold text-xl text-gray-900 tracking-tight group-hover:text-indigo-600 transition-colors">
-                  CertifyMe
+                  ProofDeck
                 </span>
               </Link>
             </div>

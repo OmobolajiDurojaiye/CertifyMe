@@ -12,12 +12,12 @@ const PublicFooter = () => {
             <Link to="/" className="flex items-center gap-2 mb-6 no-underline">
               {/* UPDATED LOGO HERE */}
               <img
-                src="/images/certbadge.png"
-                alt="CertifyMe"
-                className="h-8 w-8"
+                src="/logo.png"
+                alt="ProofDeck"
+                className="w-8 h-8 rounded-lg"
               />
-              <span className="font-bold text-2xl text-white tracking-tight">
-                CertifyMe
+              <span className="text-xl font-bold text-white tracking-tight">
+                ProofDeck
               </span>
             </Link>
             <p className="text-sm text-gray-400 mb-8 max-w-sm leading-relaxed">
@@ -70,7 +70,7 @@ const PublicFooter = () => {
 
         <div className="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-gray-500">
-            &copy; {new Date().getFullYear()} CertifyMe Inc. All rights
+            &copy; {new Date().getFullYear()} ProofDeck Inc. All rights
             reserved.
           </p>
           <div className="flex items-center gap-2 text-sm font-medium text-gray-500">

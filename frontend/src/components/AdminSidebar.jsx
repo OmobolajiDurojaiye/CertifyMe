@@ -37,12 +37,12 @@ function AdminSidebar() {
           className="flex items-center gap-3 no-underline"
         >
           <img
-            src="/images/certbadge.png"
-            alt="CertifyMe"
-            className="w-8 h-8 object-contain"
+            src="/logo.png"
+            alt="ProofDeck"
+            className="w-10 h-10 object-contain"
           />
           <span className="text-xl font-bold text-gray-900 tracking-tight">
-            CertifyMe <span className="text-indigo-600 text-xs">Admin</span>
+            ProofDeck <span className="text-indigo-600 text-xs">Admin</span>
           </span>
         </Link>
       </div>

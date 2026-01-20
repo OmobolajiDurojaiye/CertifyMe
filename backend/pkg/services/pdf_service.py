@@ -198,7 +198,7 @@ def _generate_html_pdf(certificate, template, issuer):
         "signature": certificate.signature or certificate.issuer_name,
         "issuer_name": certificate.issuer_name,
         "verification_id": certificate.verification_id,
-        "frontend_url": (current_app.config.get('FRONTEND_URL') or "certifyme.com.ng").replace('https://', '').replace('http://', ''),
+        "frontend_url": (current_app.config.get('FRONTEND_URL') or "proofdeck.app").replace('https://', '').replace('http://', ''),
         "logo_base64": logo_base64,
         "background_base64": background_base64,
         "primary_color": template.primary_color,

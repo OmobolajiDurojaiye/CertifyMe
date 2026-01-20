@@ -17,10 +17,10 @@ def create_app():
         app,
         resources={
             r"/api/*": {
-                "origins": ["https://www.certifyme.com.ng", "http://localhost:5173"]
+                "origins": ["https://www.certifyme.com.ng", "https://proofdeck.app", "https://www.proofdeck.app", "http://localhost:5173"]
             },
             r"/uploads/*": {
-                "origins": ["https://www.certifyme.com.ng", "http://localhost:5173"]
+                "origins": ["https://www.certifyme.com.ng", "https://proofdeck.app", "https://www.proofdeck.app", "http://localhost:5173"]
             }
         },
         supports_credentials=True
@@ -42,7 +42,8 @@ def create_app():
     
     app.config['MAIL_SERVER'] = os.environ.get('MAIL_SERVER')
     app.config['MAIL_PORT'] = int(os.environ.get('MAIL_PORT', 587))
-    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
+    app.config['MAIL_USE_TLS'] = os.environ.get('MAIL_USE_TLS', 'false').lower() in ['true', 'on', '1']
+    app.config['MAIL_USE_SSL'] = os.environ.get('MAIL_USE_SSL', 'false').lower() in ['true', 'on', '1']
     app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME')

@@ -21,21 +21,21 @@ def send_verification_email(user, code):
     </head>
     <body>
         <div class="container">
-            <div class="header">Welcome to CertifyMe!</div>
+            <div class="header">Welcome to ProofDeck!</div>
             <p>Hello {user.name},</p>
             <p>Thank you for signing up! To complete your registration and secure your account, please use the following verification code:</p>
             <div class="code">{code}</div>
-            <p>This code is valid for the next 15 minutes. If you did not sign up for a CertifyMe account, you can safely ignore this email.</p>
+            <p>This code is valid for the next 15 minutes. If you did not sign up for a ProofDeck account, you can safely ignore this email.</p>
             <div class="footer">
-                This is an automated message from CertifyMe.
+                This is an automated message from ProofDeck.
             </div>
         </div>
     </body>
     </html>
     """
     msg = Message(
-        subject="Your CertifyMe Verification Code",
-        sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')),
+        subject="Your ProofDeck Verification Code",
+        sender=('ProofDeck', current_app.config.get('MAIL_USERNAME')),
         recipients=[user.email],
         html=html_body
     )
@@ -69,7 +69,7 @@ def send_admin_verification_email(admin_user):
     </head>
     <body>
         <div class="container">
-            <div class="header">CertifyMe Admin Account Request</div>
+            <div class="header">ProofDeck Admin Account Request</div>
             <div class="alert">
                 <strong>Security Alert:</strong> A request has been made to create a new administrator account.
             </div>
@@ -85,15 +85,15 @@ def send_admin_verification_email(admin_user):
             <div class="code">{admin_user.verification_code}</div>
             <p>This code will expire in 15 minutes. If you did not request this, you can safely ignore this email. No account will be created without this code.</p>
             <div class="footer">
-                This is an automated security message from CertifyMe.
+                This is an automated security message from ProofDeck.
             </div>
         </div>
     </body>
     </html>
     """
     msg = Message(
-        subject="[Action Required] New CertifyMe Admin Account Request",
-        sender=('CertifyMe Security', current_app.config.get('MAIL_USERNAME')),
+        subject="[Action Required] New ProofDeck Admin Account Request",
+        sender=('ProofDeck Security', current_app.config.get('MAIL_USERNAME')),
         recipients=[trusted_recipient],
         html=html_body
     )
@@ -122,25 +122,27 @@ def send_password_reset_email(user, reset_url):
     </head>
     <body>
         <div class="container">
-            <div class="header">CertifyMe Password Reset Request</div>
-            <p>Hello {user.name or 'User'},</p>
-            <p>We received a request to reset the password for your account. If you did not make this request, you can safely ignore this email.</p>
-            <p>To reset your password, please click the button below. This link is valid for 15 minutes.</p>
-            <div style="text-align: center;">
-                <a href="{reset_url}" class="button">Reset Your Password</a>
+            <div class="header">ProofDeck Password Reset Request</div>
+            <div class="content">
+                <p>Hello,</p>
+                <p>We received a request to reset your password for your ProofDeck account.</p>
+                <p>Please click the button below to reset your password:</p>
+                <p style="text-align: center;">
+                    <a href="{reset_url}" class="button">Reset Password</a>
+                </p>
+                <p>If you did not request a password reset, please ignore this email or contact support if you have questions.</p>
+                <p>This link will expire in 1 hour.</p>
             </div>
-            <p>If you're having trouble with the button, you can also copy and paste this link into your browser:</p>
-            <p><a href="{reset_url}">{reset_url}</a></p>
             <div class="footer">
-                This is an automated message from CertifyMe.
+                This is an automated message from ProofDeck.
             </div>
         </div>
     </body>
     </html>
     """
     msg = Message(
-        subject="Your CertifyMe Password Reset Link",
-        sender=('CertifyMe Support', current_app.config.get('MAIL_USERNAME')),
+        subject="Your ProofDeck Password Reset Link",
+        sender=('ProofDeck Support', current_app.config.get('MAIL_USERNAME')),
         recipients=[user.email],
         html=html_body
     )
@@ -212,8 +214,8 @@ def send_bulk_email(users, subject, user_content, header_image_url=None):
                                         <a href="{social_links['linkedin']}"><img src="https://i.ibb.co/xY7Xq65/linkedin.png" alt="LinkedIn"></a>
                                         <a href="{social_links['twitter']}"><img src="https://i.ibb.co/TThB71D/twitter.png" alt="Twitter"></a>
                                     </p>
-                                    <p style="margin-top: 20px;">CertifyMe: Digital Certificates Made Simple</p>
-                                    <p>&copy; {datetime.now().year} CertifyMe. All rights reserved.</p>
+                                    <p style="margin-top: 20px;">ProofDeck: Digital Certificates Made Simple</p>
+                                    <p>&copy; {datetime.now().year} ProofDeck. All rights reserved.</p>
                                 </td>
                             </tr>
                         </table>
@@ -224,7 +226,7 @@ def send_bulk_email(users, subject, user_content, header_image_url=None):
 
                 msg = Message(
                     subject=subject,
-                    sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')),
+                    sender=('ProofDeck', current_app.config.get('MAIL_USERNAME')),
                     recipients=[user.email],
                     html=html_body
                 )

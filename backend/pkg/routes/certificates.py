@@ -26,7 +26,7 @@ def _send_issuer_notification_email(issuer, subject, summary_html):
     try:
         msg = Message(
             subject=subject,
-            sender=('CertifyMe', current_app.config.get('MAIL_USERNAME')),
+            sender=('ProofDeck', current_app.config.get('MAIL_USERNAME')),
             recipients=[issuer.email],
             html=summary_html
         )
@@ -49,7 +49,7 @@ def _create_issuer_summary_email(issuer_name, count, cert_list, action_type="cre
     <html>
     <body style="font-family:Arial, sans-serif; background:#f8f9fa; padding:20px;">
         <div style="max-width:600px;margin:auto;background:white;padding:30px;border-radius:8px;">
-            <h2 style="color:#2563EB;">CertifyMe — Documents {action_type.title()}</h2>
+            <h2 style="color:#2563EB;">ProofDeck — Documents {action_type.title()}</h2>
             <p>Dear <b>{issuer_name}</b>,</p>
             <p>This is to confirm that <b>{count}</b> document{'s' if count > 1 else ''} have been successfully {action_type}.</p>
 
@@ -181,7 +181,7 @@ def create_certificate():
                 # Notify Issuer
                 issuer_summary = [{"recipient_name": certificate.recipient_name, "course_title": certificate.course_title, "verification_id": certificate.verification_id}]
                 summary_html = _create_issuer_summary_email(user.name, 1, issuer_summary, action_type="created and sent")
-                _send_issuer_notification_email(user, "Document Issued — CertifyMe", summary_html)
+                _send_issuer_notification_email(user, "Document Issued — ProofDeck", summary_html)
 
             except Exception as e:
                 current_app.logger.error(f"Email sending error for cert {certificate.id}: {e}")
@@ -353,7 +353,7 @@ def download_bulk_template():
     writer.writerow(headers)
     writer.writerow(['Jane Doe', 'jane@example.com', 'Web Development', 'Tech Institute', '2024-10-22', 'Dr. Smith', '500.00'])
     output.seek(0)
-    return Response(output, mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=certifyme_bulk_template.csv"})
+    return Response(output, mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=proofdeck_bulk_template.csv"})
 
 
 @certificate_bp.route('/<int:cert_id>/send', methods=['POST'])
@@ -432,7 +432,7 @@ def send_bulk_emails():
     if sent > 0:
         cert_list = [{"recipient_name": c.recipient_name, "course_title": c.course_title, "verification_id": c.verification_id} for c in certs_to_send if c.sent_at]
         summary_html = _create_issuer_summary_email(user.name, sent, cert_list, action_type="sent")
-        _send_issuer_notification_email(user, "Bulk Emails Sent — CertifyMe", summary_html)
+        _send_issuer_notification_email(user, "Bulk Emails Sent — ProofDeck", summary_html)
 
     if errors: 
         return jsonify({"msg": f"Sent {sent} emails with {len(errors)} errors", "sent": sent, "errors": errors}), 207

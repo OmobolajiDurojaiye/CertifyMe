@@ -1,4 +1,4 @@
-# CertifyMe - Certificate & Badge Issuer
+# ProofDeck - Certificate & Badge Issuer
 
 A powerful, easy-to-use platform for issuing, managing, and verifying digital certificates and badges.
 
