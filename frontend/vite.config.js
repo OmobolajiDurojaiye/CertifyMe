@@ -24,37 +24,6 @@ const ROUTES = [
 export default defineConfig({
   plugins: [
     react(),
-    {
-      name: "manual-sitemap-generator",
-      enforce: "post",
-      closeBundle() {
-        const distPath = path.resolve(__dirname, "dist");
-        const sitemapPath = path.resolve(distPath, "sitemap.xml");
-
-        if (!fs.existsSync(distPath)) {
-          fs.mkdirSync(distPath, { recursive: true });
-        }
-
-        const urls = ROUTES.map(
-          (url) => `
-  <url>
-    <loc>${HOSTNAME}${url}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>${url === "/" ? "1.0" : "0.8"}</priority>
-  </url>`
-        ).join("\n");
-
-        const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset
-  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls}
-</urlset>`;
-
-        fs.writeFileSync(sitemapPath, sitemap.trim());
-        console.log("✅ Custom sitemap generated successfully!");
-      },
-    },
   ],
   server: {
     proxy: {
