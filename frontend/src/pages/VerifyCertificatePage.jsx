@@ -11,10 +11,105 @@ import {
   AlertCircle,
   Loader2,
   ArrowLeft,
+  Share2,
+  Linkedin,
+  Facebook,
+  Copy,
+  Check,
+  Twitter,
 } from "lucide-react";
 import TemplateRenderer from "../components/templates/TemplateRenderer";
 import PublicHeader from "../components/PublicHeader";
 import PublicFooter from "../components/PublicFooter";
+
+// --- SHARE SECTION COMPONENT ---
+const ShareCredentialSection = ({ currentUrl, companyName }) => {
+  const [copied, setCopied] = useState(false);
+
+  const shareText = `I just earned a valid credential from ${companyName}! Verify it here:`;
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(currentUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareLinks = {
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+      currentUrl
+    )}`,
+    twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+      shareText
+    )}&url=${encodeURIComponent(currentUrl)}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+      currentUrl
+    )}`,
+  };
+
+  return (
+    <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="bg-indigo-100 p-2 rounded-full text-indigo-600">
+          <Share2 size={20} />
+        </div>
+        <h3 className="text-lg font-bold text-gray-900">
+          Share this Achievement
+        </h3>
+      </div>
+      <p className="text-gray-600 mb-6 text-sm">
+        Let your network know about your new credential!
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* LinkedIn */}
+        <a
+          href={shareLinks.linkedin}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 px-4 py-3 bg-[#0A66C2] text-white rounded-lg hover:bg-[#004182] transition-colors font-medium text-sm no-underline"
+        >
+          <Linkedin size={18} />
+          LinkedIn
+        </a>
+
+        {/* Twitter / X */}
+        <a
+          href={shareLinks.twitter}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 px-4 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-medium text-sm no-underline"
+        >
+          <Twitter size={18} />
+          Post to X
+        </a>
+
+        {/* Facebook */}
+        <a
+          href={shareLinks.facebook}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1877F2] text-white rounded-lg hover:bg-[#166fe5] transition-colors font-medium text-sm no-underline"
+        >
+          <Facebook size={18} />
+          Facebook
+        </a>
+
+        {/* Copy Link */}
+        <button
+          onClick={handleCopy}
+          className={`flex items-center justify-center gap-2 px-4 py-3 border rounded-lg transition-colors font-medium text-sm ${
+            copied
+              ? "bg-green-50 border-green-200 text-green-700"
+              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          {copied ? <Check size={18} /> : <Copy size={18} />}
+          {copied ? "Copied!" : "Copy Link"}
+        </button>
+      </div>
+    </div>
+  );
+};
 
 // --- MAIN PAGE COMPONENT ---
 const VerifyCertificatePage = () => {
@@ -180,7 +275,7 @@ const VerifyCertificatePage = () => {
 
               {/* Certificate Preview */}
               <div
-                className="w-full max-w-4xl mx-auto rounded-lg shadow-2xl overflow-hidden bg-white"
+                className="w-full max-w-4xl mx-auto rounded-lg shadow-2xl overflow-hidden bg-white mb-8"
                 style={{ aspectRatio: "1.414/1" }}
               >
                  <TemplateRenderer 
@@ -188,6 +283,14 @@ const VerifyCertificatePage = () => {
                     formData={certificate}
                  />
               </div>
+
+              {/* Share Section (Only if Valid) */}
+              {certificate.status === "valid" && (
+                <ShareCredentialSection
+                  currentUrl={window.location.href}
+                  companyName={company?.name || "ProofDeck"}
+                />
+              )}
             </div>
           )}
         </div>
