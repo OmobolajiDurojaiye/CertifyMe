@@ -163,8 +163,8 @@ def send_bulk_email(users, subject, user_content, header_image_url=None):
     social_links = {
         'instagram': current_app.config.get('SOCIAL_INSTAGRAM', '#'),
         'facebook': current_app.config.get('SOCIAL_FACEBOOK', '#'),
-        'linkedin': current_app.config.get('SOCIAL_LINKEDIN', '#'),
-        'twitter': current_app.config.get('SOCIAL_TWITTER', '#'),
+        'linkedin': 'https://www.linkedin.com/company/proofdeck',
+        'twitter': 'https://x.com/proofdeck',
     }
 
     try:
@@ -212,7 +212,7 @@ def send_bulk_email(users, subject, user_content, header_image_url=None):
                                         <a href="{social_links['instagram']}"><img src="https://i.ibb.co/6rW8k04/instagram.png" alt="Instagram"></a>
                                         <a href="{social_links['facebook']}"><img src="https://i.ibb.co/d2r03s7/facebook.png" alt="Facebook"></a>
                                         <a href="{social_links['linkedin']}"><img src="https://i.ibb.co/xY7Xq65/linkedin.png" alt="LinkedIn"></a>
-                                        <a href="{social_links['twitter']}"><img src="https://i.ibb.co/TThB71D/twitter.png" alt="Twitter"></a>
+                                        <a href="{social_links['twitter']}"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/X_logo_2023.svg/48px-X_logo_2023.svg.png" alt="X (Twitter)"></a>
                                     </p>
                                     <p style="margin-top: 20px;">ProofDeck: Digital Certificates Made Simple</p>
                                     <p>&copy; {datetime.now().year} ProofDeck. All rights reserved.</p>

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Twitter, Linkedin, Github, Globe, ArrowUpRight } from "lucide-react";
+import { X, Linkedin, Github, Globe, ArrowUpRight } from "lucide-react";
 
 const PublicFooter = () => {
   return (
@@ -25,9 +25,9 @@ const PublicFooter = () => {
               Built for speed, security, and scale.
             </p>
             <div className="flex space-x-4">
-              <SocialLink href="#" icon={Twitter} />
-              <SocialLink href="#" icon={Linkedin} />
-              <SocialLink href="#" icon={Github} />
+              <SocialLink href="https://x.com/proofdeck" icon={X} />
+              <SocialLink href="https://www.linkedin.com/company/proofdeck" icon={Linkedin} />
+              <SocialLink href="https://github.com/OmobolajiDurojaiye/CertifyMe" icon={Github} />
             </div>
           </div>
 
