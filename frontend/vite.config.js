@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // --- END OF FIX ---
 
-const HOSTNAME = "https://certifyme.com.ng";
+const HOSTNAME = "https://proofdeck.app";
 const ROUTES = [
   "/",
   "/signup",
