@@ -33,7 +33,7 @@ def create_app():
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 86400
 
     app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'mysql+mysqlconnector://root@127.0.0.1/certifyme_db')
-    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_recycle": 280}
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_recycle": 280, "pool_pre_ping": True}
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     app.config['FRONTEND_URL'] = os.environ.get('FRONTEND_URL')
