@@ -134,7 +134,7 @@ const ReferralSection = () => {
             <div className="relative z-10">
               <h2 className="text-2xl font-bold mb-2">Give credits, Get credits</h2>
               <p className="text-indigo-100 mb-6 max-w-lg">
-                Refer a friend to CertifyMe. When they verify their account, they get 5 bonus credits and you get 10!
+                Refer a friend to ProofDeck. When they verify their account, they get 5 bonus credits and you get 10!
               </p>
               
               <div className="bg-white/10 backdrop-blur-md p-1 pl-4 rounded-lg inline-flex items-center gap-4 border border-white/20">

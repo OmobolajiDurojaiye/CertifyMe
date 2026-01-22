@@ -212,3 +212,22 @@ export const adminReplyToTicket = (ticketId, message, file) => {
 };
 export const updateTicketStatus = (ticketId, status) =>
   API.put(`/admin/support/tickets/${ticketId}/status`, { status });
+
+// WIDGET MESSAGES
+export const getWidgetMessages = (params = {}) =>
+  API.get(`/admin/support/widget-messages?${new URLSearchParams(params).toString()}`);
+
+export const deleteWidgetMessage = (msgId) =>
+  API.delete(`/admin/support/widget-messages/${msgId}`);
+
+export const updateWidgetMessageStatus = (msgId, status) =>
+  API.put(`/admin/support/widget-messages/${msgId}/status`, { status });
+
+export const replyToWidgetMessage = (data) =>
+  API.post(`/admin/support/widget-messages/reply`, data);
+
+// PUBLIC WIDGET API
+export const getChatHistory = (params = {}) =>
+  API.get(`/support/history?${new URLSearchParams(params).toString()}`);
+
+export const sendSupportMessage = (data) => API.post("/support/message", data);

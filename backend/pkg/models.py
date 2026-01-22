@@ -200,7 +200,10 @@ class SupportWidgetMessage(db.Model):
     __tablename__ = 'support_widget_messages'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Optional link to user if logged in
-    email = db.Column(db.String(120), nullable=False)
+    session_id = db.Column(db.String(100), nullable=True) # For guest users
+    email = db.Column(db.String(120), nullable=True) # Optional for guests who haven't provided it yet
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.Enum('new', 'read', 'replied', name='widget_message_statuses'), default='new', nullable=False)
+    sender_type = db.Column(db.Enum('user', 'admin', name='message_sender_types'), default='user', nullable=False)
+    admin_id = db.Column(db.Integer, db.ForeignKey('admins.id'), nullable=True) # If reply from admin
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
