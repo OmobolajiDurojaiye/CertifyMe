@@ -27,6 +27,8 @@ import HelpArticlePage from "./pages/HelpArticlePage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
 import PricingPage from "./pages/PricingPage"; // Import new page
 import ContactPage from "./pages/ContactPage"; // Import new page
+import LegalPage from "./pages/LegalPage";
+import SupportWidget from "./components/SupportWidget"; // Global Support Widget
 
 // Admin imports
 import AdminPortalPage from "./pages/AdminPortalPage";
@@ -57,6 +59,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/legal" element={<LegalPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
@@ -130,6 +133,7 @@ function App() {
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
+      <SupportWidget />
     </UserProvider>
   );
 }

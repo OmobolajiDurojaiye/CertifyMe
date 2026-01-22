@@ -57,6 +57,10 @@ class User(db.Model):
     signature_image_url = db.Column(db.Text, nullable=True)
     api_key = db.Column(db.String(64), unique=True, nullable=True, index=True)
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id', ondelete='SET NULL', use_alter=True), nullable=True)
+    
+    # Referral Fields
+    referral_code = db.Column(db.String(10), unique=True, nullable=True)
+    referred_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
 
      # --- CANVA COLUMNS ---
     # canva_access_token = db.Column(db.Text, nullable=True)
@@ -177,4 +181,26 @@ class Payment(db.Model):
     currency = db.Column(db.String(5), nullable=False)
     status = db.Column(db.Enum('pending', 'paid', 'failed', name='payment_statuses'), default='pending', nullable=False)
     transaction_ref = db.Column(db.String(100), unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Referral(db.Model):
+    __tablename__ = 'referrals'
+    id = db.Column(db.Integer, primary_key=True)
+    referrer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    referred_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    status = db.Column(db.Enum('pending', 'completed', name='referral_statuses'), default='pending', nullable=False)
+    reward_claimed = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    referrer = db.relationship('User', foreign_keys=[referrer_id], backref='referrals_sent')
+    referred = db.relationship('User', foreign_keys=[referred_id], backref='referral_received')
+
+class SupportWidgetMessage(db.Model):
+    __tablename__ = 'support_widget_messages'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True) # Optional link to user if logged in
+    email = db.Column(db.String(120), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.Enum('new', 'read', 'replied', name='widget_message_statuses'), default='new', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

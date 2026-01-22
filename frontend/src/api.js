@@ -114,6 +114,9 @@ export const verifyPayment = (reference) =>
 // USER ANALYTICS
 export const getUserAnalytics = () => API.get("/analytics/dashboard");
 
+// REFERRALS
+export const getReferralStats = () => API.get("/referrals/stats");
+
 // GROUPS
 export const getGroups = (page = 1) => API.get(`/groups/?page=${page}`);
 export const createGroup = (name) => API.post("/groups/", { name });

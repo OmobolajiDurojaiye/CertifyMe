@@ -61,9 +61,9 @@ const PublicFooter = () => {
           <div>
             <h4 className="font-bold text-gray-900 mb-6 text-white">Legal</h4>
             <ul className="space-y-4">
-              <FooterLink to="#">Privacy Policy</FooterLink>
-              <FooterLink to="#">Terms of Service</FooterLink>
-              {/* <FooterLink to="">Security</FooterLink> */}
+              <FooterLink to="/legal?tab=privacy">Privacy Policy</FooterLink>
+              <FooterLink to="/legal?tab=terms">Terms of Service</FooterLink>
+              <FooterLink to="/legal?tab=security">Security</FooterLink>
             </ul>
           </div>
         </div>

@@ -8,7 +8,9 @@ function SignupPage() {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
+    email: "",
     password: "",
+    referral_code: "", // Add referral code
     role: "free", // 'free' (individual) or 'enterprise' (business)
     company_name: ""
   });
@@ -28,7 +30,10 @@ function SignupPage() {
         email: formData.email,
         password: formData.password,
         account_type: formData.role === 'enterprise' ? 'company' : 'individual',
-        company_name: formData.role === 'enterprise' ? formData.company_name : undefined
+        password: formData.password,
+        account_type: formData.role === 'enterprise' ? 'company' : 'individual',
+        company_name: formData.role === 'enterprise' ? formData.company_name : undefined,
+        referral_code: formData.referral_code || undefined
       };
 
       await signupUser(payload);
@@ -210,6 +215,30 @@ function SignupPage() {
               />
             </div>
              <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters.</p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="referral_code"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Referral Code (Optional)
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                <Briefcase size={18} />
+              </div>
+              <input
+                id="referral_code"
+                type="text"
+                value={formData.referral_code}
+                onChange={(e) =>
+                  setFormData({ ...formData, referral_code: e.target.value })
+                }
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow sm:text-sm"
+                placeholder="R-123456"
+              />
+            </div>
           </div>
         </div>
 

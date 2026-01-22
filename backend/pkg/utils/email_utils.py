@@ -235,3 +235,53 @@ def send_bulk_email(users, subject, user_content, header_image_url=None):
     except Exception as e:
         current_app.logger.error(f"Failed during bulk email sending: {e}")
         raise
+
+def send_support_email(email, message):
+    """
+    Sends a support notification email to the admin.
+    """
+    trusted_recipient = current_app.config.get('MAIL_USERNAME') or current_app.config.get('ADMIN_EMAIL')
+    
+    html_body = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 20px; }}
+            .container {{ max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px; }}
+            .header {{ background-color: #f8f9fa; padding: 10px; text-align: center; border-bottom: 1px solid #eee; }}
+            .content {{ padding: 20px 0; }}
+            .footer {{ font-size: 12px; color: #888; text-align: center; margin-top: 20px; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header"><h3>New Support Message</h3></div>
+            <div class="content">
+                <p><strong>From:</strong> {email}</p>
+                <p><strong>Message:</strong></p>
+                <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; border-left: 4px solid #0d6efd;">
+                    {message}
+                </div>
+            </div>
+            <div class="footer">
+                Sent from ProofDeck Support Widget
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    msg = Message(
+        subject=f"Support Request from {email}",
+        sender=('ProofDeck Support', current_app.config.get('MAIL_USERNAME')),
+        recipients=[trusted_recipient],
+        html=html_body,
+        reply_to=email
+    )
+    
+    try:
+        mail.send(msg)
+        current_app.logger.info(f"Support email sent from {email}")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send support email: {e}")

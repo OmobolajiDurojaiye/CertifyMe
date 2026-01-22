@@ -3,7 +3,7 @@ from flask_jwt_extended import create_access_token, decode_token
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from bcrypt import hashpw, gensalt, checkpw
 from datetime import datetime, timedelta
-from ..models import User, Company
+from ..models import User, Company, Referral
 from ..extensions import db
 from ..utils.email_utils import send_password_reset_email, send_verification_email
 
@@ -47,16 +47,27 @@ def register():
     if account_type == 'company' and not company_name:
         return jsonify({"msg": "Company name is required for a company account"}), 400
 
+    referral_code = data.get('referral_code')
+    referrer = None
+    if referral_code:
+        referrer = User.query.filter_by(referral_code=referral_code).first()
+
     hashed_password = hashpw(data['password'].encode('utf-8'), gensalt())
     
     new_user = User(
         name=data['name'],
         email=email,
         password_hash=hashed_password.decode('utf-8'),
-        is_verified=False
+        is_verified=False,
+        referred_by=referrer.id if referrer else None
     )
     new_user.set_verification_code()
     db.session.add(new_user)
+    db.session.flush() # Ensure ID is generated
+
+    if referrer:
+        new_referral = Referral(referrer_id=referrer.id, referred_id=new_user.id)
+        db.session.add(new_referral)
 
     if account_type == 'company':
         try:
@@ -109,6 +120,19 @@ def verify_email():
     user.is_verified = True
     user.verification_code = None
     user.verification_expiry = None
+
+    # Process Referral Rewards
+    referral = Referral.query.filter_by(referred_id=user.id, status='pending').first()
+    if referral:
+        referral.status = 'completed'
+        # Reward Referrer (10 credits)
+        referrer = User.query.get(referral.referrer_id)
+        if referrer:
+            referrer.cert_quota += 10
+        
+        # Reward New User (5 bonus credits)
+        user.cert_quota += 5
+
     db.session.commit()
 
     access_token = create_access_token(identity=str(user.id))

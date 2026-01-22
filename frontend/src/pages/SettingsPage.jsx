@@ -8,6 +8,7 @@ import {
   generateApiKey,
   switchToCompany,
   getCanvaAuthUrl,
+  getReferralStats,
 } from "../api";
 import toast, { Toaster } from "react-hot-toast";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -29,6 +30,7 @@ import {
   Key,
   CheckCircle,
   Link as LinkIcon,
+  Gift,
 } from "lucide-react";
 import { Modal, Spinner, Button } from "react-bootstrap";
 
@@ -97,6 +99,74 @@ const PlanCard = ({
     </button>
   </div>
 );
+
+const ReferralSection = () => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const { data } = await getReferralStats();
+        setStats(data);
+      } catch (error) {
+        toast.error("Failed to load referral data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const copyToClipboard = () => {
+    if (stats?.referral_code) {
+      navigator.clipboard.writeText(stats.referral_code);
+      toast.success("Referral code copied!");
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center"><Spinner animation="border" /></div>;
+
+  return (
+    <div className="space-y-6">
+       <Section title="Invite & Earn" icon={Gift}>
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-8 text-white mb-8 relative overflow-hidden">
+            <div className="relative z-10">
+              <h2 className="text-2xl font-bold mb-2">Give credits, Get credits</h2>
+              <p className="text-indigo-100 mb-6 max-w-lg">
+                Refer a friend to CertifyMe. When they verify their account, they get 5 bonus credits and you get 10!
+              </p>
+              
+              <div className="bg-white/10 backdrop-blur-md p-1 pl-4 rounded-lg inline-flex items-center gap-4 border border-white/20">
+                <span className="font-mono font-bold tracking-widest text-lg">{stats?.referral_code}</span>
+                <button 
+                  onClick={copyToClipboard}
+                  className="bg-white text-indigo-600 px-3 py-1.5 rounded-md text-sm font-bold hover:bg-indigo-50 transition-colors"
+                >
+                  <Copy size={16} className="inline mr-1" /> Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+               <p className="text-sm text-gray-500 mb-1">Total Referrals</p>
+               <p className="text-2xl font-bold text-gray-900">{stats?.total_referrals}</p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+               <p className="text-sm text-gray-500 mb-1">Completed</p>
+               <p className="text-2xl font-bold text-green-600">{stats?.completed_referrals}</p>
+            </div>
+            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+               <p className="text-sm text-gray-500 mb-1">Credits Earned</p>
+               <p className="text-2xl font-bold text-indigo-600">{stats?.earned_credits}</p>
+            </div>
+          </div>
+       </Section>
+    </div>
+  );
+};
 
 function SettingsPage() {
   const { user, refreshUser } = useUser();
@@ -281,6 +351,7 @@ function SettingsPage() {
 
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
+    { id: "referrals", label: "Referrals", icon: Gift },
     // { id: "integrations", label: "Integrations", icon: LinkIcon },
     { id: "billing", label: "Billing", icon: CreditCard },
     {
@@ -471,36 +542,11 @@ function SettingsPage() {
 
       {/* {activeTab === "integrations" && (
         <Section title="External Apps" icon={LinkIcon}>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex items-center gap-4">
-              <img
-                src="https://static.canva.com/web/images/8439b51bb7a19f6e65ce1064bc37c197.svg"
-                alt="Canva"
-                className="w-10 h-10"
-              />
-              <div>
-                <h4 className="font-bold text-gray-900">Canva</h4>
-                <p className="text-sm text-gray-500">
-                  Import your designs to use as templates.
-                </p>
-              </div>
-            </div>
-            {isCanvaConnected ? (
-              <div className="flex items-center gap-2 text-green-600 font-medium text-sm bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
-                <CheckCircle size={16} /> Connected
-              </div>
-            ) : (
-              <button
-                onClick={handleCanvaConnect}
-                disabled={isCanvaConnecting}
-                className="bg-black text-white px-4 py-2 rounded-lg font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50"
-              >
-                {isCanvaConnecting ? <Spinner size="sm" /> : "Connect"}
-              </button>
-            )}
-          </div>
+          // ... content ...
         </Section>
       )} */}
+
+      {activeTab === "referrals" && <ReferralSection />}
 
       {activeTab === "billing" && (
         <div>
