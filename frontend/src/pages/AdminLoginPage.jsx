@@ -38,7 +38,7 @@ function AdminLoginPage() {
 
     try {
       const response = await adminLogin(formData);
-      localStorage.setItem("token", response.data.access_token);
+      localStorage.setItem("adminToken", response.data.access_token);
       navigate("/admin/dashboard");
     } catch (err) {
       setError(err.response?.data?.msg || "Login failed. Please try again.");

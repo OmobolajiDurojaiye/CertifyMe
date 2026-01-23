@@ -6,6 +6,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import { UserProvider } from "./context/UserContext";
+import { AdminAuthProvider } from "./context/AdminAuthContext";
 import SignupPage from "./pages/SignupPage";
 import MyCertificatesPage from "./pages/MyCertificatesPage";
 import CreateCertificatePage from "./pages/CreateCertificatePage";
@@ -47,6 +48,7 @@ import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage
 import AdminCompaniesPage from "./pages/AdminCompaniesPage";
 import AdminCompanyDetailsPage from "./pages/AdminCompanyDetailsPage";
 import AdminMessagingPage from "./pages/AdminMessagingPage";
+import AdminTeamPage from "./pages/AdminTeamPage";
 
 import DocsPage from "./pages/DocsPage";
 
@@ -55,85 +57,88 @@ const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 function App() {
   return (
     <UserProvider>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/legal" element={<LegalPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-        <Route path="/verify" element={<VerifyCertificatePage />} />
-        <Route
-          path="/verify/:verificationId"
-          element={<VerifyCertificatePage />}
-        />
-        <Route path="/search" element={<OpenLedgerPage />} />
-        <Route path="/docs" element={<DocsPage />} />
+      <AdminAuthProvider>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/legal" element={<LegalPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/verify" element={<VerifyCertificatePage />} />
+          <Route
+            path="/verify/:verificationId"
+            element={<VerifyCertificatePage />}
+          />
+          <Route path="/search" element={<OpenLedgerPage />} />
+          <Route path="/docs" element={<DocsPage />} />
 
-        {/* Admin Routes */}
-        <Route path="/admin/login" element={<AdminPortalPage />} />
-        <Route path="/admin/verify" element={<AdminVerifyPage />} />
-        <Route element={<AdminProtectedRoute />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<AdminDashboardPage />} />
-            <Route path="users" element={<AdminUserManagementPage />} />
-            <Route path="users/:userId" element={<AdminUserDetailsPage />} />
-            <Route path="payments" element={<AdminPaymentsPage />} />
-            <Route
-              path="payments/:paymentId"
-              element={<AdminPaymentDetailsPage />}
-            />
-            <Route path="certificates" element={<AdminCertificatesPage />} />
-            <Route path="analytics" element={<AdminAnalyticsPage />} />
-            <Route path="support" element={<AdminSupportPage />} />
-            <Route
-              path="support/:ticketId"
-              element={<AdminSupportTicketDetailsPage />}
-            />
-            <Route path="companies" element={<AdminCompaniesPage />} />
-            <Route
-              path="companies/:companyId"
-              element={<AdminCompanyDetailsPage />}
-            />
-            <Route path="messaging" element={<AdminMessagingPage />} />
-          </Route>
-        </Route>
-
-        {/* Protected User Routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<MyCertificatesPage />} />
-            <Route path="analytics" element={<AnalyticsPage />} />
-            <Route path="templates" element={<TemplatesPage />} />
-            <Route path="groups" element={<GroupsPage />} />
-            <Route path="create" element={<CreateCertificatePage />} />
-            <Route path="edit/:certId" element={<CreateCertificatePage />} />
-            <Route path="view/:certId" element={<ViewCertificatePage />} />
-            <Route path="bulk-create" element={<BulkCreateCertificatesPage />} />
-            <Route path="settings" element={<SettingsPage />} />
-
-            <Route path="support">
-              <Route index element={<SupportHubPage />} />
-              <Route path="articles/:slug" element={<HelpArticlePage />} />
-              <Route path="tickets" element={<ContactSupportPage />} />
-              <Route path="tickets/:ticketId" element={<ContactSupportPage />} />
+          {/* Admin Routes */}
+          <Route path="/admin/login" element={<AdminPortalPage />} />
+          <Route path="/admin/verify" element={<AdminVerifyPage />} />
+          <Route element={<AdminProtectedRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="users" element={<AdminUserManagementPage />} />
+              <Route path="users/:userId" element={<AdminUserDetailsPage />} />
+              <Route path="payments" element={<AdminPaymentsPage />} />
+              <Route
+                path="payments/:paymentId"
+                element={<AdminPaymentDetailsPage />}
+              />
+              <Route path="certificates" element={<AdminCertificatesPage />} />
+              <Route path="analytics" element={<AdminAnalyticsPage />} />
+              <Route path="support" element={<AdminSupportPage />} />
+              <Route
+                path="support/:ticketId"
+                element={<AdminSupportTicketDetailsPage />}
+              />
+              <Route path="companies" element={<AdminCompaniesPage />} />
+              <Route
+                path="companies/:companyId"
+                element={<AdminCompanyDetailsPage />}
+              />
+              <Route path="messaging" element={<AdminMessagingPage />} />
+              <Route path="team" element={<AdminTeamPage />} /> {/* New Route */}
             </Route>
-
-            <Route path="upload-template" element={<UploadTemplatePage />} />
-            <Route
-              path="upload-template/:templateId"
-              element={<UploadTemplatePage />}
-            />
           </Route>
-        </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-      <SupportWidget />
+          {/* Protected User Routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<MyCertificatesPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
+              <Route path="templates" element={<TemplatesPage />} />
+              <Route path="groups" element={<GroupsPage />} />
+              <Route path="create" element={<CreateCertificatePage />} />
+              <Route path="edit/:certId" element={<CreateCertificatePage />} />
+              <Route path="view/:certId" element={<ViewCertificatePage />} />
+              <Route path="bulk-create" element={<BulkCreateCertificatesPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+
+              <Route path="support">
+                <Route index element={<SupportHubPage />} />
+                <Route path="articles/:slug" element={<HelpArticlePage />} />
+                <Route path="tickets" element={<ContactSupportPage />} />
+                <Route path="tickets/:ticketId" element={<ContactSupportPage />} />
+              </Route>
+
+              <Route path="upload-template" element={<UploadTemplatePage />} />
+              <Route
+                path="upload-template/:templateId"
+                element={<UploadTemplatePage />}
+              />
+            </Route>
+          </Route>
+
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+        <SupportWidget />
+      </AdminAuthProvider>
     </UserProvider>
   );
 }

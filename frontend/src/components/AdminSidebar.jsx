@@ -10,10 +10,14 @@ import {
   MessageSquare,
   LogOut,
   Mail,
+  Shield,
 } from "lucide-react";
+import { useAdminAuth } from "../context/AdminAuthContext";
 
 function AdminSidebar() {
   const navigate = useNavigate();
+  const { admin } = useAdminAuth();
+  const isSuperAdmin = admin?.role === 'super_admin';
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -54,40 +58,61 @@ function AdminSidebar() {
           <span>Dashboard</span>
         </NavLink>
 
-        <NavLink to="/admin/users" className={navItemClass}>
-          <Users size={20} />
-          <span>User Management</span>
-        </NavLink>
+        {(isSuperAdmin || admin?.permissions?.view_users) && (
+            <NavLink to="/admin/users" className={navItemClass}>
+            <Users size={20} />
+            <span>User Management</span>
+            </NavLink>
+        )}
 
-        <NavLink to="/admin/companies" className={navItemClass}>
-          <Building size={20} />
-          <span>Companies</span>
-        </NavLink>
+        {(isSuperAdmin || admin?.permissions?.view_companies) && (
+            <NavLink to="/admin/companies" className={navItemClass}>
+            <Building size={20} />
+            <span>Companies</span>
+            </NavLink>
+        )}
 
-        <NavLink to="/admin/payments" className={navItemClass}>
-          <CreditCard size={20} />
-          <span>Payments</span>
-        </NavLink>
+        {(isSuperAdmin || admin?.permissions?.view_payments) && (
+            <NavLink to="/admin/payments" className={navItemClass}>
+            <CreditCard size={20} />
+            <span>Payments</span>
+            </NavLink>
+        )}
 
-        <NavLink to="/admin/certificates" className={navItemClass}>
-          <FileText size={20} />
-          <span>Certificates</span>
-        </NavLink>
+        {(isSuperAdmin || admin?.permissions?.view_certificates) && (
+            <NavLink to="/admin/certificates" className={navItemClass}>
+            <FileText size={20} />
+            <span>Certificates</span>
+            </NavLink>
+        )}
 
-        <NavLink to="/admin/analytics" className={navItemClass}>
-          <BarChart2 size={20} />
-          <span>Analytics</span>
-        </NavLink>
+        {(isSuperAdmin || admin?.permissions?.view_analytics) && (
+            <NavLink to="/admin/analytics" className={navItemClass}>
+            <BarChart2 size={20} />
+            <span>Analytics</span>
+            </NavLink>
+        )}
 
-        <NavLink to="/admin/support" className={navItemClass}>
-          <MessageSquare size={20} />
-          <span>Support Tickets</span>
-        </NavLink>
+        {(isSuperAdmin || admin?.permissions?.view_support) && (
+            <NavLink to="/admin/support" className={navItemClass}>
+            <MessageSquare size={20} />
+            <span>Support Tickets</span>
+            </NavLink>
+        )}
 
-        <NavLink to="/admin/messaging" className={navItemClass}>
-          <Mail size={20} />
-          <span>Messaging</span>
-        </NavLink>
+        {(isSuperAdmin || admin?.permissions?.view_messaging) && (
+            <NavLink to="/admin/messaging" className={navItemClass}>
+            <Mail size={20} />
+            <span>Messaging</span>
+            </NavLink>
+        )}
+        
+        {isSuperAdmin && (
+            <NavLink to="/admin/team" className={navItemClass}>
+              <Shield size={20} />
+              <span>Team</span>
+            </NavLink>
+        )}
       </div>
 
       {/* --- FOOTER SECTION --- */}

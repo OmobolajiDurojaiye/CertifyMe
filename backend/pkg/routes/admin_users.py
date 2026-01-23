@@ -22,6 +22,8 @@ def get_current_admin():
         "id": current_user.id,
         "name": current_user.name,
         "email": current_user.email,
+        "role": current_user.role,
+        "permissions": current_user.permissions,
         "is_admin": True
     }), 200
 

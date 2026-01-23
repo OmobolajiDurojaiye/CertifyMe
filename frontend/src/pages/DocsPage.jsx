@@ -399,7 +399,6 @@ print(response.json())`;
             </div>
         </main>
       </div>
-      <PublicFooter />
     </div>
   );
 }

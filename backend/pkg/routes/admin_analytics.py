@@ -14,20 +14,57 @@ def get_dashboard_stats():
     if not isinstance(current_user, Admin):
         return jsonify({"msg": "Admin access required"}), 403
 
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     thirty_days_ago = datetime.utcnow() - timedelta(days=30)
     
-    # Use 'or 0' to prevent None values if tables are empty
-    total_users = User.query.count() or 0
-    total_certificates = Certificate.query.count() or 0
-    total_companies = Company.query.count() or 0
+    # 1. Revenue Metrics
     total_revenue = db.session.query(func.sum(Payment.amount)).filter(Payment.status == 'paid').scalar() or 0.0
-
-    new_users_30d = User.query.filter(User.created_at >= thirty_days_ago).count() or 0
-    new_certs_30d = Certificate.query.filter(Certificate.created_at >= thirty_days_ago).count() or 0
     revenue_30d = db.session.query(func.sum(Payment.amount)).filter(
-        Payment.status == 'paid',
-        Payment.created_at >= thirty_days_ago
+        Payment.status == 'paid', Payment.created_at >= thirty_days_ago
     ).scalar() or 0.0
+    revenue_today = db.session.query(func.sum(Payment.amount)).filter(
+        Payment.status == 'paid', Payment.created_at >= today_start
+    ).scalar() or 0.0
+    revenue_this_month = db.session.query(func.sum(Payment.amount)).filter(
+        Payment.status == 'paid', Payment.created_at >= month_start
+    ).scalar() or 0.0
+
+    # Revenue by Plan
+    revenue_by_plan_query = db.session.query(
+        Payment.plan, func.sum(Payment.amount)
+    ).filter(Payment.status == 'paid').group_by(Payment.plan).all()
+    revenue_by_plan = {r[0]: float(r[1]) for r in revenue_by_plan_query}
+
+    # 2. User & Cert Metrics
+    total_users = User.query.count() or 0
+    new_users_30d = User.query.filter(User.created_at >= thirty_days_ago).count() or 0
+    total_certificates = Certificate.query.count() or 0
+    new_certs_30d = Certificate.query.filter(Certificate.created_at >= thirty_days_ago).count() or 0
+    
+    # Avg Certs per User
+    avg_certs_user = round(total_certificates / total_users, 1) if total_users > 0 else 0
+
+    # 3. Engagement & Churn (The "Pulse")
+    total_companies = Company.query.count() or 0
+    
+    # Active Orgs: Issued a cert in last 30 days
+    active_companies_30d = db.session.query(func.count(func.distinct(Certificate.company_id))).filter(
+        Certificate.created_at >= thirty_days_ago,
+        Certificate.company_id.isnot(None)
+    ).scalar() or 0
+
+    # Churn Risk: Failed payments in last 30 days
+    failed_payments_count = Payment.query.filter(
+        Payment.status == 'failed', 
+        Payment.created_at >= thirty_days_ago
+    ).count() or 0
+
+    # Expired Subscriptions (Churn?): Paid role but expiry in past
+    expired_subs_count = User.query.filter(
+        User.role.in_(['starter', 'growth', 'pro', 'enterprise']),
+        User.subscription_expiry < datetime.utcnow()
+    ).count() or 0
 
     recent_users = User.query.order_by(User.created_at.desc()).limit(5).all()
     
@@ -53,8 +90,15 @@ def get_dashboard_stats():
             'new_certs_30d': new_certs_30d,
             'total_revenue': float(total_revenue),
             'revenue_30d': float(revenue_30d),
-            'total_companies': total_companies
+            'revenue_today': float(revenue_today),
+            'revenue_this_month': float(revenue_this_month),
+            'total_companies': total_companies,
+            'active_companies_30d': active_companies_30d,
+            'avg_certs_user': avg_certs_user,
+            'failed_payments_30d': failed_payments_count,
+            'expired_subs_count': expired_subs_count
         },
+        'revenue_by_plan': revenue_by_plan,
         'recent_users': [
             {'id': u.id, 'name': u.name, 'email': u.email, 'date': u.created_at.isoformat()}
             for u in recent_users

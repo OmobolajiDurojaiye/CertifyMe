@@ -1,44 +1,27 @@
-import React, { useEffect, useState } from "react";
-import { Navigate, Outlet } from "react-router-dom";
-import { getAdminProfile } from "../api";
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import { Spinner } from "react-bootstrap";
 
 function AdminProtectedRoute() {
-  const [isAdmin, setIsAdmin] = useState(null);
-  const [error, setError] = useState("");
+  const { admin, loading, error } = useAdminAuth();
+  const location = useLocation();
 
-  useEffect(() => {
-    const verifyAdminStatus = async () => {
-      try {
-        const response = await getAdminProfile();
-        if (response.data.is_admin) {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-          setError("Administration rights required");
-        }
-      } catch (err) {
-        console.error("Admin verification failed:", err);
-        setIsAdmin(false);
-        setError(
-          err.response?.data?.msg ||
-            "Failed to verify admin status. Please try logging in again."
-        );
-      }
-    };
-
-    verifyAdminStatus();
-  }, []);
-
-  if (isAdmin === null) {
-    return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <Spinner animation="border" variant="primary" />
+      </div>
+    );
   }
 
-  if (!isAdmin) {
+  if (!admin) {
     return (
-      <Navigate
-        to="/admin/login"
-        state={{ error: error || "Please log in as an admin" }}
-      />
+        <Navigate
+            to="/admin/login"
+            state={{ from: location, error: error || "Please log in to access the admin portal." }}
+            replace
+        />
     );
   }
 

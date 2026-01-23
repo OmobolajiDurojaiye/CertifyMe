@@ -26,6 +26,14 @@ class Admin(db.Model):
     verification_code = db.Column(db.String(6), nullable=True)
     verification_expiry = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # RBAC Fields
+    role = db.Column(db.Enum('super_admin', 'business_admin', 'support_admin', name='admin_roles'), default='super_admin', nullable=False)
+    permissions = db.Column(db.JSON, nullable=True) # { "can_manage_users": true, ... }
+
+    @property
+    def is_super_admin(self):
+        return self.role == 'super_admin'
 
     def set_verification_code(self):
         self.verification_code = str(random.randint(100000, 999999))

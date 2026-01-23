@@ -92,9 +92,24 @@ def admin_login():
 
     # CRITICAL: Check for user, correct password, AND that they are verified.
     if admin and admin.is_verified and checkpw(data['password'].encode('utf-8'), admin.password_hash.encode('utf-8')):
-        # Use admin ID as the string identity, add is_admin as an additional claim
-        access_token = create_access_token(identity=str(admin.id), additional_claims={"is_admin": True})
-        return jsonify(access_token=access_token), 200
+        # Inject Role and Permissions into JWT
+        additional_claims = {
+            "is_admin": True,
+            "role": admin.role,
+            "permissions": admin.permissions or {}
+        }
+        access_token = create_access_token(identity=str(admin.id), additional_claims=additional_claims)
+        
+        return jsonify({
+            "access_token": access_token,
+            "admin": {
+                "id": admin.id,
+                "name": admin.name,
+                "email": admin.email,
+                "role": admin.role,
+                "permissions": admin.permissions
+            }
+        }), 200
     
     if admin and not admin.is_verified:
         return jsonify({"msg": "Account not verified. Please check your email."}), 403

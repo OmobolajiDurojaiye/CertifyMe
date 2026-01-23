@@ -6,9 +6,16 @@ const API = axios.create({
 });
 
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
+  if (req.url.includes("/admin")) {
+    const adminToken = localStorage.getItem("adminToken");
+    if (adminToken) {
+      req.headers.Authorization = `Bearer ${adminToken}`;
+    }
+  } else {
+    const token = localStorage.getItem("token");
+    if (token) {
+      req.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return req;
 });
