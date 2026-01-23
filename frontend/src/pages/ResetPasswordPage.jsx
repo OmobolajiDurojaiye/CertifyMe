@@ -14,6 +14,7 @@ function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { token } = useParams();
   const navigate = useNavigate();
 
@@ -23,6 +24,10 @@ function ResetPasswordPage() {
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   const handleSubmit = async (e) => {
@@ -100,17 +105,26 @@ function ResetPasswordPage() {
               </button>
             </Form.Group>
 
-            <Form.Group className="mb-4" controlId="confirmPassword">
+            <Form.Group className="mb-4 position-relative" controlId="confirmPassword">
               <Form.Label>Confirm New Password</Form.Label>
               <Form.Control
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm your new password"
                 required
                 disabled={!!message}
+                className="password-input"
               />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={toggleConfirmPasswordVisibility}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                {showConfirmPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+              </button>
             </Form.Group>
 
             <Button

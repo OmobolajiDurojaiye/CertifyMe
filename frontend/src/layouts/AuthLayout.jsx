@@ -21,7 +21,7 @@ const AuthLayout = ({ children, title, subtitle, linkText, linkTo, linkLabel }) 
   );
 
   return (
-    <div className="min-h-screen flex bg-white font-sans selection:bg-indigo-100 selection:text-indigo-700">
+    <div className="h-screen flex bg-white font-sans selection:bg-indigo-100 selection:text-indigo-700 overflow-hidden">
       {/* Left Panel - Visual Branding (Desktop only) */}
       <div className="hidden lg:flex w-1/2 relative bg-indigo-600 overflow-hidden flex-col justify-between p-12 text-white">
         {/* Background Gradients & Shapes */}
@@ -67,16 +67,16 @@ const AuthLayout = ({ children, title, subtitle, linkText, linkTo, linkLabel }) 
       </div>
 
       {/* Right Panel - Form Content */}
-      <div className="w-full lg:w-1/2 flex flex-col relative overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex flex-col relative h-full overflow-y-auto">
          {/* Mobile Header */}
-        <div className="lg:hidden p-6 flex items-center justify-between">
+        <div className="lg:hidden p-6 flex items-center justify-between shrink-0">
            <Link to="/" className="flex items-center gap-2 text-indigo-600 no-underline">
                <img src="/logo.png" alt="ProofDeck" className="w-10 h-10 object-contain" />
               <span className="font-bold text-xl text-gray-900">{APP_NAME}</span>
            </Link>
         </div>
 
-        <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 xl:px-24">
+        <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 xl:px-24 min-h-min">
            <div className="w-full max-w-md mx-auto animate-in fade-in slide-in-from-bottom-8 duration-700">
                {/* Header Content */}
                <div className="mb-10">

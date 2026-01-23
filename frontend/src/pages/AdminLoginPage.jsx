@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Form, Button, Alert, Spinner } from "react-bootstrap";
 import { adminLogin } from "../api";
+import { Eye, EyeOff } from "lucide-react";
 import "../styles/Auth.css";
 
 function AdminLoginPage() {
   const [formData, setFormData] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -80,13 +82,21 @@ function AdminLoginPage() {
             <Form.Group className="mb-4 position-relative" controlId="password">
               <Form.Label>Password</Form.Label>
               <Form.Control
-                type="password"
+                type={showPassword ? "text" : "password"}
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
                 required
+                className="password-input"
               />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </Form.Group>
             <Button
               className="btn-auth w-100"

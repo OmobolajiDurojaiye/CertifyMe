@@ -1,13 +1,12 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { signupUser } from "../api";
-import { Mail, Lock, User, Briefcase, Loader2, AlertCircle, Check, Building2 } from "lucide-react";
+import { Mail, Lock, User, Briefcase, Loader2, AlertCircle, Check, Building2, Eye, EyeOff } from "lucide-react";
 import AuthLayout from "../layouts/AuthLayout";
 
 function SignupPage() {
   const [formData, setFormData] = useState({
     username: "",
-    email: "",
     email: "",
     password: "",
     referral_code: "", // Add referral code
@@ -16,6 +15,7 @@ function SignupPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -28,8 +28,6 @@ function SignupPage() {
       const payload = {
         name: formData.username,
         email: formData.email,
-        password: formData.password,
-        account_type: formData.role === 'enterprise' ? 'company' : 'individual',
         password: formData.password,
         account_type: formData.role === 'enterprise' ? 'company' : 'individual',
         company_name: formData.role === 'enterprise' ? formData.company_name : undefined,
@@ -51,7 +49,7 @@ function SignupPage() {
     return (
       <div
         onClick={() => setFormData({ ...formData, role: id })}
-        className={`relative p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+        className={`relative p-4 pr-9 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
           isSelected
             ? "border-indigo-600 bg-indigo-50 shadow-md"
             : "border-gray-200 hover:border-indigo-200 hover:bg-gray-50"
@@ -62,7 +60,7 @@ function SignupPage() {
              <Icon size={20} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
                 <h4 className={`text-sm font-bold ${isSelected ? 'text-indigo-900' : 'text-gray-900'}`}>{title}</h4>
                  {badge && <span className="text-[10px] uppercase font-bold bg-green-100 text-green-700 px-1.5 py-0.5 rounded">{badge}</span>}
             </div>
@@ -203,16 +201,23 @@ function SignupPage() {
               </div>
               <input
                 id="password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 value={formData.password}
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow sm:text-sm"
+                className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow sm:text-sm"
                 placeholder="••••••••"
                 minLength={6}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
              <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters.</p>
           </div>
