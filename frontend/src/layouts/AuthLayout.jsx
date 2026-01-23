@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ShieldCheck, ArrowRight } from "lucide-react";
 import { APP_NAME } from "../config";
+import MobileWarning from "../components/MobileWarning";
 
 const AuthLayout = ({ children, title, subtitle, linkText, linkTo, linkLabel }) => {
   const location = useLocation();
@@ -22,6 +23,7 @@ const AuthLayout = ({ children, title, subtitle, linkText, linkTo, linkLabel }) 
 
   return (
     <div className="h-screen flex bg-white font-sans selection:bg-indigo-100 selection:text-indigo-700 overflow-hidden">
+      <MobileWarning />
       {/* Left Panel - Visual Branding (Desktop only) */}
       <div className="hidden lg:flex w-1/2 relative bg-indigo-600 overflow-hidden flex-col justify-between p-12 text-white">
         {/* Background Gradients & Shapes */}

@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import BottomNav from "../components/BottomNav";
 import useWindowSize from "../hooks/useWindowSize";
 import { UserProvider } from "../context/UserContext";
+import MobileWarning from "../components/MobileWarning";
 
 function DashboardLayout() {
   const { width } = useWindowSize();
@@ -11,7 +12,8 @@ function DashboardLayout() {
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-[var(--background-white)] transition-colors duration-300 overflow-hidden">
-      {/* 
+      <MobileWarning />
+      {/*  
         DESKTOP SIDEBAR 
         flex-shrink-0 prevents it from being squashed.
         The width is defined inside the Sidebar component itself (w-64).
