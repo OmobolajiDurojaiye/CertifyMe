@@ -25,6 +25,11 @@ import {
   MoreHorizontal,
   FileText,
   CheckCircle,
+  CreditCard,
+  LayoutTemplate,
+  Upload,
+  AlertCircle,
+  Award
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -258,453 +263,378 @@ function MyCertificatesPage() {
     promise.finally(() => setDownloadingId(null));
   };
 
+  // --- Premium Stats Configuration ---
   const stats = [
     {
       title: "Certificates Issued",
       value: certificates.length,
-      icon: <FileText className="w-6 h-6" />,
-      color: "text-blue-600 bg-blue-50",
+      icon: <FileText className="w-5 h-5 text-blue-600" />,
+      bg: "bg-white",
+      text: "text-gray-900",
+      border: "border-blue-100",
+      iconBg: "bg-blue-50"
     },
     {
-      title: "Templates Created",
+      title: "Active Templates",
       value: templates.length,
-      icon: <Eye className="w-6 h-6" />,
-      color: "text-green-600 bg-green-50",
-    },
-    {
-      title: "Quota Remaining",
-      value: user ? user.cert_quota : "...",
-      icon: <HelpCircle className="w-6 h-6" />,
-      color: "text-purple-600 bg-purple-50",
+      icon: <LayoutTemplate className="w-5 h-5 text-emerald-600" />,
+      bg: "bg-white",
+      text: "text-gray-900",
+      border: "border-emerald-100",
+      iconBg: "bg-emerald-50"
     },
   ];
 
   return (
     <ErrorBoundary>
-      <div className="max-w-7xl mx-auto pb-12">
+      <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6 lg:px-8">
         <Toaster position="top-right" />
 
-        {/* Header Section */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        {/* --- 1. Header Section --- */}
+        <div className="py-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900">
-              Welcome back, {user?.name?.split(" ")[0]}!
-            </h2>
-            <p className="text-gray-500 mt-1">
-              Manage your certificates and templates from here.
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Dashboard
+            </h1>
+            <p className="text-gray-500 mt-2 text-lg">
+              Welcome back, <span className="font-semibold text-gray-900">{user?.name?.split(" ")[0]}</span>. Here's your activity overview.
             </p>
           </div>
           <div className="flex gap-3">
-            <Link
-              to="/dashboard/create"
-              className="inline-flex items-center justify-center bg-indigo-600 text-white rounded-lg py-2.5 px-5 hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+             <Link
+              to="/dashboard/bulk-create"
+              className="inline-flex items-center justify-center bg-white border border-gray-200 text-gray-700 rounded-lg py-2.5 px-5 hover:bg-gray-50 hover:border-gray-300 transition-all font-semibold shadow-sm text-sm"
             >
-              <PlusCircle className="w-5 h-5 mr-2" />
-              Create New
+              <Upload className="w-4 h-4 mr-2" />
+              Bulk Import
             </Link>
             <Link
-              to="/dashboard/bulk-create"
-              className="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-700 rounded-lg py-2.5 px-5 hover:bg-gray-50 transition-colors font-medium shadow-sm"
+              to="/dashboard/create"
+              className="inline-flex items-center justify-center bg-gray-900 text-white rounded-lg py-2.5 px-5 hover:bg-black transition-all font-semibold shadow-lg shadow-gray-200 text-sm"
             >
-              <PlusCircle className="w-5 h-5 mr-2" />
-              Bulk Create
+              <PlusCircle className="w-4 h-4 mr-2" />
+              Create Certificate
             </Link>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-md mb-6 shadow-sm">
+          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-8 shadow-sm flex items-center gap-3">
+            <AlertCircle className="w-5 h-5" />
             {error}
           </div>
         )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* --- 2. Stats Grid --- */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          
+          {/* Badge Card */}
+          <div className="relative overflow-hidden rounded-lg p-4 shadow-lg bg-[#1e293b] text-white flex flex-col justify-between group border border-gray-700">
+             {/* Decorative 'Guilloche' Pattern element */}
+             <div className="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full border-[20px] border-white/5 blur-sm pointer-events-none"></div>
+             
+             <div className="relative z-10 flex justify-between items-start">
+                <div>
+                   <div className="flex items-center gap-2 mb-1">
+                      <div className="p-1 bg-indigo-500/20 rounded border border-indigo-400/30">
+                        <Award className="w-3.5 h-3.5 text-indigo-300" />
+                      </div>
+                      <span className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest">Authorized Issuer</span>
+                   </div>
+                   <h3 className="text-3xl font-serif font-medium text-white tracking-tight mt-1">
+                    {user?.cert_quota?.toLocaleString() || 0}
+                  </h3>
+                   <p className="text-xs text-gray-400">Available Credits</p>
+                </div>
+             </div>
+
+             <div className="relative z-10 flex justify-between items-end mt-2 pt-3 border-t border-white/10">
+               <div>
+                  <p className="font-serif text-sm tracking-wide text-white">{user?.name || "Authorized Member"}</p>
+               </div>
+               
+               <Link to="/dashboard/settings" className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold py-1.5 px-3 rounded-md transition-all shadow-sm flex items-center gap-1.5 decoration-0">
+                  <PlusCircle size={12}/> Top Up
+               </Link>
+             </div>
+          </div>
+
+          {/* Other Stats */}
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center gap-4 hover:shadow-md transition-shadow"
+              className={`relative overflow-hidden rounded-lg p-6 shadow-sm transition-all duration-200 hover:shadow-md group ${
+                stat.bg === 'bg-white' ? 'bg-gradient-to-br from-white to-slate-50 border border-gray-200' : stat.bg + ' ' + stat.text
+              }`}
             >
-              <div className={`p-3 rounded-lg ${stat.color}`}>{stat.icon}</div>
-              <div>
-                <p className="text-gray-500 text-sm font-medium">
-                  {stat.title}
-                </p>
-                <h3 className="text-2xl font-bold text-gray-900 mt-0.5">
-                  {stat.value}
-                </h3>
+              <div className="flex items-start justify-between relative z-10">
+                <div>
+                   <p className={`text-sm font-medium mb-1 ${stat.bg === 'bg-white' ? 'text-gray-500' : 'text-indigo-100'}`}>
+                    {stat.title}
+                  </p>
+                  <h3 className={`text-3xl font-bold tracking-tight ${stat.bg === 'bg-white' ? 'text-gray-900' : 'text-white'}`}>
+                    {stat.value}
+                  </h3>
+                  {stat.subtext && (
+                       <p className="text-indigo-100 text-xs mt-2 opacity-80">{stat.subtext}</p>
+                  )}
+                </div>
+                <div className={`p-3 rounded-lg ${stat.iconBg || 'bg-white/20'}`}>
+                    {stat.icon}
+                </div>
               </div>
+
+              {/* Decorative Background Icon */}
+              {stat.bg === 'bg-white' && (
+                  <>
+                    <div className="absolute -bottom-6 -right-6 text-indigo-900/5 transform rotate-12 group-hover:scale-110 group-hover:-rotate-12 transition-all duration-500">
+                        {React.cloneElement(stat.icon, { className: "w-32 h-32" })}
+                    </div>
+                  </>
+              )}
             </div>
           ))}
         </div>
 
-        {/* Main Content Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        {/* --- 3. Main Content Card --- */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden min-h-[500px] flex flex-col">
+          
           {/* Toolbar */}
-          <div className="p-5 border-b border-gray-200 flex flex-col lg:flex-row gap-4 justify-between items-center bg-gray-50/50">
-            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-              {/* Search */}
-              <div className="relative w-full sm:w-64">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search certificates..."
-                  className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1); // Reset to page 1 on search
-                  }}
-                />
-              </div>
+          <div className="p-5 border-b border-gray-100">
+             <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
+                 
+                 {/* Left: Tabs */}
+                 <div className="flex p-1 bg-gray-100/80 rounded-xl self-start w-full lg:w-auto">
+                    {["all", "sent", "not_sent"].map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => {
+                          setFilterStatus(status);
+                          setCurrentPage(1);
+                        }}
+                        className={`flex-1 lg:flex-none px-6 py-2 text-sm font-semibold rounded-lg transition-all ${
+                          filterStatus === status
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-500 hover:text-gray-700"
+                        }`}
+                      >
+                         {status === "all" ? "All Certificates" : status === "sent" ? "Issued" : "Drafts"}
+                      </button>
+                    ))}
+                 </div>
 
-              {/* Filter Tabs */}
-              <div className="flex bg-gray-200 p-1 rounded-lg self-start sm:self-auto">
-                {["all", "sent", "not_sent"].map((status) => (
-                  <button
-                    key={status}
-                    onClick={() => {
-                      setFilterStatus(status);
-                      setCurrentPage(1);
-                    }}
-                    className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-                      filterStatus === status
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-gray-600 hover:text-gray-900"
-                    }`}
-                  >
-                    {status === "all"
-                      ? "All"
-                      : status === "sent"
-                      ? "Emailed"
-                      : "Pending"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Bulk Actions */}
-            {selectedCertIds.size > 0 && (
-              <div className="flex items-center gap-3 w-full lg:w-auto justify-end animate-in fade-in slide-in-from-top-2 duration-200">
-                <span className="text-sm font-medium text-gray-600">
-                  {selectedCertIds.size} selected
-                </span>
-                <button
-                  onClick={handleBulkSend}
-                  disabled={isBulkSending}
-                  className="inline-flex items-center bg-blue-600 text-white text-sm font-medium rounded-lg py-2 px-4 hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
-                >
-                  {isBulkSending ? (
-                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                  ) : (
-                    <Send className="w-4 h-4 mr-2" />
-                  )}
-                  Send Email
-                </button>
-              </div>
-            )}
+                 {/* Right: Search & Bulk */}
+                 <div className="flex items-center gap-3 w-full lg:w-auto">
+                    <div className="relative flex-1 lg:w-72">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="Search recipient or course..."
+                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500 transition-all text-sm outline-none"
+                            value={searchTerm}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        />
+                    </div>
+                    {selectedCertIds.size > 0 && (
+                        <button
+                            onClick={handleBulkSend}
+                            disabled={isBulkSending}
+                            className="whitespace-nowrap inline-flex items-center bg-indigo-600 text-white text-sm font-semibold rounded-xl py-2 px-4 hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-70"
+                        >
+                            {isBulkSending ? <div className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full mr-2"/> : <Send className="w-4 h-4 mr-2" />}
+                            Send ({selectedCertIds.size})
+                        </button>
+                    )}
+                 </div>
+             </div>
           </div>
 
-          {/* Table */}
-          {loading ? (
-            <div className="text-center py-20">
-              <div className="animate-spin h-8 w-8 mx-auto text-indigo-600 border-4 border-indigo-200 border-t-indigo-600 rounded-full"></div>
-              <p className="mt-3 text-gray-500">Loading your certificates...</p>
-            </div>
-          ) : filteredCertificates.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <div className="bg-gray-100 rounded-full h-16 w-16 flex items-center justify-center mx-auto mb-4">
-                <Search className="h-8 w-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900">
-                No certificates found
-              </h3>
-              <p className="text-gray-500 mt-1 max-w-sm mx-auto">
-                {searchTerm || filterStatus !== "all"
-                  ? "Try adjusting your search or filters to find what you're looking for."
-                  : "Get started by creating your first certificate."}
-              </p>
-              {!searchTerm && filterStatus === "all" && (
-                <Link
-                  to="/dashboard/create"
-                  className="mt-4 inline-flex items-center text-indigo-600 font-medium hover:text-indigo-800"
-                >
-                  Create Certificate <ChevronRight className="w-4 h-4 ml-1" />
-                </Link>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          onChange={handleSelectAll}
-                          checked={
-                            paginatedCertificates.length > 0 &&
-                            paginatedCertificates.every((c) =>
-                              selectedCertIds.has(c.id)
-                            )
-                          }
-                          className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                        />
-                      </div>
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >
-                      Recipient
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >
-                      Course / Event
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >
-                      Date Issued
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >
-                      Status
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedCertificates.map((cert) => {
-                    const isSelected = selectedCertIds.has(cert.id);
-                    return (
-                      <tr
-                        key={cert.id}
-                        className={`hover:bg-gray-50 transition-colors ${
-                          isSelected ? "bg-indigo-50/30" : ""
-                        }`}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleSelectOne(cert.id)}
-                            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="font-medium text-gray-900">
-                            {cert.recipient_name}
-                          </div>
-                          {cert.recipient_email && (
-                            <div className="text-xs text-gray-500 mt-0.5">
-                              {cert.recipient_email}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {cert.course_title}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(cert.issue_date).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          {cert.sent_at ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Emailed
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                              Pending
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end space-x-2">
-                            <button
-                              onClick={() => handleSendEmail(cert.id)}
-                              disabled={!!cert.sent_at || sendingId === cert.id}
-                              className={`p-1.5 rounded-md transition-colors ${
-                                cert.sent_at
-                                  ? "text-gray-300 cursor-not-allowed"
-                                  : "text-gray-500 hover:text-blue-600 hover:bg-blue-50"
-                              }`}
-                              title="Send Email"
-                            >
-                              {sendingId === cert.id ? (
-                                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                              ) : (
-                                <Mail className="w-4 h-4" />
-                              )}
-                            </button>
+          {/* Table Content */}
+          <div className="flex-1 relative">
+            {loading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/50 z-10">
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="animate-spin h-8 w-8 text-indigo-600 border-2 border-indigo-100 border-t-indigo-600 rounded-full"></div>
+                        <p className="text-sm font-medium text-gray-500">Loading records...</p>
+                    </div>
+                </div>
+            ) : null}
 
-                            <button
-                              onClick={() => handleDownload(cert)}
-                              disabled={downloadingId === cert.id}
-                              className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-                              title="Download PDF"
-                            >
-                              {downloadingId === cert.id ? (
-                                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full" />
-                              ) : (
-                                <Download className="w-4 h-4" />
-                              )}
-                            </button>
+            {filteredCertificates.length === 0 && !loading ? (
+                <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+                    <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                        <Search className="w-10 h-10 text-gray-300" />
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">No certificates found</h3>
+                    <p className="text-gray-500 max-w-sm mx-auto mb-6">
+                        {searchTerm ? "No results match your search criteria. Try a different keyword." : "Get started by creating your first certificate."}
+                    </p>
+                    {(!searchTerm && filterStatus === "all") && (
+                        <Link to="/dashboard/create" className="text-indigo-600 font-semibold hover:text-indigo-800 text-sm">
+                            Create new certificate &rarr;
+                        </Link>
+                    )}
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-100">
+                        <thead className="bg-gray-50/50">
+                            <tr>
+                                <th scope="col" className="px-6 py-4 text-left w-10">
+                                    <input
+                                        type="checkbox"
+                                        onChange={handleSelectAll}
+                                        checked={paginatedCertificates.length > 0 && paginatedCertificates.every((c) => selectedCertIds.has(c.id))}
+                                        className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                    />
+                                </th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Recipient</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Course Detail</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Issued</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-50">
+                            {paginatedCertificates.map((cert) => {
+                                const isSelected = selectedCertIds.has(cert.id);
+                                return (
+                                    <tr key={cert.id} className={`group hover:bg-gray-50/80 transition-colors ${isSelected ? "bg-indigo-50/40" : ""}`}>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => handleSelectOne(cert.id)}
+                                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            />
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs uppercase border border-gray-200">
+                                                     {cert.recipient_name.charAt(0)}
+                                                 </div>
+                                                 <div>
+                                                     <p className="text-sm font-semibold text-gray-900">{cert.recipient_name}</p>
+                                                     <p className="text-xs text-gray-500">{cert.recipient_email}</p>
+                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                                            {cert.course_title}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                            {new Date(cert.issue_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric'})}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${cert.sent_at ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-50 text-gray-600 border-gray-200"}`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${cert.sent_at ? "bg-emerald-500" : "bg-gray-400"}`} />
+                                                {cert.sent_at ? "Emailed" : "Draft"}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                            <div className="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                                 {/* Action Buttons */}
+                                                 <button
+                                                    onClick={() => handleSendEmail(cert.id)}
+                                                    disabled={!!cert.sent_at}
+                                                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                    title="Send Email"
+                                                 >
+                                                    {sendingId === cert.id ? <div className="animate-spin h-4 w-4 border-2 border-indigo-600 border-t-transparent rounded-full" /> : <Mail className="w-4 h-4" />}
+                                                 </button>
+                                                 <button
+                                                    onClick={() => handleDownload(cert)}
+                                                    className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                                                    title="Download"
+                                                 >
+                                                    {downloadingId === cert.id ? <div className="animate-spin h-4 w-4 border-2 border-gray-600 border-t-transparent rounded-full" /> : <Download className="w-4 h-4" />}
+                                                 </button>
+                                                 <Link
+                                                    to={`/dashboard/view/${cert.id}`}
+                                                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                                    title="View Details"
+                                                 >
+                                                    <Eye className="w-4 h-4" />
+                                                 </Link>
+                                                 <Link
+                                                    to={`/dashboard/edit/${cert.id}`}
+                                                    className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+                                                    title="Edit"
+                                                 >
+                                                    <Pencil className="w-4 h-4" />
+                                                 </Link>
+                                                 <button
+                                                     onClick={() => { setSelectedCert(cert); setShowDeleteModal(true); }}
+                                                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                                     title="Delete"
+                                                 >
+                                                     <Trash className="w-4 h-4" />
+                                                 </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
-                            <div className="h-4 w-px bg-gray-200 mx-1"></div>
-
-                            <button
-                              onClick={() =>
-                                navigate(`/dashboard/view/${cert.id}`)
-                              }
-                              className="p-1.5 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
-                              title="View Details"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-
-                            <button
-                              onClick={() =>
-                                navigate(`/dashboard/edit/${cert.id}`)
-                              }
-                              className="p-1.5 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-md transition-colors"
-                              title="Edit"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setSelectedCert(cert);
-                                setShowDeleteModal(true);
-                              }}
-                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                              title="Delete"
-                            >
-                              <Trash className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {/* Pagination */}
-          {!loading && filteredCertificates.length > itemsPerPage && (
-            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between bg-gray-50/50">
-              <p className="text-sm text-gray-700">
-                Showing{" "}
-                <span className="font-medium">
-                  {(currentPage - 1) * itemsPerPage + 1}
-                </span>{" "}
-                to{" "}
-                <span className="font-medium">
-                  {Math.min(
-                    currentPage * itemsPerPage,
-                    filteredCertificates.length
-                  )}
-                </span>{" "}
-                of{" "}
-                <span className="font-medium">
-                  {filteredCertificates.length}
-                </span>{" "}
-                results
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  className="p-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1)
-                  .filter((page) => {
-                    // Logic to show limited page numbers (start, end, current +/- 1)
-                    return (
-                      page === 1 ||
-                      page === totalPages ||
-                      Math.abs(page - currentPage) <= 1
-                    );
-                  })
-                  .map((page, index, array) => (
-                    <React.Fragment key={page}>
-                      {index > 0 && array[index - 1] !== page - 1 && (
-                        <span className="px-2 text-gray-500">...</span>
-                      )}
-                      <button
-                        onClick={() => handlePageChange(page)}
-                        className={`px-3 py-1 text-sm font-medium rounded-md ${
-                          currentPage === page
-                            ? "bg-indigo-600 text-white"
-                            : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    </React.Fragment>
-                  ))}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages}
-                  className="p-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
+            {/* Pagination Footer */}
+            {!loading && filteredCertificates.length > itemsPerPage && (
+                <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
+                     <p className="text-xs text-gray-500 font-medium">
+                        Page {currentPage} of {totalPages}
+                     </p>
+                     <div className="flex gap-2">
+                        <button
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                     </div>
+                </div>
+            )}
+           </div>
         </div>
 
         {/* Delete Modal */}
         {showDeleteModal && (
-          <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full">
-              <div className="flex items-center gap-3 text-red-600 mb-4">
-                <div className="p-3 bg-red-100 rounded-full">
+          <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full border border-gray-100">
+              <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
                   <Trash className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  Delete Certificate?
-                </h3>
+                <h3 className="text-xl font-bold text-gray-900">Delete Certificate?</h3>
+                <p className="text-gray-500 text-sm mt-2">
+                    Are you sure? This will permanently remove the certificate for <strong>{selectedCert?.recipient_name}</strong>.
+                </p>
               </div>
-
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete the certificate for{" "}
-                <strong>{selectedCert?.recipient_name}</strong>? This action
-                cannot be undone.
-              </p>
-
-              <div className="flex justify-end gap-3">
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition-colors"
+                  className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-semibold transition-colors text-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors shadow-sm"
+                  className="flex-1 px-4 py-2.5 text-white bg-red-600 hover:bg-red-700 rounded-xl font-semibold transition-colors shadow-sm text-sm"
                 >
-                  Delete Certificate
+                  Delete
                 </button>
               </div>
             </div>
