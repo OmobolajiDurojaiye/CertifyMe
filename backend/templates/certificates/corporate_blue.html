@@ -214,7 +214,7 @@
     </style>
 </head>
 <body>
-    <div class="container" style="--background-color: {{ background_style_map.get('background-color', 'white') }}; --border: {{ background_style_map.get('border', 'none') }};">
+    <div class="container" style="--background-color: {{ background_style_map.get('background-color', 'white') }}; --border: {{ background_style_map.get('border', 'none') }};{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}'); background-size: cover; background-position: center; background-attachment: fixed;{% endif %}">
         <div class="clip-top" style="--background-color: {{ primary_color }}"></div>
         <div class="clip-bottom" style="--background-color: {{ secondary_color }}"></div>
         

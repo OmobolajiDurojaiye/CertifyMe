@@ -220,7 +220,7 @@
     </style>
 </head>
 <body style="--primary-color: {{ primary_color }};">
-    <div class="page-container">
+    <div class="page-container" style="{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}'); background-size: cover; background-position: center; background-attachment: fixed;{% endif %} background-color: var(--background-color, white);">
         <div class="receipt-container">
             <div class="header">
                 <div>

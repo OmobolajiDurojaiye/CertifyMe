@@ -219,7 +219,7 @@
     </style>
 </head>
 <body>
-    <div class="container" style="--background-image: {{ background_style_map.get('background-image', 'none') }}; --background-color: {{ background_style_map.get('background-color', 'white') }};  --border: {{ background_style_map.get('border', 'none') }};">
+    <div class="container" style="{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}'); background-size: cover; background-position: center; background-attachment: fixed;{% else %} background-image: {{ background_style_map.get('background-image', 'none') }};{% endif %} --background-color: {{ background_style_map.get('background-color', 'white') }};  --border: {{ background_style_map.get('border', 'none') }};">
         <div class="border-outer"></div>
         <div class="border-inner"></div>
         

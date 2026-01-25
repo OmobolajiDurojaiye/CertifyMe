@@ -30,14 +30,22 @@ def get_image_as_base64(image_path):
              return None
 
     # Fallback to local file system
-    # Assuming relative path from app root or absolute path
-    # If using absolute UPLOAD_FOLDER path
-    if not os.path.isabs(image_path):
-        image_path = os.path.join(current_app.config.get('UPLOAD_FOLDER', ''), image_path)
+    # Strip leading /uploads/ if present
+    if image_path.startswith('/uploads/'):
+        filename = image_path[9:]  # Remove '/uploads/' prefix
+    else:
+        filename = os.path.basename(image_path)  # Get just the filename
+    
+    # Build full path to upload folder
+    upload_folder = current_app.config.get('UPLOAD_FOLDER', '')
+    full_path = os.path.join(upload_folder, filename)
 
-    if os.path.exists(image_path):
-        with open(image_path, "rb") as img_file:
+    if os.path.exists(full_path):
+        with open(full_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode('utf-8')
+    
+    # Log warning if file doesn't exist
+    current_app.logger.warning(f"Image file not found: {full_path} (from path: {image_path})")
     return None
 
 def react_style_to_css(style_dict):
@@ -50,19 +58,6 @@ def react_style_to_css(style_dict):
         kebab_key = "".join(['-' + c.lower() if c.isupper() else c for c in k])
         css_parts.append(f"{kebab_key}: {v}")
     return "; ".join(css_parts)
-    try:
-        # Handle both relative (upload) and absolute paths
-        if image_path.startswith('/uploads/'):
-             full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(image_path))
-        else:
-             full_path = os.path.join(current_app.config['UPLOAD_FOLDER'], os.path.basename(image_path))
-
-        if os.path.exists(full_path):
-            with open(full_path, "rb") as image_file:
-                return base64.b64encode(image_file.read()).decode('utf-8')
-    except Exception as e:
-        current_app.logger.error(f"Error encoding image {image_path}: {e}")
-    return None
 
 def generate_certificate_pdf(certificate, template, issuer):
     """
@@ -205,7 +200,14 @@ def _generate_html_pdf(certificate, template, issuer):
         "primary_color_alpha": f"{template.primary_color}22",
         "secondary_color": template.secondary_color,
         "body_font_color": template.body_font_color,
-        "font_family": template.font_family,
+        "font_family": {
+            "Georgia": "'Merriweather', serif",
+            "Times New Roman": "'Playfair Display', serif",
+            "Arial": "'Open Sans', sans-serif",
+            "Verdana": "'Lato', sans-serif",
+            "Lato": "'Lato', sans-serif",
+            "Roboto": "'Roboto', sans-serif"
+        }.get(template.font_family, template.font_family),
         "qr_base64": qr_base64,
         "custom_text": template.custom_text or {},
         "signature_image_base64": signature_image_base64,

@@ -104,11 +104,15 @@ const Modern = ({ data, isFullscreen }) => {
               style={{ borderColor: primary_color }}
             >
               <div className="text-xs" style={textStyle}>
-                <p className="font-bold">{signature || issuer_name}</p>
+                {data.signature_image ? (
+                    <img src={data.signature_image} alt="Signature" className="h-10 object-contain mb-1" />
+                ) : (
+                    <p className="font-bold">{signature || issuer_name}</p>
+                )}
                 <p className="text-gray-500">Authorized Signature</p>
               </div>
               <div className="text-xs text-right" style={textStyle}>
-                <p className="font-bold">{verification_id ? verification_id.substring(0,8) : 'PENDING'}</p>
+                <p className="font-bold">{verification_id || 'PENDING'}</p>
                 <p className="text-gray-500">Verification ID</p>
               </div>
             </div>

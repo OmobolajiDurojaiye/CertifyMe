@@ -182,7 +182,7 @@
     </style>
 </head>
 <body>
-    <div class="container" style="--primary-color: {{ primary_color }}; --body-font-color: {{ body_font_color }}; --background-color: {{ background_style_map.get('background-color', 'white') }};">
+    <div class="container" style="--primary-color: {{ primary_color }}; --body-font-color: {{ body_font_color }}; --background-color: {{ background_style_map.get('background-color', 'white') }};{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}'); background-size: cover; background-position: center; background-attachment: fixed;{% endif %}">
         <div class="sidebar">
             <div class="rotated-text-container">
                 <div class="rotated-text">{{ custom_text.get('verification_label', 'CERTIFICATE ID') }}: {{ verification_id if verification_id else '000000' }}</div>

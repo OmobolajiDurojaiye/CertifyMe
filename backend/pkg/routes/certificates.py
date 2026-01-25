@@ -3,7 +3,9 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 from sqlalchemy import func, case
 import csv
-from io import StringIO
+from io import StringIO, BytesIO
+import threading
+import uuid
 import uuid
 import pandas as pd
 from flask_mail import Message
@@ -319,25 +321,23 @@ def bulk_create_certificates():
     if not template or (not template.is_public and template.user_id != user_id):
         return jsonify({"msg": "Template not found or permission denied"}), 404
 
-    # Call the Bulk Service to handle parsing and processing
-    result = process_bulk_upload(file, template, group_id, user_id)
-    
-    # If successful, trigger notification
-    if result.get('created', 0) > 0:
-        # Fetch the newly created certs to send summary
-        # (For simplicity/performance, we might skip fetching details here or fetch latest N)
-        # Re-using a simple summary mechanism here based on created count
+    # Call the Bulk Service to handle parsing and processing in a BACKGROUND THREAD
+    # We read the file stream into memory first to avoid file handle closure issues
+    try:
+        file_content = file.read()
+        filename = file.filename
         
-        # Note: Ideally process_bulk_upload could return the list of created IDs
-        # For now, we send a generic success email to the issuer
-        summary_html = f"""
-        <h3>Bulk Processing Complete</h3>
-        <p>{result['created']} documents have been successfully generated.</p>
-        <p>Check your dashboard to view details.</p>
-        """
-        _send_issuer_notification_email(user, "Bulk Processing Complete", summary_html)
-
-    return jsonify(result), result['status']
+        # We need to pass the app object for the thread to create an app_context
+        app = current_app._get_current_object()
+        
+        thread = threading.Thread(target=process_bulk_upload, args=(app, file_content, filename, template.id, group_id, user.id))
+        thread.start()
+        
+        return jsonify({"msg": "Processing started. You will be notified via email upon completion."}), 202
+        
+    except Exception as e:
+        current_app.logger.error(f"Failed to start background process: {e}")
+        return jsonify({"msg": "Failed to start processing"}), 500
 
 
 @certificate_bp.route('/bulk-template', methods=['GET'])

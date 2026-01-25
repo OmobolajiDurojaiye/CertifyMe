@@ -218,7 +218,7 @@
     </style>
 </head>
 <body>
-    <div class="container" style="--background-color: {{ background_style_map.get('background-color', 'transparent') }}; --background-image: {{ background_style_map.get('background-image', 'none') }}; --border: {{ background_style_map.get('border', 'none') }};">
+    <div class="container" style="--background-color: {{ background_style_map.get('background-color', 'transparent') }};{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}'); background-size: cover; background-position: center; background-attachment: fixed;{% else %} background-image: {{ background_style_map.get('background-image', 'none') }};{% endif %} --border: {{ background_style_map.get('border', 'none') }};">
         <div class="blur-overlay">
             <div class="blur-1"></div>
             <div class="blur-2"></div>

@@ -187,7 +187,7 @@
     </style>
 </head>
 <body>
-    <div class="container" style="--primary-color: {{ primary_color }}; --secondary-color: {{ secondary_color }}; --background-color: {{ background_style_map.get('background-color', 'white') }};">
+    <div class="container" style="--primary-color: {{ primary_color }}; --secondary-color: {{ secondary_color }}; --background-color: {{ background_style_map.get('background-color', 'white') }};{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}'); background-size: cover; background-position: center; background-attachment: fixed;{% endif %}">
         <div class="gradient-overlay" style="--primary-color-alpha: {{ primary_color_alpha }}; --background: linear-gradient(225deg, {{ primary_color_alpha }} 0%, transparent 100%);"></div>
         
         <div class="header">
