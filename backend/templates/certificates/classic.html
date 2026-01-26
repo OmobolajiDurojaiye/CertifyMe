@@ -16,6 +16,8 @@
         }
 
         body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
             margin: 0;
             padding: 0;
             width: 297mm;
@@ -152,11 +154,10 @@
 
         .qr-section {
             margin-top: 1rem; /* mt-4 */
-        }
-    </style>
+        }</style>
 </head>
 <body>
-    <div class="container" style="--primary-color: {{ primary_color }}; --secondary-color: {{ secondary_color }}; --body-font-color: {{ body_font_color }}; --font-family: {{ font_family }}, sans-serif; --background-color: {{ background_style_map.get('background-color', 'white') }};{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}'); background-size: cover; background-position: center; background-attachment: fixed;{% endif %}">
+    <div class="container" style="--primary-color: {{ primary_color }}; --secondary-color: {{ secondary_color }}; --body-font-color: {{ body_font_color }}; --font-family: {{ font_family }}, sans-serif; --background-color: {{ background_style_map.get('background-color', 'white') }}; {% if background_base64 %} background-image: url('data:image/png; base64,{{ background_base64 }}'); background-size: cover; background-position: center; {% endif %}">
         <div class="top-bar"></div>
         
         <div class="content">
@@ -198,3 +199,5 @@
     </div>
 </body>
 </html>
+
+

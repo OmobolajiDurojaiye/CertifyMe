@@ -15,6 +15,8 @@
         }
 
         body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
             margin: 0;
             padding: 0;
             width: 297mm;
@@ -186,12 +188,10 @@
             font-size: 1.125rem;
             color: #334155;
             margin: 0;
-        }
-
-    </style>
+        }</style>
 </head>
 <body>
-    <div class="container" style="--primary-color: {{ primary_color }}; --background-color: {{ background_style_map.get('background-color', '#f8fafc') }};{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}'); background-size: cover; background-position: center; background-attachment: fixed;{% endif %}">
+    <div class="container" style="--primary-color: {{ primary_color }}; --background-color: {{ background_style_map.get('background-color', '#f8fafc') }}; {% if background_base64 %} background-image: url('data:image/png; base64,{{ background_base64 }}'); background-size: cover; background-position: center; {% endif %}">
         <div class="sidebar-card">
             <div class="top-gradient"></div>
             <div class="icon-circle">
@@ -245,3 +245,5 @@
     </div>
 </body>
 </html>
+
+

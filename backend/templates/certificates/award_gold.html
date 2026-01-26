@@ -15,6 +15,8 @@
         }
 
         body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
             margin: 0;
             padding: 0;
             width: 297mm;
@@ -42,7 +44,7 @@
             background-color: var(--background-color, white);
             background-size: cover;
             background-position: center;
-            background-attachment: fixed;
+            
             /* background-image: radial-gradient(circle, #fffff0 0%, #ffffff 100%);  -- User might overwrite this via style map */
             
             /* background_style moved inline */
@@ -187,11 +189,10 @@
             font-size: 1.25rem;
             margin: 0;
             margin-top: 0.25rem;
-        }
-    </style>
+        }</style>
 </head>
 <body>
-    <div class="container" style="--primary-color: {{ primary_color }}; --background-color: {{ background_style_map.get('background-color', 'transparent') }};{% if background_base64 %} background-image: url('data:image/png;base64,{{ background_base64 }}');{% else %} background-image: {{ background_style_map.get('background-image', 'radial-gradient(circle, #fffff0 0%, #ffffff 100%)') }};{% endif %} background-size: cover; background-position: center; background-attachment: fixed; --border: {{ background_style_map.get('border', 'none') }};">
+    <div class="container" style="--primary-color: {{ primary_color }}; --background-color: {{ background_style_map.get('background-color', 'transparent') }}; {% if background_base64 %} background-image: url('data:image/png; base64,{{ background_base64 }}'); {% else %} background-image: {{ background_style_map.get('background-image', 'radial-gradient(circle, #fffff0 0%, #ffffff 100%)') }}; {% endif %} background-size: cover; background-position: center; --border: {{ background_style_map.get('border', 'none') }};">
         <div class="inner-border-1"></div>
         <div class="inner-border-2"></div>
 
@@ -236,3 +237,5 @@
     </div>
 </body>
 </html>
+
+

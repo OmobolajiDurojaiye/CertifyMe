@@ -56,7 +56,7 @@ const Modern = ({ data, isFullscreen }) => {
             <h1
               className="font-light uppercase tracking-widest mb-4"
               style={{
-                fontSize: isFullscreen ? "1.5rem" : "1rem",
+                fontSize: isFullscreen ? "3rem" : "1.8rem", // Increased from 1.5/1
                 color: primary_color,
               }}
             >
@@ -65,19 +65,22 @@ const Modern = ({ data, isFullscreen }) => {
             <h2
               className="font-extrabold mb-3"
               style={{
-                fontSize: isFullscreen ? "2.5rem" : "1.6rem",
+                fontSize: isFullscreen ? "5rem" : "3rem", // Increased from 2.5/1.6
                 ...textStyle,
               }}
             >
               {recipient_name}
             </h2>
-            <p className="italic mb-4 text-sm" style={{ color: body_font_color }}>
+            <p className="italic mb-4" style={{ 
+                color: body_font_color, 
+                fontSize: isFullscreen ? "1.5rem" : "1rem" // Increased base size
+            }}>
               {certificateBody}
             </p>
             <p
               className="font-bold uppercase tracking-wide mb-6"
               style={{
-                fontSize: isFullscreen ? "1.2rem" : "0.9rem",
+                fontSize: isFullscreen ? "2rem" : "1.2rem",
                 color: secondary_color,
               }}
             >
