@@ -51,6 +51,7 @@ import AdminMessagingPage from "./pages/AdminMessagingPage";
 import AdminTeamPage from "./pages/AdminTeamPage";
 
 import DocsPage from "./pages/DocsPage";
+import KasiLandingPage from "./pages/KasiLandingPage";
 
 const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 
@@ -61,6 +62,7 @@ function App() {
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/kasi" element={<KasiLandingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/legal" element={<LegalPage />} />
           <Route path="/contact" element={<ContactPage />} />
