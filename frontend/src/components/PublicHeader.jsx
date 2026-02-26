@@ -43,7 +43,7 @@ const PublicHeader = () => {
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
-              {/* <Link
+              <Link
                 to="/kasi"
                 className="relative text-[15px] font-medium text-gray-600 hover:text-[#0F8C55] transition-colors no-underline group/kasi"
               >
@@ -51,7 +51,7 @@ const PublicHeader = () => {
                 <span className="absolute -top-3 -right-6 px-1.5 py-0.5 rounded-full bg-[#0BBF6A] text-[8px] font-black text-white uppercase tracking-tighter shadow-sm group-hover/kasi:scale-110 transition-transform">
                     New
                 </span>
-              </Link> */}
+              </Link>
               <Link
                 to="/pricing"
                 className="text-[15px] font-medium text-gray-600 hover:text-indigo-600 transition-colors no-underline"
