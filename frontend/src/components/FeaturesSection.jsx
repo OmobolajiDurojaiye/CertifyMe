@@ -1,14 +1,13 @@
-import React, { useRef } from "react";
-import { motion, useInView } from "motion/react";
-import { 
-  Palette, 
-  UploadCloud, 
-  BarChart3, 
-  ShieldCheck, 
+import React from "react";
+import { motion } from "motion/react";
+import {
+  Palette,
+  UploadCloud,
+  BarChart3,
+  ShieldCheck,
   ArrowRight,
   Zap,
-  Globe,
-  Lock
+  Code,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
@@ -17,242 +16,240 @@ const features = [
   {
     id: "editor",
     title: "Visual Template Editor",
-    subtitle: "Design Beautiful Certificates",
-    description: "Create stunning credentials with our drag-and-drop editor. Choose from dozens of professionally designed templates or customize your own. Real-time preview guarantees what you see is what they get.",
-    image: "/images/feature-editor.png",
+    subtitle: "DESIGN",
+    description:
+      "Create stunning credentials with our drag-and-drop editor. Choose from professionally designed templates or build your own from scratch. Real-time WYSIWYG preview guarantees what you see is what recipients get.",
     icon: Palette,
-    color: "indigo",
-    orientation: "left",
+    image: "/images/landing_page_image/visual-editor.png",
+    bgColor: "bg-indigo-50",
+    accentColor: "text-indigo-600",
+    iconBg: "bg-indigo-100",
+    borderColor: "border-indigo-100",
     benefits: [
-        "Drag & drop text, images, and signatures",
-        "Real-time visual preview",
-        "Support for custom background images"
-    ]
+      "Drag & drop text, images, and signatures",
+      "Real-time visual preview",
+      "Custom background images & branding",
+    ],
   },
   {
     id: "bulk",
     title: "Bulk Issuance Engine",
-    subtitle: "Scale Without Effort",
-    description: "Issue thousands of certificates in minutes. Simply upload a CSV file, map your columns, and let our engine handle the rest. We generate, sign, and email credentials automatically.",
-    image: "/images/feature-bulk.png",
+    subtitle: "SCALE",
+    description:
+      "Issue thousands of certificates or invitations in minutes. Upload a CSV list, map your columns, and let our engine handle the rest. We generate, sign, and email credentials automatically in the background.",
     icon: UploadCloud,
-    color: "blue",
-    orientation: "right",
+    image: "/images/landing_page_image/bulk_creation.png",
+    bgColor: "bg-sky-50",
+    accentColor: "text-sky-600",
+    iconBg: "bg-sky-100",
+    borderColor: "border-sky-100",
     benefits: [
-        "One-click CSV/Excel upload",
-        "Automatic attribute mapping",
-        "Background processing for large batches"
-    ]
+      "One-click CSV/Excel upload",
+      "Automatic attribute mapping",
+      "Background processing for large batches",
+    ],
   },
   {
     id: "analytics",
-    title: "Real-Time Analytics",
-    subtitle: "Track Your Impact",
-    description: "Gain insights into your credentialing program. data-driven decisions with our comprehensive dashboard. Track issuance rates, recipient engagement, and social sharing metrics in real-time.",
-    image: "/images/feature-analytics.png",
+    title: "Visual & Real-Time Analytics",
+    subtitle: "INSIGHTS",
+    description:
+      "Gain insights into your credentialing program. Track issuance rates, recipient engagement, and platform sharing metrics with our comprehensive real-time analytics dashboard.",
     icon: BarChart3,
-    color: "purple",
-    orientation: "left",
+    image: "/images/landing_page_image/analytics.png",
+    bgColor: "bg-violet-50",
+    accentColor: "text-violet-600",
+    iconBg: "bg-violet-100",
+    borderColor: "border-violet-100",
     benefits: [
-        "Track email open & bounce rates",
-        "Monitor certification performance",
-        "Visual growth charts"
-    ]
+      "Track email open & bounce rates",
+      "Monitor certification performance",
+      "Visual growth charts & exports",
+    ],
   },
   {
     id: "verify",
     title: "Instant Verification",
-    subtitle: "Fraud-Proof Credentials",
-    description: "Every certificate comes with a unique, tamper-proof verification page. Third parties can instantly verify authenticity by scanning a QR code or visiting the unique URL.",
-    image: "/images/feature-verification.png",
+    subtitle: "TRUST",
+    description:
+      "Every credential comes with a unique, tamper-proof verification page. Third parties can instantly verify authenticity by scanning a QR code or visiting the secure URL.",
     icon: ShieldCheck,
-    color: "green",
-    orientation: "right",
+    image: "/images/landing_page_image/verification.png",
+    bgColor: "bg-emerald-50",
+    accentColor: "text-emerald-600",
+    iconBg: "bg-emerald-100",
+    borderColor: "border-emerald-100",
     benefits: [
-        "Unique QR code for every certificate",
-        "Publicly accessible verification pages",
-        "Bank-grade fraud protection"
-    ]
+      "Unique QR code per certificate",
+      "Public verification pages",
+      "Bank-grade fraud protection",
+    ],
+  },
+  {
+    id: "branding",
+    title: "Custom Branding",
+    subtitle: "BRANDING",
+    description:
+      "Configure custom domains, design custom emails, and brand public ledger portals so that recipients and verifiers enjoy a white-labeled experience under your brand name.",
+    icon: Zap,
+    bgColor: "bg-pink-50",
+    accentColor: "text-pink-600",
+    iconBg: "bg-pink-100",
+    borderColor: "border-pink-100",
+    benefits: [
+      "White-label verification portals",
+      "Custom email designs & sender info",
+      "Issuer logos & profile configuration",
+    ],
+  },
+  {
+    id: "api",
+    title: "Developer API Integration",
+    subtitle: "INTEGRATION",
+    description:
+      "Connect ProofDeck directly to your LMS, HR tool, or payment gateway using our REST API. Automate generation and trigger webhooks upon successful delivery.",
+    icon: Code,
+    bgColor: "bg-amber-50",
+    accentColor: "text-amber-600",
+    iconBg: "bg-amber-100",
+    borderColor: "border-amber-100",
+    benefits: [
+      "Easy-to-use REST API endpoints",
+      "Real-time webhook updates",
+      "Comprehensive developer documentation",
+    ],
   },
 ];
 
-const coreBenefits = [
-    {
-        icon: Zap,
-        title: "Flexible Issuance",
-        description: "Whether you need to issue a single certificate or thousands at once, we've got you covered. Support for individual creation and bulk CSV uploads."
-    },
-    {
-        icon: ShieldCheck,
-        title: "Smart Verification",
-        description: "Ensure authenticity with our dual-layer security. Every credential includes a unique QR Code and a 32-digit verification token."
-    },
-    {
-        icon: Palette,
-        title: "Custom Templates",
-        description: "Drag & drop builder. Upload your own designs or use our professional presets to match your brand identity perfectly."
-    }
-];
+const FeatureCard = ({ feature, index }) => {
+  // Each card sticks at a progressively lower top offset
+  const topOffset = 80 + index * 40;
 
-const FeatureItem = ({ feature, index }) => {
-  const isEven = index % 2 === 0;
-  
   return (
-    <div className="py-16 md:py-24 overflow-hidden">
-      <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex flex-col md:flex-row items-center gap-12 md:gap-20 ${!isEven ? 'md:flex-row-reverse' : ''}`}>
-          
-          {/* Image Section */}
-          <motion.div 
-            className="w-full md:w-1/2 relative"
-            initial={{ opacity: 0, x: isEven ? -50 : 50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-          >
-            <div className="relative group rounded-2xl overflow-hidden shadow-2xl border border-gray-100 bg-white">
-               {/* Gradient Glow */}
-               <div className={`absolute -inset-1 blur-2xl opacity-20 bg-gradient-to-tr from-${feature.color}-500 to-${feature.color}-300 transition-opacity duration-500 group-hover:opacity-40`}></div>
-               
-               <img 
-                 src={feature.image} 
-                 alt={feature.title}
-                 className="relative w-full h-auto object-cover transform transition-transform duration-700 group-hover:scale-105"
-               />
-
-               {/* Decorative floating badge */}
-               <motion.div 
-                 className="absolute -bottom-6 -right-6 md:bottom-8 md:right-8 bg-white p-4 rounded-xl shadow-lg border border-gray-100 flex items-center gap-3"
-                 initial={{ y: 20, opacity: 0 }}
-                 whileInView={{ y: 0, opacity: 1 }}
-                 transition={{ delay: 0.3, duration: 0.5 }}
-               >
-                 <div className={`p-2 rounded-lg bg-${feature.color}-100 text-${feature.color}-600`}>
-                    <feature.icon size={24} />
-                 </div>
-                 <div>
-                    <p className="text-xs text-gray-500 uppercase font-semibold">Feature</p>
-                    <p className="text-sm font-bold text-gray-900">{feature.title}</p>
-                 </div>
-               </motion.div>
-            </div>
-          </motion.div>
-
-          {/* Text Section */}
-          <motion.div 
-            className="w-full md:w-1/2 space-y-6"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-${feature.color}-50 text-${feature.color}-700 text-sm font-medium border border-${feature.color}-100`}>
-              <span className={`w-2 h-2 rounded-full bg-${feature.color}-500 animate-pulse`}></span>
+    <div
+      className="sticky mb-8 last:mb-0"
+      style={{ top: `${topOffset}px` }}
+    >
+      <motion.div
+        className={`${feature.bgColor} rounded-3xl border ${feature.borderColor} shadow-lg overflow-hidden`}
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-50px" }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 items-stretch">
+          {/* Left Column: Text Content */}
+          <div className="p-8 md:p-12 flex flex-col justify-center">
+            <div
+              className={`inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/95 ${feature.accentColor} text-xs font-bold tracking-widest mb-5 w-fit border ${feature.borderColor}`}
+            >
+              <feature.icon size={13} />
               {feature.subtitle}
             </div>
 
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">
+            <h3 className="text-2xl md:text-3xl font-extrabold text-slate-850 mb-4 leading-tight">
               {feature.title}
-            </h2>
+            </h3>
 
-            <p className="text-lg text-gray-600 leading-relaxed">
+            <p className="text-slate-650 leading-relaxed mb-6 text-sm md:text-[15px] font-medium">
               {feature.description}
             </p>
 
-            <ul className="space-y-3 pt-2">
+            <ul className="space-y-3">
               {feature.benefits.map((benefit, i) => (
-                  <li key={i} className="flex items-center gap-3 text-gray-600">
-                      <div className={`w-5 h-5 rounded-full bg-${feature.color}-100 flex items-center justify-center text-${feature.color}-600`}>
-                        <ArrowRight size={12} />
-                      </div>
-                      <span className="text-sm font-medium">{benefit}</span>
-                  </li>
+                <li key={i} className="flex items-center gap-3 text-slate-700">
+                  <div
+                    className={`w-5 h-5 rounded-full ${feature.iconBg} flex items-center justify-center ${feature.accentColor} shrink-0`}
+                  >
+                    <ArrowRight size={10} className="stroke-[2.5]" />
+                  </div>
+                  <span className="text-sm font-semibold">{benefit}</span>
+                </li>
               ))}
             </ul>
-             
-          </motion.div>
+          </div>
 
+          {/* Right Column: Visual Portrait Cover Split */}
+          <div className="relative hidden md:block overflow-hidden min-h-[380px] bg-slate-200/20 border-l border-slate-200/20">
+            {feature.image ? (
+              <img
+                src={feature.image}
+                alt={feature.title}
+                className="absolute inset-0 w-full h-full object-cover transform hover:scale-103 transition-transform duration-700 object-left-top"
+              />
+            ) : (
+              /* Abstract visual placeholder centered */
+              <div className="absolute inset-0 flex items-center justify-center p-8 bg-white/40">
+                <div className="relative w-full max-w-xs flex flex-col items-center">
+                  <div className={`aspect-square rounded-2xl bg-white/90 border border-white shadow-md flex items-center justify-center relative overflow-hidden w-40 h-40`}>
+                    <feature.icon
+                      size={80}
+                      strokeWidth={0.8}
+                      className={`${feature.accentColor} opacity-30`}
+                    />
+                    {/* Floating decoration cards */}
+                    <div className="absolute bottom-3 left-3 bg-white p-2 rounded-lg shadow-sm border border-slate-100 flex items-center gap-1.5">
+                      <div className={`p-1 rounded-md ${feature.iconBg} ${feature.accentColor}`}>
+                        <feature.icon size={10} />
+                      </div>
+                      <span className="text-[9px] font-bold text-slate-800">Verified</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
 
-const CoreBenefitsGrid = () => {
-    return (
-        <div className="container max-w-7xl mx-auto px-4 mb-24">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {coreBenefits.map((benefit, index) => (
-                    <motion.div 
-                        key={index}
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.1, duration: 0.5 }}
-                        className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-shadow duration-300"
-                    >
-                        <div className="w-12 h-12 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 mb-6">
-                            <benefit.icon size={24} />
-                        </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3">{benefit.title}</h3>
-                        <p className="text-gray-500 leading-relaxed">
-                            {benefit.description}
-                        </p>
-                    </motion.div>
-                ))}
-            </div>
-        </div>
-    )
-}
-
 export function FeaturesSection() {
   const navigate = useNavigate();
+
   return (
-    <section id="features" className="bg-white py-12 md:py-20 relative overflow-hidden">
-      
-      {/* Section Header */}
-      <div className="container max-w-7xl mx-auto px-4 mb-16 text-center">
+    <section id="features" className="bg-white py-16 md:py-24 relative overflow-visible">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
         <motion.div
-           initial={{ opacity: 0, y: 20 }}
-           whileInView={{ opacity: 1, y: 0 }}
-           viewport={{ once: true }}
-           transition={{ duration: 0.5 }}
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
         >
-             <h2 className="text-base font-semibold text-indigo-600 tracking-wide uppercase">Features</h2>
-             <p className="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-               Everything you need to issue credentials
-             </p>
+          <p className="text-xs font-bold text-indigo-600 tracking-widest uppercase mb-3">
+            Features Library
+          </p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight">
+            Everything you need to
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+              issue credentials
+            </span>
+          </h2>
         </motion.div>
-      </div>
-      
-      {/* Core Benefits Grid */}
-      <CoreBenefitsGrid />
 
-      <div className="space-y-0 relative">
-        {/* Connecting Line (Optional, decorative) */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gray-100 hidden md:block -z-10 transform -translate-x-1/2"></div>
-         
-        {features.map((feature, index) => (
-          <FeatureItem key={feature.id} feature={feature} index={index} />
-        ))}
-      </div>
+        {/* Stacking Cards Container */}
+        <div className="relative">
+          {features.map((feature, index) => (
+            <FeatureCard key={feature.id} feature={feature} index={index} />
+          ))}
+        </div>
 
-
-      {/* Bottom CTA */}
-      <div className="container mx-auto px-4 mt-16 text-center">
-         <motion.div 
-            className="inline-block"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-         >
-             <Button 
-                onClick={() => navigate('/signup')} 
-                size="lg" 
-                className="h-14 px-8 rounded-full text-lg shadow-xl shadow-indigo-200 bg-indigo-600 hover:bg-indigo-700"
-            >
-                Start Using These Features Free
-             </Button>
-         </motion.div>
+        {/* Bottom CTA Pill Button */}
+        <div className="text-center mt-16 flex justify-center">
+          <motion.button
+            onClick={() => navigate("/signup")}
+            whileHover={{ scale: 1.02, translateY: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="group px-10 py-4 bg-gradient-to-r from-indigo-600 via-indigo-650 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white rounded-full text-sm font-bold tracking-wide uppercase shadow-lg shadow-indigo-200 hover:shadow-xl hover:shadow-indigo-300/40 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border border-transparent"
+          >
+            <span>Start Using These Features Free</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform stroke-[2.5]" />
+          </motion.button>
+        </div>
       </div>
     </section>
   );

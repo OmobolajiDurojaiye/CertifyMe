@@ -43,17 +43,6 @@ const PublicHeader = () => {
             </div>
 
             <nav className="hidden md:flex items-center gap-8">
-              <a
-                href="https://kasi.proofdeck.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative text-[15px] font-medium text-gray-600 hover:text-[#0F8C55] transition-colors no-underline group/kasi"
-              >
-                Kasi
-                <span className="absolute -top-3 -right-6 px-1.5 py-0.5 rounded-full bg-[#0BBF6A] text-[8px] font-black text-white uppercase tracking-tighter shadow-sm group-hover/kasi:scale-110 transition-transform">
-                    New
-                </span>
-              </a>
               <Link
                 to="/pricing"
                 className="text-[15px] font-medium text-gray-600 hover:text-indigo-600 transition-colors no-underline"
@@ -115,7 +104,6 @@ const PublicHeader = () => {
         <div className="flex flex-col h-full pt-28 px-6 pb-8">
           <nav className="flex-1 flex flex-col space-y-2">
             {[
-              { label: "Kasi", path: "https://kasi.proofdeck.app/", isExternal: true },
               { label: "Pricing", path: "/pricing" },
               { label: "Public Ledger", path: "/search" },
               { label: "Verification", path: "/verify" },

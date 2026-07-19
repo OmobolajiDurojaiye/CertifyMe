@@ -5,7 +5,7 @@ import PublicFooter from "../components/PublicFooter";
 import { 
     Check, 
     ArrowRight, 
-    Zap, 
+    Sparkles, 
     Building2, 
     Globe2, 
     ShieldCheck, 
@@ -48,9 +48,9 @@ const PricingCard = ({ plan, isPopular }) => {
 
       <div className="flex items-baseline mb-2">
         <span className="text-4xl font-extrabold text-gray-900 tracking-tight">
-          {plan.priceUSD}
+          {plan.priceNGN}
         </span>
-        <span className="text-gray-500 ml-2 font-medium">/ {plan.priceNGN}</span>
+        <span className="text-gray-500 ml-2 font-medium">/ one-time</span>
       </div>
       <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600 bg-indigo-50 inline-block py-1 px-2 rounded-md mb-8 w-max">
           {plan.certs} Credits Included
@@ -81,28 +81,20 @@ const PricingCard = ({ plan, isPopular }) => {
 
       <Link
         to={`/signup?plan=${plan.name.toLowerCase()}`}
-        className={`w-full py-4 px-6 rounded-xl font-bold text-center transition-all duration-200 no-underline flex items-center justify-center gap-2 group ${
+        className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold text-center transition-all duration-200 no-underline flex items-center justify-center gap-2 group ${
           isPopular
             ? "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-600/30"
             : "bg-white text-gray-900 border-2 border-gray-100 hover:border-gray-200 hover:bg-gray-50"
         }`}
       >
         Choose {plan.name}
-        <ArrowRight size={16} className={`transition-transform group-hover:translate-x-1 ${!isPopular && "text-gray-400"}`} />
+        <ArrowRight size={15} className={`transition-transform group-hover:translate-x-1 ${!isPopular && "text-gray-400"}`} />
       </Link>
     </motion.div>
   );
 }
 
-const FaqItem = ({ q, a }) => (
-  <div className="border-b border-gray-200 py-8 last:border-0">
-    <h4 className="flex items-start gap-4 font-bold text-gray-900 text-lg mb-3">
-        <HelpCircle className="text-indigo-600 shrink-0 mt-1" size={20} />
-        {q}
-    </h4>
-    <p className="text-gray-600 leading-relaxed pl-9">{a}</p>
-  </div>
-);
+
 
 // Small custom icon for "Most Popular" badge
 const StarIcon = (props) => (
@@ -119,75 +111,72 @@ const PricingPage = () => {
   const plans = [
     {
       name: "Starter",
-      icon: Zap,
+      icon: Sparkles,
       colorClass: "bg-orange-100 text-orange-600",
-      priceUSD: "$15",
-      priceNGN: "₦22,500",
+      priceNGN: "₦30,000",
       certs: "500",
-      costPerCert: "₦45",
+      costPerCert: "₦60",
       for: "Perfect for workshops, bootcamps, and small cohorts.",
       features: [
-        "500 certificate credits",
-        "Unlimited templates",
-        "Email delivery & PDF downloads",
-        "Secure online verification",
+        "500 Credits Included",
+        "Unlimited Template Designs",
+        "Secure Email Delivery",
+        "High-Res PDF Downloads",
+        "Basic Verification Portal",
       ],
     },
     {
       name: "Growth",
       icon: Building2,
       colorClass: "bg-blue-100 text-blue-600",
-      priceUSD: "$50",
-      priceNGN: "₦70,000",
+      priceNGN: "₦60,000",
       certs: "2,000",
-      costPerCert: "₦35",
+      costPerCert: "₦30",
       for: "Ideal for schools and training centers issuing regularly.",
       features: [
-        "2,000 certificate credits",
-        "Everything in Starter, plus:",
-        "Priority support",
-        "Faster processing queue",
-        "Custom branding options"
+        "2,000 Credits Included",
+        "Unlimited Template Designs",
+        "Secure Email Delivery",
+        "Priority Support Channel",
+        "Basic Verification Portal",
       ],
     },
     {
       name: "Pro",
       icon: ShieldCheck,
       colorClass: "bg-indigo-100 text-indigo-600",
-      priceUSD: "$100",
-      priceNGN: "₦145,000",
+      priceNGN: "₦100,000",
       certs: "5,000",
-      costPerCert: "₦29",
+      costPerCert: "₦20",
       for: "For institutions needing automation and deeper integration.",
       features: [
-        "5,000 certificate credits",
-        "Everything in Growth, plus:",
-        "Full API access",
-        "Bulk CSV upload (Unlimited)",
-        "Priority email & chat support",
+        "5,000 Credits Included",
+        "Everything in Growth",
+        "Developer API Access",
+        "Custom Logo & Branding",
+        "Custom Domain URL",
       ],
     },
     {
       name: "Enterprise",
       icon: Globe2,
       colorClass: "bg-purple-100 text-purple-600",
-      priceUSD: "$300",
-      priceNGN: "₦440,000",
+      priceNGN: "₦300,000",
       certs: "20,000",
-      costPerCert: "₦22",
+      costPerCert: "₦15",
       for: "For universities, exam bodies, and large organizations.",
       features: [
-        "20,000 certificate credits",
-        "Everything in Pro, plus:",
-        "Dedicated account manager",
-        "SLA-backed support",
-        "Custom onboarding & training"
+        "20,000 Credits Included",
+        "Dedicated Account Manager",
+        "SLA Support Guarantee",
+        "Developer API Access",
+        "Unlimited Webhooks & API",
       ],
     },
   ];
 
   return (
-    <div className="bg-white font-sans overflow-x-hidden">
+    <div className="bg-white font-sans text-gray-900">
       <PublicHeader />
       <main>
         {/* Hero Section */}
@@ -198,18 +187,15 @@ const PricingPage = () => {
             <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-100/50 rounded-full blur-3xl -z-10"></div>
 
             <div className="max-w-4xl mx-auto px-6 relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-sm font-bold mb-8 animate-fade-in-up">
-                    <Zap size={14} /> Pay-as-you-go Pricing
-                </div>
-                <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6 leading-tight">
+                <h1 className="text-5xl md:text-7xl font-extrabold text-gray-900 tracking-tight mb-6 leading-tight pt-8">
                 Simple pricing.<br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+                <span className="text-indigo-600">
                     Pay only for what you issue.
                 </span>
                 </h1>
                 <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
                 ProofDeck uses a credit-based system. One certificate equals one
-              credit. No hidden fees. No surprises.ubscriptions.
+              credit. No hidden fees. No surprises.
                 </p>
           </div>
         </section>
@@ -259,7 +245,7 @@ const PricingPage = () => {
                   ))}
                 </ul>
               </div>
-              <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-8 rounded-2xl border border-gray-700 shadow-xl text-white">
+              <div className="bg-gray-900 p-8 rounded-2xl border border-gray-700 shadow-xl text-white">
                  <div className="w-12 h-12 bg-white/10 text-white rounded-xl flex items-center justify-center mb-6 backdrop-blur-sm">
                     <Briefcase size={24} />
                 </div>
@@ -284,37 +270,6 @@ const PricingPage = () => {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section className="py-24 bg-white">
-          <div className="max-w-3xl mx-auto px-4">
-            <h2 className="text-center text-4xl font-extrabold text-gray-900 mb-16 tracking-tight">
-              Frequently Asked Questions
-            </h2>
-            <div className="space-y-2">
-              <FaqItem
-                q="What is a credit?"
-                a="One credit equals one issued certificate. If you create a certificate but delete it before sending, the credit is returned to your account."
-              />
-              <FaqItem
-                q="Do credits expire?"
-                a="No. Your credits remain available in your account until you use them, regardless of how long ago you purchased them."
-              />
-              <FaqItem
-                q="Can I upgrade my plan later?"
-                a="Yes. You can purchase a new credit bundle at any time. Your new credits will be added to your existing balance instantly."
-              />
-              <FaqItem
-                q="Can I start small and scale later?"
-                a="Absolutely. Most institutions start with the Starter or Growth plan and purchase larger credit bundles as their issuance needs increase."
-              />
-              <FaqItem
-                q="Do recipients need an account to verify certificates?"
-                a="No. Certificates are publicly verifiable via a secure link and QR code. Anyone can confirm a certificate's authenticity without logging in."
-              />
-            </div>
-          </div>
-        </section>
-
         {/* Final CTA */}
         <section className="py-24 bg-gray-50 border-t border-gray-100">
           <div className="max-w-3xl mx-auto px-4 text-center">
@@ -328,13 +283,13 @@ const PricingPage = () => {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/signup"
-                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transform hover:-translate-y-1 no-underline"
+                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transform hover:-translate-y-0.5 no-underline"
               >
-                Get Started with ProofDeckNow
+                Get Started with ProofDeck
               </Link>
               <Link
                 to="/contact"
-                className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-gray-700 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-xl transition-all no-underline"
+                className="inline-flex items-center justify-center px-5 py-2.5 text-sm font-bold text-gray-700 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 rounded-lg transition-all no-underline"
               >
                 Contact Sales
               </Link>

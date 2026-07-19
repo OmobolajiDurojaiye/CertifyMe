@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 
 // User-facing imports
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -14,12 +14,13 @@ import SettingsPage from "./pages/SettingsPage";
 import TemplatesPage from "./pages/TemplatesPage";
 import ViewCertificatePage from "./pages/ViewCertificatePage";
 import VerifyCertificatePage from "./pages/VerifyCertificatePage";
-import BulkCreateCertificatesPage from "./pages/BulkCreateCertificatesPage";
+import SendInvitationPage from "./pages/SendInvitationPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GroupsPage from "./pages/GroupsPage";
 import ContactSupportPage from "./pages/ContactSupportPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import JoinPage from "./pages/JoinPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import UploadTemplatePage from "./pages/UploadTemplatePage";
 import OpenLedgerPage from "./pages/OpenLedgerPage";
@@ -48,17 +49,28 @@ import AdminSupportTicketDetailsPage from "./pages/AdminSupportTicketDetailsPage
 import AdminCompaniesPage from "./pages/AdminCompaniesPage";
 import AdminCompanyDetailsPage from "./pages/AdminCompanyDetailsPage";
 import AdminMessagingPage from "./pages/AdminMessagingPage";
-import AdminTeamPage from "./pages/AdminTeamPage";
+import AdminTeamPage from "./pages/AdminTeamPage"; // New Route
 
 import DocsPage from "./pages/DocsPage";
 import KasiLandingPage from "./pages/KasiLandingPage";
 
 const NotFoundPage = () => <h1 className="p-5">404: Page Not Found</h1>;
 
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 function App() {
   return (
     <UserProvider>
       <AdminAuthProvider>
+        <ScrollToTop />
         <Routes>
           {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
@@ -71,6 +83,7 @@ function App() {
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/join/:token" element={<JoinPage />} />
           <Route path="/verify" element={<VerifyCertificatePage />} />
           <Route
             path="/verify/:verificationId"
@@ -119,7 +132,8 @@ function App() {
               <Route path="create" element={<CreateCertificatePage />} />
               <Route path="edit/:certId" element={<CreateCertificatePage />} />
               <Route path="view/:certId" element={<ViewCertificatePage />} />
-              <Route path="bulk-create" element={<BulkCreateCertificatesPage />} />
+              <Route path="bulk-create" element={<CreateCertificatePage />} />
+              <Route path="send-invitation" element={<SendInvitationPage />} />
               <Route path="settings" element={<SettingsPage />} />
 
               <Route path="support">
