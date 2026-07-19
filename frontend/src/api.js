@@ -6,6 +6,15 @@ const API = axios.create({
 });
 
 API.interceptors.request.use((req) => {
+  // Associate with global button spinner if request started within 150ms of button click
+  if (window.__buttonSpinner && (Date.now() - window.__buttonSpinner.clickTime < 150)) {
+    req._associatedSpinner = window.__buttonSpinner;
+    window.__buttonSpinner.activeRequests++;
+  }
+
+  const ws = localStorage.getItem("workspaceContext") || "personal";
+  req.headers["X-Workspace-Context"] = ws;
+
   if (req.url.includes("/admin")) {
     const adminToken = localStorage.getItem("adminToken");
     if (adminToken) {
@@ -19,6 +28,38 @@ API.interceptors.request.use((req) => {
   }
   return req;
 });
+
+API.interceptors.response.use(
+  (response) => {
+    // Notify associated spinner of completion
+    if (response.config && response.config._associatedSpinner) {
+      const spinner = response.config._associatedSpinner;
+      spinner.activeRequests = Math.max(0, spinner.activeRequests - 1);
+      if (spinner.activeRequests === 0) {
+        spinner.setNetworkFinished();
+      }
+    }
+    return response;
+  },
+  (error) => {
+    // Notify associated spinner of completion even on failure
+    if (error.config && error.config._associatedSpinner) {
+      const spinner = error.config._associatedSpinner;
+      spinner.activeRequests = Math.max(0, spinner.activeRequests - 1);
+      if (spinner.activeRequests === 0) {
+        spinner.setNetworkFinished();
+      }
+    }
+
+    if (error.response && error.response.status === 403) {
+      const msg = error.response.data?.msg;
+      if (msg === "Permission denied" || msg === "Template permission denied") {
+        window.location.reload();
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 // USER AUTH
 export const loginUser = (credentials) => API.post("/auth/login", credentials);
@@ -183,6 +224,8 @@ export const getAdminCompanies = (params = {}) =>
   API.get(`/admin/companies?${new URLSearchParams(params).toString()}`);
 export const getAdminCompanyDetails = (companyId) =>
   API.get(`/admin/companies/${companyId}`);
+export const adjustCompanyQuota = (companyId, adjustment, reason) =>
+  API.post(`/admin/companies/${companyId}/adjust-quota`, { adjustment, reason });
 export const deleteAdminCompany = (companyId) =>
   API.delete(`/admin/companies/${companyId}/delete`);
 export const getEmailRecipients = () => API.get("/admin/messaging/recipients");
@@ -238,3 +281,11 @@ export const getChatHistory = (params = {}) =>
   API.get(`/support/history?${new URLSearchParams(params).toString()}`);
 
 export const sendSupportMessage = (data) => API.post("/support/message", data);
+
+// TEAM MULTI-TENANCY API
+export const getTeamMembers = () => API.get("/team/members");
+export const sendTeamInvite = (email) => API.post("/team/invite", { email });
+export const cancelTeamInvite = (inviteId) => API.delete(`/team/invites/${inviteId}`);
+export const removeTeamMember = (memberId) => API.delete(`/team/members/${memberId}`);
+export const getInvitationDetails = (token) => API.get(`/team/invite/${token}`);
+export const acceptInvitation = (data) => API.post("/team/accept", data);
